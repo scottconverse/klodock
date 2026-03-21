@@ -50,6 +50,7 @@ pub fn run() {
             secrets::keychain::delete_secret,
             secrets::keychain::list_secrets,
             secrets::keychain::test_api_key,
+            secrets::keychain::check_ollama,
             // Setup state commands
             setup::setup_state::get_setup_state,
             setup::setup_state::complete_step,

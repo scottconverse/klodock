@@ -231,3 +231,20 @@ pub async fn test_api_key(provider: String, key: String) -> Result<bool, String>
         Err(e) => Err(format!("Network error testing {} key: {}", provider, e)),
     }
 }
+
+/// Check if Ollama is running locally by probing its API endpoint.
+///
+/// Returns `Ok(true)` if Ollama responds, `Ok(false)` if it's not reachable,
+/// and `Err` only for unexpected failures.
+#[tauri::command]
+pub async fn check_ollama() -> Result<bool, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(3))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+
+    match client.get("http://localhost:11434/api/tags").send().await {
+        Ok(resp) => Ok(resp.status().is_success()),
+        Err(_) => Ok(false), // Not running or not installed — not an error
+    }
+}

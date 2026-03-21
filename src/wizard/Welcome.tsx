@@ -22,7 +22,7 @@ export function Welcome() {
       </h1>
 
       <p className="mt-3 max-w-md text-lg leading-relaxed text-neutral-600">
-        Let's set up your AI assistant in under 5 minutes.
+        Let's set up your AI assistant. It only takes a few minutes.
       </p>
 
       <ul className="mt-10 grid w-full max-w-lg gap-4 text-left">

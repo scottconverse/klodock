@@ -29,7 +29,7 @@ ClawPad fills the gap: **easy + local + free.**
 
 ## Features
 
-- **5-minute setup wizard** — from download to a working agent
+- **Quick setup wizard** — from download to a working agent in minutes, not hours
 - **Silent Node.js install** — detects existing installs, handles nvm/volta/homebrew
 - **Visual personality builder** — name, role, tone slider, live SOUL.md preview
 - **API key management** — OS keychain (DPAPI on Windows, Keychain on macOS, libsecret on Linux), keys never stored in plaintext

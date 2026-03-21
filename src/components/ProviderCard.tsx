@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CheckCircle2,
   XCircle,
   ExternalLink,
   Loader2,
+  Download,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
-import { storeSecret, testApiKey } from "@/lib/tauri";
+import { storeSecret, testApiKey, checkOllama } from "@/lib/tauri";
 import type { ReactNode } from "react";
 
 export interface ProviderCardProps {
@@ -37,11 +38,37 @@ export function ProviderCard({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(validated);
 
+  // Ollama-specific state
+  const [ollamaDetected, setOllamaDetected] = useState<boolean | null>(null);
+  const [ollamaChecking, setOllamaChecking] = useState(false);
+
+  // Auto-detect Ollama on mount if this is the local provider
+  useEffect(() => {
+    if (isLocal && !success) {
+      detectOllama();
+    }
+  }, [isLocal]);
+
+  async function detectOllama() {
+    setOllamaChecking(true);
+    try {
+      const running = await checkOllama();
+      setOllamaDetected(running);
+      if (running) {
+        setSuccess(true);
+        onValidated(id);
+      }
+    } catch {
+      setOllamaDetected(false);
+    } finally {
+      setOllamaChecking(false);
+    }
+  }
+
   async function handleOpenUrl() {
     try {
       await open(keyUrl);
     } catch {
-      // Fallback: let the browser handle it
       window.open(keyUrl, "_blank");
     }
   }
@@ -58,7 +85,7 @@ export function ProviderCard({
         setSuccess(true);
         onValidated(id);
       } else {
-        setError("Invalid key — please check and try again.");
+        setError("Invalid key \u2014 please check and try again.");
       }
     } catch {
       setError("Could not verify the key. Please check it and try again.");
@@ -115,24 +142,89 @@ export function ProviderCard({
       {/* ── Local provider (Ollama) ──────────────────── */}
       {isLocal ? (
         <div className="space-y-3">
-          <p className="text-sm text-neutral-600">
-            Free — runs on your computer. No API key needed.
-          </p>
-          <button
-            type="button"
-            onClick={handleOpenUrl}
-            className="
-              inline-flex items-center gap-1.5 rounded-lg border
-              border-neutral-200 px-3 py-1.5 text-sm font-medium
-              text-neutral-700 transition-colors hover:bg-neutral-50
-              focus-visible:outline-2 focus-visible:outline-offset-2
-              focus-visible:outline-primary-500
-            "
-            aria-label={`Download ${name}`}
-          >
-            Download Ollama
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
+          {ollamaChecking ? (
+            <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <Loader2
+                className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+              Checking if Ollama is running...
+            </div>
+          ) : ollamaDetected && success ? (
+            <div className="space-y-2">
+              <p className="flex items-center gap-2 text-sm font-medium text-success-700">
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                Ollama detected and running
+              </p>
+              <p className="text-xs text-neutral-500">
+                Free, local AI — no API key needed. Your data never leaves your machine.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-neutral-600">
+                Free — runs AI models on your computer. No API key, no cost, no data sent anywhere.
+              </p>
+
+              {ollamaDetected === false && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 space-y-2">
+                  <p className="text-sm text-amber-800">
+                    Ollama isn't running. To use it:
+                  </p>
+                  <ol className="text-xs text-amber-700 list-decimal list-inside space-y-1">
+                    <li>Download and install Ollama from the link below</li>
+                    <li>Open Ollama (it runs in the background)</li>
+                    <li>Click "Check Again" to detect it</li>
+                  </ol>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenUrl}
+                  className="
+                    inline-flex items-center gap-1.5 rounded-lg border
+                    border-neutral-200 px-3 py-1.5 text-sm font-medium
+                    text-neutral-700 transition-colors hover:bg-neutral-50
+                    focus-visible:outline-2 focus-visible:outline-offset-2
+                    focus-visible:outline-primary-500
+                  "
+                  aria-label="Download Ollama"
+                >
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                  Download Ollama
+                </button>
+
+                <button
+                  type="button"
+                  onClick={detectOllama}
+                  disabled={ollamaChecking}
+                  className="
+                    inline-flex flex-1 items-center justify-center gap-1.5
+                    rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium
+                    text-white transition-colors hover:bg-primary-700
+                    focus-visible:outline-2 focus-visible:outline-offset-2
+                    focus-visible:outline-primary-500
+                    disabled:cursor-not-allowed disabled:opacity-50
+                  "
+                  aria-label="Check if Ollama is running"
+                >
+                  {ollamaChecking ? (
+                    <>
+                      <Loader2
+                        className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                        aria-hidden="true"
+                      />
+                      Checking...
+                    </>
+                  ) : (
+                    "Check Again"
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         /* ── API key provider ─────────────────────────── */

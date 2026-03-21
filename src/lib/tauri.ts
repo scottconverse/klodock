@@ -112,6 +112,10 @@ export async function testApiKey(
   return invoke<boolean>("test_api_key", { provider, key });
 }
 
+export async function checkOllama(): Promise<boolean> {
+  return invoke<boolean>("check_ollama");
+}
+
 /* ── Setup State ─────────────────────────────────────── */
 
 export async function getSetupState(): Promise<SetupState> {

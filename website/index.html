@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ClawPad — Desktop GUI for OpenClaw</title>
+  <meta name="description" content="Set up your AI agent in minutes, not hours. No terminal, no subscriptions, no data leaving your computer. ClawPad is the free, open-source desktop app for OpenClaw.">
+  <meta name="theme-color" content="#1e40af">
+  <meta property="og:title" content="ClawPad — Desktop GUI for OpenClaw">
+  <meta property="og:description" content="Set up your AI agent in minutes, not hours. No terminal, no subscriptions, no data leaving your computer.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-200: #bfdbfe;
+      --blue-400: #60a5fa; --blue-500: #3b82f6; --blue-600: #2563eb;
+      --blue-700: #1d4ed8; --blue-800: #1e40af; --blue-900: #1e3a8a;
+      --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+      --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+      --slate-900: #0f172a; --slate-950: #020617;
+      --green-400: #4ade80; --green-500: #22c55e; --green-600: #16a34a;
+      --amber-400: #fbbf24; --amber-500: #f59e0b;
+      --red-400: #f87171; --red-500: #ef4444;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font); color: var(--slate-800); background: #fff; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    a { color: var(--blue-600); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; height: auto; }
+
+    /* ---- Layout ---- */
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 96px 0; }
+    .section-alt { background: var(--slate-50); }
+    .section-dark { background: var(--slate-900); color: var(--slate-200); }
+
+    /* ---- Nav ---- */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+    }
+    .nav-inner {
+      max-width: 1120px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; height: 64px;
+    }
+    .nav-logo { font-weight: 800; font-size: 20px; color: var(--slate-900); display: flex; align-items: center; gap: 8px; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a { color: var(--slate-600); font-size: 14px; font-weight: 500; }
+    .nav-links a:hover { color: var(--slate-900); text-decoration: none; }
+    .nav-cta {
+      background: var(--blue-600); color: #fff !important; padding: 8px 20px;
+      border-radius: 8px; font-weight: 600; font-size: 14px; transition: background 0.15s;
+    }
+    .nav-cta:hover { background: var(--blue-700); text-decoration: none !important; }
+
+    /* ---- Hero ---- */
+    .hero { padding: 160px 0 100px; text-align: center; position: relative; overflow: hidden; }
+    .hero::before {
+      content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 900px; height: 900px; border-radius: 50%;
+      background: radial-gradient(circle, var(--blue-100) 0%, transparent 70%);
+      opacity: 0.5; z-index: 0;
+    }
+    .hero > * { position: relative; z-index: 1; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--blue-50); border: 1px solid var(--blue-200);
+      padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 500;
+      color: var(--blue-700); margin-bottom: 24px;
+    }
+    .hero-badge svg { width: 14px; height: 14px; }
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 64px); font-weight: 800;
+      line-height: 1.1; color: var(--slate-900); margin-bottom: 20px;
+      letter-spacing: -0.02em;
+    }
+    .hero h1 span { color: var(--blue-600); }
+    .hero p {
+      font-size: 19px; color: var(--slate-600); max-width: 600px; margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+    .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 16px;
+      transition: all 0.15s; cursor: pointer; border: none;
+    }
+    .btn-primary { background: var(--blue-600); color: #fff; box-shadow: 0 1px 3px rgba(37,99,235,0.3); }
+    .btn-primary:hover { background: var(--blue-700); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.25); text-decoration: none; }
+    .btn-secondary { background: var(--slate-100); color: var(--slate-700); border: 1px solid var(--slate-300); }
+    .btn-secondary:hover { background: var(--slate-200); text-decoration: none; }
+    .btn svg { width: 18px; height: 18px; }
+    .hero-stats {
+      display: flex; gap: 48px; justify-content: center; margin-top: 56px;
+      padding-top: 40px; border-top: 1px solid var(--slate-200);
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat-value { font-size: 28px; font-weight: 800; color: var(--slate-900); }
+    .hero-stat-label { font-size: 13px; color: var(--slate-500); margin-top: 2px; }
+
+    /* ---- Problem ---- */
+    .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+    .problem-grid h2 { font-size: 36px; font-weight: 800; color: var(--slate-900); line-height: 1.15; margin-bottom: 16px; }
+    .problem-grid p { color: var(--slate-600); font-size: 17px; margin-bottom: 24px; }
+    .pain-points { list-style: none; }
+    .pain-points li {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px 0;
+      border-bottom: 1px solid var(--slate-100); font-size: 15px; color: var(--slate-700);
+    }
+    .pain-points li:last-child { border-bottom: none; }
+    .pain-icon { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    .pain-icon-red { background: #fef2f2; color: var(--red-500); }
+    .comparison-card {
+      background: var(--slate-900); border-radius: 16px; padding: 32px;
+      color: var(--slate-300); font-family: var(--mono); font-size: 13px;
+      line-height: 1.8; white-space: pre; overflow-x: auto;
+    }
+
+    /* ---- Features ---- */
+    .features-header { text-align: center; margin-bottom: 64px; }
+    .features-header h2 { font-size: 36px; font-weight: 800; color: var(--slate-900); margin-bottom: 12px; }
+    .features-header p { font-size: 17px; color: var(--slate-500); max-width: 540px; margin: 0 auto; }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .feature-card {
+      background: #fff; border: 1px solid var(--slate-200); border-radius: 12px;
+      padding: 28px; transition: all 0.2s;
+    }
+    .feature-card:hover { border-color: var(--blue-300); box-shadow: 0 4px 24px rgba(37,99,235,0.08); }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; font-size: 20px;
+    }
+    .fi-blue { background: var(--blue-50); color: var(--blue-600); }
+    .fi-green { background: #f0fdf4; color: var(--green-600); }
+    .fi-amber { background: #fffbeb; color: var(--amber-500); }
+    .fi-slate { background: var(--slate-100); color: var(--slate-600); }
+    .feature-card h3 { font-size: 16px; font-weight: 700; color: var(--slate-900); margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--slate-500); line-height: 1.55; }
+
+    /* ---- Wizard Preview ---- */
+    .wizard-section { text-align: center; }
+    .wizard-section h2 { font-size: 36px; font-weight: 800; color: var(--slate-900); margin-bottom: 12px; }
+    .wizard-section p { font-size: 17px; color: var(--slate-500); margin-bottom: 48px; }
+    .wizard-steps {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+      max-width: 900px; margin: 0 auto;
+    }
+    .wizard-step {
+      background: #fff; border: 1px solid var(--slate-200); border-radius: 12px;
+      padding: 24px 16px; text-align: center; transition: all 0.2s;
+    }
+    .wizard-step:hover { border-color: var(--blue-400); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+    .wizard-step-num {
+      width: 32px; height: 32px; border-radius: 50%; background: var(--blue-600);
+      color: #fff; font-weight: 700; font-size: 14px;
+      display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;
+    }
+    .wizard-step h4 { font-size: 14px; font-weight: 600; color: var(--slate-900); margin-bottom: 4px; }
+    .wizard-step p { font-size: 12px; color: var(--slate-400); }
+
+    /* ---- Security ---- */
+    .security-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .security-grid h2 { font-size: 36px; font-weight: 800; color: #fff; margin-bottom: 12px; }
+    .security-grid > div:first-child p { color: var(--slate-400); font-size: 17px; margin-bottom: 28px; }
+    .security-list { list-style: none; }
+    .security-list li {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0; color: var(--slate-300); font-size: 15px;
+    }
+    .security-check { color: var(--green-400); flex-shrink: 0; font-size: 18px; margin-top: 2px; }
+    .security-flow {
+      background: var(--slate-800); border: 1px solid var(--slate-700);
+      border-radius: 12px; padding: 24px; font-family: var(--mono);
+      font-size: 12px; line-height: 1.7; color: var(--slate-400);
+      white-space: pre; overflow-x: auto;
+    }
+    .security-flow .highlight { color: var(--green-400); }
+    .security-flow .dim { color: var(--slate-600); }
+
+    /* ---- Tech ---- */
+    .tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 48px; }
+    .tech-card {
+      background: #fff; border: 1px solid var(--slate-200); border-radius: 10px;
+      padding: 20px; text-align: center;
+    }
+    .tech-card h4 { font-size: 15px; font-weight: 700; color: var(--slate-900); margin-bottom: 4px; }
+    .tech-card p { font-size: 12px; color: var(--slate-500); }
+    .tech-card .tech-label { font-size: 11px; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+
+    /* ---- CTA ---- */
+    .cta-section { text-align: center; padding: 80px 0; }
+    .cta-section h2 { font-size: 40px; font-weight: 800; color: var(--slate-900); margin-bottom: 16px; }
+    .cta-section p { font-size: 18px; color: var(--slate-500); margin-bottom: 40px; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .cta-actions { display: flex; gap: 16px; justify-content: center; }
+
+    /* ---- Footer ---- */
+    footer {
+      background: var(--slate-950); color: var(--slate-500); padding: 48px 0;
+      font-size: 14px;
+    }
+    .footer-inner {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { color: var(--slate-400); }
+    .footer-links a:hover { color: #fff; }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      .hero { padding: 120px 0 64px; }
+      .hero h1 { font-size: 36px; }
+      .hero-stats { gap: 24px; flex-wrap: wrap; }
+      .problem-grid, .security-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .wizard-steps { grid-template-columns: repeat(2, 1fr); }
+      .tech-grid { grid-template-columns: repeat(2, 1fr); }
+      .nav-links { display: none; }
+    }
+
+    /* ---- Animations ---- */
+    @media (prefers-reduced-motion: no-preference) {
+      .fade-in { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
+      .fade-in.visible { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo" aria-label="ClawPad home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      ClawPad
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#wizard">How It Works</a>
+      <a href="#security">Security</a>
+      <a href="https://github.com/scottconverse/clawpad" target="_blank" rel="noopener">GitHub</a>
+      <a href="#download" class="nav-cta">Download</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="top">
+  <div class="container">
+    <div class="hero-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Setup in minutes &middot; Zero terminal &middot; 100% local
+    </div>
+    <h1>Your AI agent,<br><span>without the command line.</span></h1>
+    <p>ClawPad wraps OpenClaw in a visual desktop app. Install it like any other program, run the wizard, and talk to your agent. Your keys and data never leave your machine.</p>
+    <div class="hero-actions">
+      <a href="#download" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download for Free
+      </a>
+      <a href="https://github.com/scottconverse/clawpad" class="btn btn-secondary" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">672 KB</div>
+        <div class="hero-stat-label">Windows installer</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">Minutes</div>
+        <div class="hero-stat-label">Not hours</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">$0</div>
+        <div class="hero-stat-label">Forever</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">0 bytes</div>
+        <div class="hero-stat-label">Sent to our servers</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Problem -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="problem-grid">
+      <div>
+        <h2>OpenClaw is incredible.<br>Setting it up isn't.</h2>
+        <p>250,000+ GitHub stars. 13,700 community skills. The most powerful open-source AI agent framework in history. But getting it running means:</p>
+        <ul class="pain-points">
+          <li>
+            <span class="pain-icon pain-icon-red">&times;</span>
+            <span>Installing Node.js 22+ from the terminal</span>
+          </li>
+          <li>
+            <span class="pain-icon pain-icon-red">&times;</span>
+            <span>Running <code>npm install -g</code> and debugging PATH issues</span>
+          </li>
+          <li>
+            <span class="pain-icon pain-icon-red">&times;</span>
+            <span>Hand-editing JSON config files and SOUL.md</span>
+          </li>
+          <li>
+            <span class="pain-icon pain-icon-red">&times;</span>
+            <span>Managing API keys in plaintext .env files</span>
+          </li>
+          <li>
+            <span class="pain-icon pain-icon-red">&times;</span>
+            <span>Or paying $10&ndash;$40/mo for a hosted wrapper that holds your keys</span>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <div class="comparison-card" role="img" aria-label="Competitive positioning chart">                More Control / Local
+
+                    <span style="color:#60a5fa;font-weight:bold">&#9733; ClawPad</span>
+                 (free, local, GUI)
+
+  Easier ----                          ---- Harder
+
+  Clawnify      OneClaw      KiwiClaw
+  ($$$)         ($10/mo)     ($15-39/mo)
+
+                  OpenClaw CLI
+                (free but terminal)
+
+                Less Control / Cloud</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="features-header">
+      <h2>Everything you need. Nothing you don't.</h2>
+      <p>ClawPad handles the hard parts so you can focus on what your agent does, not how to install it.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <h3>Silent Installation</h3>
+        <p>Node.js downloaded, verified, and extracted automatically. No admin prompts, no terminal. Detects nvm, Volta, and Homebrew.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Encrypted Key Storage</h3>
+        <p>API keys live in your OS credential store (DPAPI, Keychain, libsecret). Never in plaintext. Scrubbed from disk when the agent stops.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-amber">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </div>
+        <h3>Visual Personality Builder</h3>
+        <p>Pick a role, slide the tone from formal to casual, add instructions. Watch the SOUL.md preview update live. No markdown to learn.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        </div>
+        <h3>Channel Setup Wizard</h3>
+        <p>Connect Telegram or Discord with step-by-step visual guides, token validation, and a test message to confirm it works.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <h3>Skill Browser with Safety Ratings</h3>
+        <p>Browse ClawHub skills visually. Every skill shows a safety badge: Verified, Community, or Unreviewed. One click to install.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-slate">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Health Monitoring</h3>
+        <p>See at a glance: is your agent running? Is your API key valid? Are channels connected? Plain-English fixes for every issue.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Wizard -->
+<section class="section section-alt wizard-section" id="wizard">
+  <div class="container">
+    <h2>From download to &ldquo;Hello!&rdquo; in 8 steps.</h2>
+    <p>The setup wizard handles everything. You just click Next.</p>
+    <div class="wizard-steps">
+      <div class="wizard-step fade-in">
+        <div class="wizard-step-num">1</div>
+        <h4>Welcome</h4>
+        <p>One button. Let's go.</p>
+      </div>
+      <div class="wizard-step fade-in">
+        <div class="wizard-step-num">2</div>
+        <h4>Dependencies</h4>
+        <p>Node.js installed silently</p>
+      </div>
+      <div class="wizard-step fade-in">
+        <div class="wizard-step-num">3</div>
+        <h4>Install</h4>
+        <p>OpenClaw set up for you</p>
+      </div>
+      <div class="wizard-step fade-in">
+        <div class="wizard-step-num">4</div>
+        <h4>API Key</h4>
+        <p>Paste, test, secured</p>
+      </div>
+      <div class="wizard-step fade-in">
+        <div class="wizard-step-num">5</div>
+        <h4>Personality</h4>
+        <p>Name, role, tone slider</p>
+      </div>
+      <div class="wizard-step fade-in">
+        <div class="wizard-step-num">6</div>
+        <h4>Channels</h4>
+        <p>Telegram or Discord</p>
+      </div>
+      <div class="wizard-step fade-in">
+        <div class="wizard-step-num">7</div>
+        <h4>Skills</h4>
+        <p>Recommended for you</p>
+      </div>
+      <div class="wizard-step fade-in">
+        <div class="wizard-step-num">8</div>
+        <h4>Done!</h4>
+        <p>Say hi to your agent</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Security -->
+<section class="section section-dark" id="security">
+  <div class="container">
+    <div class="security-grid">
+      <div>
+        <h2>Your keys. Your data. Your machine.</h2>
+        <p>ClawPad never phones home. There are no accounts, no cloud services, and no telemetry. API keys are encrypted by your operating system and only exist in memory while the agent is running.</p>
+        <ul class="security-list">
+          <li><span class="security-check">&#10003;</span> Keys stored in OS credential store (DPAPI / Keychain / libsecret)</li>
+          <li><span class="security-check">&#10003;</span> .env file scrubbed from disk when agent stops</li>
+          <li><span class="security-check">&#10003;</span> Stale .env cleaned on every app launch (crash recovery)</li>
+          <li><span class="security-check">&#10003;</span> SHA256 checksum verification on all downloads</li>
+          <li><span class="security-check">&#10003;</span> File permissions restricted to current user (icacls / chmod 600)</li>
+          <li><span class="security-check">&#10003;</span> No telemetry, no accounts, no cloud dependency</li>
+          <li><span class="security-check">&#10003;</span> MIT licensed &mdash; audit every line yourself</li>
+        </ul>
+      </div>
+      <div>
+        <div class="security-flow"><span class="dim">// Secret materialization flow</span>
+
+<span class="highlight">1.</span> User pastes API key in wizard
+<span class="highlight">2.</span> Key encrypted &rarr; OS credential store
+   <span class="dim">Keys at rest: encrypted, never plaintext</span>
+
+<span class="highlight">3.</span> Agent starts &rarr; key retrieved from store
+<span class="highlight">4.</span> Written to .env (600 perms, current user only)
+<span class="highlight">5.</span> OpenClaw daemon reads .env, starts serving
+
+<span class="highlight">6.</span> Agent stops &rarr; .env <span style="color:#f87171">deleted immediately</span>
+   <span class="dim">Keys on disk: only while agent is running</span>
+
+<span class="highlight">7.</span> App crash? Next launch scrubs stale .env
+   <span class="dim">before doing anything else</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tech Stack -->
+<section class="section">
+  <div class="container">
+    <div class="features-header">
+      <h2>Built with modern tools.</h2>
+      <p>Lightweight, fast, and cross-platform by design.</p>
+    </div>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="tech-label">Framework</div>
+        <h4>Tauri v2</h4>
+        <p>Rust backend, system webview. No bundled Chromium.</p>
+      </div>
+      <div class="tech-card">
+        <div class="tech-label">Frontend</div>
+        <h4>React 19</h4>
+        <p>TypeScript, Tailwind CSS v4, React Router v7.</p>
+      </div>
+      <div class="tech-card">
+        <div class="tech-label">Security</div>
+        <h4>OS Keychain</h4>
+        <p>DPAPI on Windows, Keychain on macOS, libsecret on Linux.</p>
+      </div>
+      <div class="tech-card">
+        <div class="tech-label">Platforms</div>
+        <h4>Win / Mac / Linux</h4>
+        <p>MSI, DMG, AppImage. One codebase, three platforms.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section section-alt cta-section" id="download">
+  <div class="container">
+    <h2>Ready to try it?</h2>
+    <p>Download ClawPad, run the wizard, and have your AI agent running in minutes. Free forever.</p>
+    <div class="cta-actions">
+      <a href="https://github.com/scottconverse/clawpad/releases/latest" class="btn btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download v0.1.0
+      </a>
+      <a href="https://github.com/scottconverse/clawpad" class="btn btn-secondary" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        Star on GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <span>&copy; 2026 Scott Converse. MIT License.</span>
+      <div class="footer-links">
+        <a href="https://github.com/scottconverse/clawpad" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/scottconverse/clawpad/releases" target="_blank" rel="noopener">Releases</a>
+        <a href="https://github.com/scottconverse/clawpad/issues" target="_blank" rel="noopener">Issues</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Scroll animations -->
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
