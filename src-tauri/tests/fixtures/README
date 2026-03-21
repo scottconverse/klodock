@@ -1,0 +1,28 @@
+Test Fixtures Directory
+======================
+
+This directory contains test fixture data used by the ClawPad integration tests.
+
+Subdirectory purposes:
+
+  setup-state/
+    Sample setup-state.json files representing various wizard progress states
+    (all-not-started, partially-complete, fully-complete, corrupted).
+
+  uninstall-state/
+    Sample uninstall-state.json files for testing resume logic
+    (fresh, partially-complete, all-done).
+
+  config/
+    Sample openclaw.json and SOUL.md files for config parsing tests.
+
+  env/
+    Sample .env files for daemon environment materialization tests.
+
+  node/
+    Mock node binary stubs or version output files for installer tests
+    (e.g., fake --version output for different semver scenarios).
+
+  keychain/
+    Test data for keychain index serialization edge cases
+    (empty index, corrupted JSON, duplicate entries).

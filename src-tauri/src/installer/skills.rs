@@ -1,0 +1,100 @@
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/// A skill that has been installed via `clawhub install`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InstalledSkill {
+    /// Registry slug, e.g. "openclaw/web-search".
+    pub slug: String,
+    /// Installed version string.
+    pub version: String,
+    /// SHA-256 content hash recorded at install time.
+    pub content_hash: String,
+}
+
+/// Shape of `~/.openclaw/.clawhub/lock.json` on disk.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ClawHubLock {
+    /// Map of slug -> lock entry.
+    skills: Vec<LockEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct LockEntry {
+    slug: String,
+    version: String,
+    content_hash: String,
+}
+
+// ---------------------------------------------------------------------------
+// Tauri commands
+// ---------------------------------------------------------------------------
+
+/// Install a skill from the ClawHub registry.
+///
+/// Delegates to:
+/// ```text
+/// <openclaw_bin> clawhub install <slug>
+/// ```
+///
+/// Returns the installed version string on success.
+#[tauri::command]
+pub async fn install_skill(slug: String) -> Result<String, String> {
+    let openclaw = super::openclaw::openclaw_bin_path();
+    if !openclaw.exists() {
+        return Err("OpenClaw binary not found. Please install OpenClaw first.".into());
+    }
+
+    // TODO: Spawn `openclaw clawhub install <slug>` via tokio::process::Command.
+    // TODO: Capture stdout/stderr; on exit code 0 return the version from output.
+    // TODO: On failure, return stderr as Err.
+    let _ = slug;
+    todo!("Run openclaw clawhub install <slug> and return installed version");
+}
+
+/// List all skills currently recorded in the ClawHub lock file.
+///
+/// Reads `~/.openclaw/.clawhub/lock.json` and returns a Vec of
+/// [`InstalledSkill`] entries.
+#[tauri::command]
+pub async fn list_installed_skills() -> Result<Vec<InstalledSkill>, String> {
+    let lock_path = clawhub_lock_path();
+
+    if !lock_path.exists() {
+        return Ok(Vec::new());
+    }
+
+    let contents = tokio::fs::read_to_string(&lock_path)
+        .await
+        .map_err(|e| format!("Failed to read lock.json: {e}"))?;
+
+    let lock: ClawHubLock = serde_json::from_str(&contents)
+        .map_err(|e| format!("Failed to parse lock.json: {e}"))?;
+
+    Ok(lock
+        .skills
+        .into_iter()
+        .map(|entry| InstalledSkill {
+            slug: entry.slug,
+            version: entry.version,
+            content_hash: entry.content_hash,
+        })
+        .collect())
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/// Path to the ClawHub lock file: `~/.openclaw/.clawhub/lock.json`.
+fn clawhub_lock_path() -> PathBuf {
+    dirs::home_dir()
+        .expect("Could not determine home directory")
+        .join(".openclaw")
+        .join(".clawhub")
+        .join("lock.json")
+}

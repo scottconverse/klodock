@@ -1,0 +1,11 @@
+node_modules/
+dist/
+target/
+*.log
+.env
+.clawpad/
+.DS_Store
+*.msi
+*.dmg
+*.AppImage
+*.deb

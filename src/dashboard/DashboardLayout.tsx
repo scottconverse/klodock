@@ -1,0 +1,99 @@
+import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  LayoutDashboard,
+  Puzzle,
+  User,
+  Radio,
+  Settings,
+  RefreshCw,
+} from "lucide-react";
+import { StatusIndicator } from "@/components/StatusIndicator";
+import { getDaemonStatus } from "@/lib/tauri";
+import type { DaemonStatus } from "@/lib/types";
+
+const NAV_ITEMS = [
+  { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/skills", label: "Skills", icon: Puzzle, end: false },
+  {
+    to: "/dashboard/personality",
+    label: "Personality",
+    icon: User,
+    end: false,
+  },
+  { to: "/dashboard/channels", label: "Channels", icon: Radio, end: false },
+  {
+    to: "/dashboard/settings",
+    label: "Settings",
+    icon: Settings,
+    end: false,
+  },
+  { to: "/dashboard/updates", label: "Updates", icon: RefreshCw, end: false },
+];
+
+export function DashboardLayout() {
+  const [status, setStatus] = useState<DaemonStatus>("Stopped");
+
+  useEffect(() => {
+    getDaemonStatus()
+      .then((h) => setStatus(h.daemon))
+      .catch(() => setStatus("Error"));
+  }, []);
+
+  return (
+    <div className="flex h-screen bg-neutral-50">
+      {/* Sidebar */}
+      <aside className="flex w-60 flex-col border-r border-neutral-200 bg-white">
+        <div className="flex h-14 items-center gap-2 border-b border-neutral-200 px-5">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-600 text-xs font-bold text-white"
+            aria-hidden="true"
+          >
+            C
+          </div>
+          <span className="text-sm font-bold text-neutral-900">ClawPad</span>
+        </div>
+
+        <nav className="flex-1 space-y-0.5 px-3 py-4" aria-label="Dashboard">
+          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm
+                 font-medium transition-colors
+                 focus-visible:outline-2 focus-visible:outline-offset-2
+                 focus-visible:outline-primary-500
+                 ${
+                   isActive
+                     ? "bg-primary-50 text-primary-700"
+                     : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+                 }`
+              }
+            >
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="border-t border-neutral-200 px-5 py-3">
+          <StatusIndicator status={status} />
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 items-center justify-between border-b border-neutral-200 bg-white px-6">
+          <h1 className="text-sm font-semibold text-neutral-900">Dashboard</h1>
+          <StatusIndicator status={status} />
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
