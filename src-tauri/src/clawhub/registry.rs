@@ -152,7 +152,7 @@ pub async fn search_skills(query: String) -> Result<Vec<SkillMetadata>, String> 
     //       On success, write_cache(&results).
     //       On network failure, fall back to read_cache().
     let _ = (query, CLAWHUB_REGISTRY_URL);
-    todo!("Fetch skills from ClawHub registry API")
+    Err("Skill search is not yet connected to the ClawHub registry. This feature is coming in a future update.".into())
 }
 
 /// Fetch the full metadata for a single skill identified by its slug.
@@ -160,8 +160,8 @@ pub async fn search_skills(query: String) -> Result<Vec<SkillMetadata>, String> 
 pub async fn get_skill_details(slug: String) -> Result<SkillMetadata, String> {
     // TODO: HTTP GET to {CLAWHUB_REGISTRY_URL}/skills/{slug}
     //       Parse JSON response into SkillMetadata.
-    let _ = (slug, CLAWHUB_REGISTRY_URL);
-    todo!("Fetch single skill details from ClawHub registry API")
+    let _ = CLAWHUB_REGISTRY_URL;
+    Err(format!("Skill details for '{}' are not yet available. The ClawHub registry connection is coming in a future update.", slug))
 }
 
 /// Return 3-5 recommended skills based on the user's stated goals from the

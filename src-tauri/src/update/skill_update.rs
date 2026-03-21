@@ -28,12 +28,8 @@ pub struct SkillUpdateInfo {
 /// registry for the latest version of each.
 #[tauri::command]
 pub async fn check_skill_updates() -> Result<Vec<SkillUpdateInfo>, String> {
-    // TODO:
-    // 1. Read ~/.clawpad/lock.json to get installed skill slugs + versions.
-    // 2. For each skill, query ClawHub registry for latest version.
-    // 3. Compare versions using semver.
-    // 4. Return list of SkillUpdateInfo for all installed skills.
-    todo!("Compare lock.json hashes against ClawHub registry")
+    // For now, return empty — no update checking until ClawHub API is connected.
+    Ok(Vec::new())
 }
 
 /// Update a single skill to the latest version from ClawHub.
@@ -42,11 +38,5 @@ pub async fn check_skill_updates() -> Result<Vec<SkillUpdateInfo>, String> {
 /// download.
 #[tauri::command]
 pub async fn update_skill(slug: String) -> Result<String, String> {
-    // TODO:
-    // 1. Fetch latest version metadata from ClawHub registry.
-    // 2. Download and install the updated skill package.
-    // 3. Update lock.json with new version + hash.
-    // 4. Return confirmation message.
-    let _ = slug;
-    todo!("Run clawhub update for a single skill")
+    Err(format!("Skill updates are not yet available. You can reinstall '{}' manually from the skill browser.", slug))
 }

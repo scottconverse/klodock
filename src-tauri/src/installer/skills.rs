@@ -49,11 +49,25 @@ pub async fn install_skill(slug: String) -> Result<String, String> {
         return Err("OpenClaw binary not found. Please install OpenClaw first.".into());
     }
 
-    // TODO: Spawn `openclaw clawhub install <slug>` via tokio::process::Command.
-    // TODO: Capture stdout/stderr; on exit code 0 return the version from output.
-    // TODO: On failure, return stderr as Err.
-    let _ = slug;
-    todo!("Run openclaw clawhub install <slug> and return installed version");
+    let node_dir = super::node::clawpad_base_dir().join("node");
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let path_sep = if cfg!(windows) { ";" } else { ":" };
+    let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);
+
+    let output = tokio::process::Command::new(&openclaw)
+        .args(["clawhub", "install", &slug])
+        .env("PATH", &new_path)
+        .output()
+        .await
+        .map_err(|e| format!("Failed to run skill install: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Skill installation failed: {stderr}"));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    Ok(stdout)
 }
 
 /// List all skills currently recorded in the ClawHub lock file.

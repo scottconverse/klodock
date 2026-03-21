@@ -29,12 +29,18 @@ pub struct UpdateInfo {
 /// Returns an [`UpdateInfo`] describing the current state.
 #[tauri::command]
 pub async fn check_openclaw_update() -> Result<UpdateInfo, String> {
-    // TODO:
-    // 1. Run `npm list -g @anthropic/openclaw --json` to get current_version.
-    // 2. HTTP GET {NPM_REGISTRY_URL} and parse `dist-tags.latest`.
-    // 3. Compare with semver::Version.
+    // For now, return "up to date" since we can't check the registry yet.
+    // The real implementation will query the npm registry.
     let _ = NPM_REGISTRY_URL;
-    todo!("Check npm registry for latest OpenClaw version")
+    let current = match crate::installer::openclaw::check_openclaw().await {
+        Ok(status) => status.version.unwrap_or_else(|| "unknown".to_string()),
+        Err(_) => "unknown".to_string(),
+    };
+    Ok(UpdateInfo {
+        current_version: current,
+        latest_version: "unknown".to_string(),
+        update_available: false,
+    })
 }
 
 /// Update OpenClaw to the latest version via npm.
@@ -43,10 +49,5 @@ pub async fn check_openclaw_update() -> Result<UpdateInfo, String> {
 /// the config module so it can be restored if the update fails.
 #[tauri::command]
 pub async fn update_openclaw() -> Result<String, String> {
-    // TODO:
-    // 1. Back up current config via crate::config (e.g. copy openclaw.json).
-    // 2. Run `npm update -g @anthropic/openclaw`.
-    // 3. Verify the new version with `check_openclaw_update()`.
-    // 4. On failure, restore backed-up config.
-    todo!("Run npm update for OpenClaw with config backup")
+    Err("Automatic updates are not yet available. Please reinstall ClawPad to get the latest version.".into())
 }

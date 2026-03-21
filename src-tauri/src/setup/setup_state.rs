@@ -133,17 +133,50 @@ async fn verify_step(step: SetupStep) -> StepStatus {
 
 /// Checks if `node >= 22` is on PATH or at `~/.clawpad/node/`.
 async fn verify_node_install() -> StepStatus {
-    todo!("Check node >= 22 on PATH via `which` crate + semver parse, or check ~/.clawpad/node/")
+    // Check ClawPad-managed node first
+    let clawpad_node = crate::installer::node::clawpad_node_path();
+    if clawpad_node.exists() {
+        return StepStatus::Completed;
+    }
+    // Check system PATH
+    match which::which("node") {
+        Ok(path) => {
+            match std::process::Command::new(&path).arg("--version").output() {
+                Ok(output) => {
+                    let version = String::from_utf8_lossy(&output.stdout);
+                    let major: u64 = version.trim().trim_start_matches('v')
+                        .split('.').next()
+                        .and_then(|s| s.parse().ok())
+                        .unwrap_or(0);
+                    if major >= 22 { StepStatus::Completed } else { StepStatus::NotStarted }
+                }
+                Err(_) => StepStatus::NotStarted,
+            }
+        }
+        Err(_) => StepStatus::NotStarted,
+    }
 }
 
 /// Checks if the openclaw binary exists on disk.
 async fn verify_openclaw_install() -> StepStatus {
-    todo!("Check for openclaw binary in ~/.clawpad/ or on PATH")
+    let managed = crate::installer::openclaw::openclaw_bin_path();
+    if managed.exists() {
+        return StepStatus::Completed;
+    }
+    match which::which("openclaw") {
+        Ok(_) => StepStatus::Completed,
+        Err(_) => StepStatus::NotStarted,
+    }
 }
 
 /// Checks if the OS keychain has at least one API key stored.
 async fn verify_api_key_setup() -> StepStatus {
-    todo!("Use keyring crate to probe for stored API keys")
+    match crate::secrets::keychain::list_secrets() {
+        Ok(keys) => {
+            if keys.is_empty() { StepStatus::NotStarted } else { StepStatus::Completed }
+        }
+        Err(_) => StepStatus::NotStarted,
+    }
 }
 
 /// Checks if `~/.openclaw/SOUL.md` exists.
@@ -162,10 +195,33 @@ async fn verify_personality_setup() -> StepStatus {
 
 /// Checks if `openclaw.json` has at least one channel configured.
 async fn verify_channel_setup() -> StepStatus {
-    todo!("Read openclaw.json via config::openclaw_json and check for channels array")
+    // Check if any channel token exists in the secret store
+    match crate::secrets::keychain::list_secrets() {
+        Ok(keys) => {
+            let has_channel = keys.iter().any(|k| {
+                k.contains("TELEGRAM") || k.contains("DISCORD") || k.contains("WHATSAPP")
+            });
+            if has_channel { StepStatus::Completed } else { StepStatus::NotStarted }
+        }
+        Err(_) => StepStatus::NotStarted,
+    }
 }
 
 /// Checks if `lock.json` has any skill entries.
 async fn verify_skill_install() -> StepStatus {
-    todo!("Read lock.json and check for non-empty entries")
+    let home = match dirs::home_dir() {
+        Some(h) => h,
+        None => return StepStatus::NotStarted,
+    };
+    let lock_path = home.join(".openclaw").join(".clawhub").join("lock.json");
+    if !lock_path.exists() {
+        return StepStatus::NotStarted;
+    }
+    match tokio::fs::read_to_string(&lock_path).await {
+        Ok(content) => {
+            // Any non-empty, non-trivial JSON means skills are installed
+            if content.trim().len() > 2 { StepStatus::Completed } else { StepStatus::NotStarted }
+        }
+        Err(_) => StepStatus::NotStarted,
+    }
 }
