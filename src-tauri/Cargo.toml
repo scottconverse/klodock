@@ -33,3 +33,6 @@ thiserror = "2"
 dirs = "6"
 which = "7"
 semver = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
