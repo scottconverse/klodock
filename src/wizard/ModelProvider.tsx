@@ -9,7 +9,7 @@ import {
   Server,
 } from "lucide-react";
 import { ProviderCard } from "@/components/ProviderCard";
-import { completeStep } from "@/lib/tauri";
+import { completeStep, writeConfig } from "@/lib/tauri";
 
 const PROVIDERS = [
   {
@@ -68,6 +68,15 @@ const PROVIDERS = [
   },
 ] as const;
 
+const PROVIDER_DEFAULTS: Record<string, { model_provider: string; default_model: string }> = {
+  openai: { model_provider: "openai", default_model: "gpt-4o" },
+  anthropic: { model_provider: "anthropic", default_model: "claude-sonnet-4-20250514" },
+  gemini: { model_provider: "gemini", default_model: "gemini-pro" },
+  groq: { model_provider: "groq", default_model: "llama-3.3-70b-versatile" },
+  openrouter: { model_provider: "openrouter", default_model: "anthropic/claude-sonnet-4" },
+  ollama: { model_provider: "ollama", default_model: "llama3" },
+};
+
 export function ModelProvider() {
   const navigate = useNavigate();
   const [validated, setValidated] = useState<Set<string>>(new Set());
@@ -77,6 +86,22 @@ export function ModelProvider() {
   }
 
   async function handleNext() {
+    // Write the first validated provider as the default in openclaw.json
+    const primaryProvider = [...validated][0];
+    const defaults = PROVIDER_DEFAULTS[primaryProvider];
+    if (defaults) {
+      try {
+        await writeConfig({
+          model_provider: defaults.model_provider,
+          default_model: defaults.default_model,
+          channels: {},
+          agent_name: "OpenClaw",
+        });
+      } catch {
+        // Non-critical — config can be set later
+      }
+    }
+
     try {
       await completeStep("api_key_setup");
     } catch {
