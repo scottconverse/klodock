@@ -116,10 +116,11 @@ struct MissingRequirements {
 }
 
 /// Run `openclaw skills list` and return parsed results.
+/// Times out after 15 seconds to avoid infinite hangs when the daemon is down.
 async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
     let openclaw = crate::installer::openclaw::openclaw_bin_path()?;
     if !openclaw.exists() {
-        return Err("OpenClaw binary not found.".into());
+        return Err("OpenClaw is not installed. Complete the setup wizard first.".into());
     }
 
     let node_dir = crate::paths::klodock_base_dir()?.join("node");
@@ -130,9 +131,10 @@ async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
     // Use --json for reliable parsing (avoids Unicode encoding issues on Windows).
     // Use std::process::Command (blocking) wrapped in spawn_blocking to avoid
     // tokio .cmd file issues on Windows.
+    // Wrapped in a 15-second timeout to prevent infinite hangs.
     let new_path_clone = new_path.clone();
     let openclaw_clone = openclaw.clone();
-    let output = tokio::task::spawn_blocking(move || {
+    let task = tokio::task::spawn_blocking(move || {
         let mut cmd = std::process::Command::new(&openclaw_clone);
         cmd.args(["skills", "list", "--json"])
             .env("PATH", &new_path_clone)
@@ -145,10 +147,16 @@ async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
             cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         }
         cmd.output()
-    })
-    .await
-    .map_err(|e| format!("Task join error: {e}"))?
-    .map_err(|e| format!("Failed to run openclaw skills list: {e}"))?;
+    });
+
+    let output = match tokio::time::timeout(std::time::Duration::from_secs(15), task).await {
+        Ok(join_result) => join_result
+            .map_err(|e| format!("Task join error: {e}"))?
+            .map_err(|e| format!("Failed to run openclaw skills list: {e}"))?,
+        Err(_) => {
+            return Err("Skills query timed out. Your agent may not be running — try starting it from the Overview page.".into());
+        }
+    };
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);

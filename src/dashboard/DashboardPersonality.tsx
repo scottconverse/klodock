@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ToneSlider } from "@/components/ToneSlider";
 import { roleTemplates } from "@/lib/templates";
 import { generateSoul, writeSoul } from "@/lib/tauri";
+import { useToast } from "@/components/Toast";
 import type { Role, SoulConfig } from "@/lib/types";
 
 type RoleType = Role["type"];
@@ -29,6 +30,7 @@ function buildRole(roleType: RoleType, customText: string): Role {
 }
 
 export function DashboardPersonality() {
+  const toast = useToast();
   const [soulContent, setSoulContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -78,9 +80,10 @@ export function DashboardPersonality() {
       setSoulContent(md);
       setEditing(false);
       setSaved(true);
+      toast.success("Personality saved!");
       setTimeout(() => setSaved(false), 3000);
     } catch {
-      // show error
+      toast.error("Failed to save personality. Please try again.");
     }
   }
 
