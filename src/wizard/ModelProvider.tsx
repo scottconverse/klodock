@@ -34,7 +34,7 @@ const PROVIDERS = [
     id: "gemini",
     name: "Google Gemini",
     cost: "Free tier available",
-    envVar: "GEMINI_API_KEY",
+    envVar: "GOOGLE_API_KEY",
     keyUrl: "https://aistudio.google.com/apikey",
     icon: <Globe className="h-5 w-5 text-primary-500" />,
     isLocal: false,
@@ -72,7 +72,7 @@ const PROVIDERS = [
 const PROVIDER_MODEL_REFS: Record<string, string> = {
   openai: "openai/gpt-4o",
   anthropic: "anthropic/claude-sonnet-4-6",
-  gemini: "google/gemini-pro",
+  gemini: "google/gemini-2.5-flash",
   groq: "groq/llama-3.3-70b-versatile",
   openrouter: "anthropic/claude-sonnet-4",
   ollama: "ollama/llama3",
