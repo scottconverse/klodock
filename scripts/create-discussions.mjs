@@ -4,13 +4,13 @@
 const TOKEN = process.argv[2];
 if (!TOKEN) { console.error("Usage: node create-discussions.mjs <token>"); process.exit(1); }
 
-const REPO_ID = "R_kgDORtRkqA";
+const REPO_ID = "R_kgDORtUdhg";
 const CATEGORIES = {
-  announcements: "DIC_kwDORtRkqM4C4-xX",
-  general: "DIC_kwDORtRkqM4C4-xY",
-  ideas: "DIC_kwDORtRkqM4C4-xa",
-  qanda: "DIC_kwDORtRkqM4C4-xZ",
-  showandtell: "DIC_kwDORtRkqM4C4-xb",
+  announcements: "DIC_kwDORtUdhs4C4_Nn",
+  general: "DIC_kwDORtUdhs4C4_No",
+  ideas: "DIC_kwDORtUdhs4C4_Nq",
+  qanda: "DIC_kwDORtUdhs4C4_Np",
+  showandtell: "DIC_kwDORtUdhs4C4_Nr",
 };
 
 const DISCUSSIONS = [
