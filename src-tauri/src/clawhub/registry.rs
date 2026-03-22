@@ -246,3 +246,31 @@ pub async fn get_recommended_skills(
 
     Ok(result)
 }
+
+/// Return ALL available skills from OpenClaw (ready and missing).
+/// Ready skills appear first, then missing skills sorted alphabetically.
+#[tauri::command]
+pub async fn list_all_skills() -> Result<Vec<SkillMetadata>, String> {
+    let all = match query_openclaw_skills().await {
+        Ok(skills) => skills,
+        Err(e) => {
+            log::error!("Failed to query all OpenClaw skills: {e}");
+            return Err(format!("Could not load skills: {e}"));
+        }
+    };
+
+    let mut ready: Vec<SkillMetadata> = all.iter()
+        .filter(|(is_ready, _)| *is_ready)
+        .map(|(_, s)| s.clone())
+        .collect();
+    ready.sort_by(|a, b| a.name.cmp(&b.name));
+
+    let mut missing: Vec<SkillMetadata> = all.iter()
+        .filter(|(is_ready, _)| !*is_ready)
+        .map(|(_, s)| s.clone())
+        .collect();
+    missing.sort_by(|a, b| a.name.cmp(&b.name));
+
+    ready.extend(missing);
+    Ok(ready)
+}

@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, AlertTriangle, Check, CheckCircle2 } from "lucide-react";
+import { Loader2, AlertTriangle, Check, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import {
   getRecommendedSkills,
+  listAllSkills,
   installSkill,
   completeStep,
 } from "@/lib/tauri";
@@ -12,6 +13,9 @@ import type { SkillMetadata } from "@/lib/types";
 export function Skills() {
   const navigate = useNavigate();
   const [skills, setSkills] = useState<SkillMetadata[]>([]);
+  const [allSkills, setAllSkills] = useState<SkillMetadata[]>([]);
+  const [showAll, setShowAll] = useState(false);
+  const [loadingAll, setLoadingAll] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -48,6 +52,26 @@ export function Skills() {
       mountedRef.current = false;
     };
   }, []);
+
+  async function handleBrowseAll() {
+    if (allSkills.length > 0) {
+      setShowAll(!showAll);
+      return;
+    }
+    setLoadingAll(true);
+    try {
+      const all = await listAllSkills();
+      // Filter out skills already in the recommended list
+      const recommendedSlugs = new Set(skills.map((s) => s.slug));
+      const additional = all.filter((s) => !recommendedSlugs.has(s.slug));
+      setAllSkills(additional);
+      setShowAll(true);
+    } catch {
+      // Silently fail — browse is optional
+    } finally {
+      setLoadingAll(false);
+    }
+  }
 
   function handleToggle(slug: string) {
     setSelected((prev) => {
@@ -284,6 +308,115 @@ export function Skills() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Browse all skills */}
+      {!installing && !installProgress && skills.length > 0 && (
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={handleBrowseAll}
+            disabled={loadingAll}
+            className="
+              inline-flex items-center gap-1.5 text-sm font-medium
+              text-primary-600 hover:text-primary-700 transition-colors
+              disabled:opacity-50
+            "
+            aria-expanded={showAll}
+            aria-label={showAll ? "Hide additional skills" : "Browse all available skills"}
+          >
+            {loadingAll ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                Loading...
+              </>
+            ) : showAll ? (
+              <>
+                <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                Hide additional skills
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                Browse all {allSkills.length > 0 ? allSkills.length : ""} available skills
+              </>
+            )}
+          </button>
+
+          {showAll && allSkills.length > 0 && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {allSkills.map((skill) => {
+                const isSelected = selected.has(skill.slug);
+                return (
+                  <div
+                    key={skill.slug}
+                    className={`
+                      flex flex-col gap-3 rounded-xl border p-5 shadow-sm
+                      transition-all
+                      ${
+                        isSelected
+                          ? "border-primary-300 bg-primary-50/30 ring-1 ring-primary-200"
+                          : "border-neutral-200 bg-white hover:shadow-md"
+                      }
+                    `}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-neutral-900">
+                          {skill.name}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-neutral-500">
+                          {skill.author}
+                        </p>
+                      </div>
+                      <SafetyBadge rating={skill.safety_rating} />
+                    </div>
+
+                    <p className="line-clamp-2 text-sm leading-relaxed text-neutral-600">
+                      {skill.description}
+                    </p>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs font-medium text-neutral-500">
+                        Bundled with OpenClaw
+                      </span>
+
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isSelected}
+                        aria-label={`${isSelected ? "Exclude" : "Include"} ${skill.name}`}
+                        onClick={() => handleToggle(skill.slug)}
+                        disabled={installing}
+                        className={`
+                          relative inline-flex h-6 w-11 shrink-0 cursor-pointer
+                          items-center rounded-full transition-colors
+                          focus-visible:outline-2 focus-visible:outline-offset-2
+                          focus-visible:outline-primary-500
+                          disabled:cursor-not-allowed disabled:opacity-50
+                          ${isSelected ? "bg-primary-600" : "bg-neutral-300"}
+                        `}
+                      >
+                        <span
+                          className={`
+                            inline-flex h-4 w-4 items-center justify-center
+                            rounded-full bg-white shadow-sm transition-transform
+                            ${isSelected ? "translate-x-6" : "translate-x-1"}
+                          `}
+                          aria-hidden="true"
+                        >
+                          {isSelected && (
+                            <Check className="h-2.5 w-2.5 text-primary-600" />
+                          )}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
