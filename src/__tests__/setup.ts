@@ -1,5 +1,5 @@
 /**
- * Vitest global setup file for ClawPad frontend tests.
+ * Vitest global setup file for KloDock frontend tests.
  *
  * Referenced in vitest.config.ts via `setupFiles`.
  * Provides DOM matchers and mocks the Tauri IPC bridge.

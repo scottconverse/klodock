@@ -1,5 +1,5 @@
 /**
- * E2E: Uninstall — clean removal of ClawPad and dependencies.
+ * E2E: Uninstall — clean removal of KloDock and dependencies.
  *
  * Verifies the uninstall flow:
  *
@@ -13,7 +13,7 @@
  *      - Clear keychain
  *      - Remove managed Node.js
  *      - npm uninstall -g openclaw
- *      - Remove ~/.clawpad/
+ *      - Remove ~/.klodock/
  *   5. On completion, app shows "Uninstall complete" and closes.
  *
  * Resume scenario:
@@ -28,7 +28,7 @@ import { describe, it } from "vitest";
 describe("Uninstall E2E", () => {
   it.todo("shows confirmation dialog before uninstalling");
   it.todo("displays progress for each uninstall step");
-  it.todo("removes all ClawPad artifacts on completion");
+  it.todo("removes all KloDock artifacts on completion");
   it.todo("optionally removes personal data when selected");
   it.todo("resumes partial uninstall on re-launch");
 });

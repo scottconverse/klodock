@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
 const mdPath = path.join(projectRoot, 'README-full.md');
-const pdfPath = path.join(projectRoot, 'ClawPad-README.pdf');
+const pdfPath = path.join(projectRoot, 'KloDock-README.pdf');
 
 const md = new MarkdownIt({ html: true, typographer: true });
 const markdown = fs.readFileSync(mdPath, 'utf-8');
@@ -171,7 +171,7 @@ await page.pdf({
   headerTemplate: '<div></div>',
   footerTemplate: `
     <div style="font-size: 8pt; color: #94a3b8; width: 100%; text-align: center; padding: 0 0.85in;">
-      ClawPad v0.1.0 — <span class="pageNumber"></span> / <span class="totalPages"></span>
+      KloDock v0.1.0 — <span class="pageNumber"></span> / <span class="totalPages"></span>
     </div>
   `,
 });

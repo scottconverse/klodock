@@ -14,10 +14,10 @@ fn main() {
     rt.block_on(async {
         match run_install().await {
             Ok(version) => {
-                println!("\n✅ SUCCESS: Node.js v{version} installed to ~/.clawpad/node/");
+                println!("\n✅ SUCCESS: Node.js v{version} installed to ~/.klodock/node/");
 
                 // Verify npm also works
-                let npm_path = clawpad_base_dir().join("node").join("npm.cmd");
+                let npm_path = klodock_base_dir().join("node").join("npm.cmd");
                 println!("\nVerifying npm...");
                 match Command::new(&npm_path).arg("--version").output() {
                     Ok(out) => {
@@ -28,7 +28,7 @@ fn main() {
                 }
 
                 // Verify npx also works
-                let npx_path = clawpad_base_dir().join("node").join("npx.cmd");
+                let npx_path = klodock_base_dir().join("node").join("npx.cmd");
                 println!("\nVerifying npx...");
                 match Command::new(&npx_path).arg("--version").output() {
                     Ok(out) => {
@@ -40,7 +40,7 @@ fn main() {
 
                 // List files in install dir
                 println!("\nInstall directory contents:");
-                if let Ok(entries) = std::fs::read_dir(clawpad_base_dir().join("node")) {
+                if let Ok(entries) = std::fs::read_dir(klodock_base_dir().join("node")) {
                     for entry in entries.flatten() {
                         println!("  {}", entry.file_name().to_string_lossy());
                     }
@@ -58,7 +58,7 @@ fn main() {
 }
 
 async fn run_install() -> Result<String, String> {
-    let install_dir = clawpad_base_dir().join("node");
+    let install_dir = klodock_base_dir().join("node");
 
     // Determine archive
     let archive_name = format!("node-v{NODE_VERSION}-win-x64.zip");
@@ -66,7 +66,7 @@ async fn run_install() -> Result<String, String> {
     let shasums_url = format!("{NODE_DOWNLOAD_BASE}v{NODE_VERSION}/SHASUMS256.txt");
 
     // Create temp dir
-    let tmp_dir = clawpad_base_dir().join("tmp");
+    let tmp_dir = klodock_base_dir().join("tmp");
     tokio::fs::create_dir_all(&tmp_dir)
         .await
         .map_err(|e| format!("Failed to create temp dir: {e}"))?;
@@ -120,7 +120,7 @@ async fn run_install() -> Result<String, String> {
 
     // Extract using PowerShell
     println!("Extracting to {}...", install_dir.display());
-    let extract_tmp = clawpad_base_dir().join("node_extract_tmp");
+    let extract_tmp = klodock_base_dir().join("node_extract_tmp");
     let _ = tokio::fs::remove_dir_all(&extract_tmp).await;
 
     let output = tokio::process::Command::new("powershell.exe")
@@ -221,6 +221,6 @@ async fn download_with_progress(url: &str, dest: &std::path::Path) -> Result<(),
     Ok(())
 }
 
-fn clawpad_base_dir() -> PathBuf {
-    dirs::home_dir().expect("no home dir").join(".clawpad")
+fn klodock_base_dir() -> PathBuf {
+    dirs::home_dir().expect("no home dir").join(".klodock")
 }

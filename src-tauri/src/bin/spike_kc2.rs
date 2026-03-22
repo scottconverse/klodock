@@ -3,7 +3,7 @@
 fn main() {
     use keyring::Entry;
 
-    let service = "clawpad";
+    let service = "klodock";
     let key = "_spike_kc2_test";
     let value = "test-secret-123";
     let target = format!("{service}.{key}");

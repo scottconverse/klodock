@@ -24,7 +24,7 @@ pub enum StepStatus {
     Failed(String),
 }
 
-/// Full wizard state that is persisted to `~/.clawpad/setup-state.json`.
+/// Full wizard state that is persisted to `~/.klodock/setup-state.json`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SetupState {
     pub steps: HashMap<SetupStep, StepStatus>,
@@ -53,10 +53,10 @@ impl SetupState {
     }
 }
 
-/// Path to `~/.clawpad/setup-state.json`.
+/// Path to `~/.klodock/setup-state.json`.
 fn state_file_path() -> Result<PathBuf, String> {
     let home = dirs::home_dir().ok_or_else(|| "Cannot determine home directory".to_string())?;
-    Ok(home.join(".clawpad").join("setup-state.json"))
+    Ok(home.join(".klodock").join("setup-state.json"))
 }
 
 /// Reads persisted setup state from disk.
@@ -109,7 +109,7 @@ async fn persist_state(state: &SetupState) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("Failed to create .clawpad dir: {e}"))?;
+            .map_err(|e| format!("Failed to create .klodock dir: {e}"))?;
     }
     let json =
         serde_json::to_string_pretty(state).map_err(|e| format!("Failed to serialize state: {e}"))?;
@@ -131,11 +131,11 @@ async fn verify_step(step: SetupStep) -> StepStatus {
     }
 }
 
-/// Checks if `node >= 22` is on PATH or at `~/.clawpad/node/`.
+/// Checks if `node >= 22` is on PATH or at `~/.klodock/node/`.
 async fn verify_node_install() -> StepStatus {
-    // Check ClawPad-managed node first
-    let clawpad_node = crate::installer::node::clawpad_node_path();
-    if clawpad_node.exists() {
+    // Check KloDock-managed node first
+    let klodock_node = crate::installer::node::klodock_node_path();
+    if klodock_node.exists() {
         return StepStatus::Completed;
     }
     // Check system PATH

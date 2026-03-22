@@ -3,7 +3,7 @@
  *
  * Provides platform-specific setup and teardown utilities for e2e tests.
  * Handles creating isolated test environments so e2e tests don't interfere
- * with the user's real ClawPad installation.
+ * with the user's real KloDock installation.
  */
 
 import { platform } from "os";
@@ -27,11 +27,11 @@ export function detectPlatform(): Platform {
 // Test environment paths
 // ---------------------------------------------------------------------------
 
-/** Base directory for test isolation. Uses a separate `.clawpad-test/` dir. */
+/** Base directory for test isolation. Uses a separate `.klodock-test/` dir. */
 export function testBaseDir(): string {
   const home =
     process.env.HOME || process.env.USERPROFILE || process.env.HOMEPATH || "";
-  return join(home, ".clawpad-test");
+  return join(home, ".klodock-test");
 }
 
 /** Path to the test setup-state.json. */
@@ -62,8 +62,8 @@ export function testPidPath(): string {
  * Create an isolated test environment directory.
  *
  * Call this in `beforeAll` or `beforeEach` to ensure a clean test directory
- * exists. Sets the `CLAWPAD_HOME` env var so the app uses the test directory
- * instead of `~/.clawpad/`.
+ * exists. Sets the `KLODOCK_HOME` env var so the app uses the test directory
+ * instead of `~/.klodock/`.
  */
 export function setupTestEnv(): void {
   const base = testBaseDir();
@@ -71,8 +71,8 @@ export function setupTestEnv(): void {
     mkdirSync(base, { recursive: true });
   }
 
-  // Point ClawPad at the test directory.
-  process.env.CLAWPAD_HOME = base;
+  // Point KloDock at the test directory.
+  process.env.KLODOCK_HOME = base;
 }
 
 /**
@@ -86,7 +86,7 @@ export function teardownTestEnv(): void {
     rmSync(base, { recursive: true, force: true });
   }
 
-  delete process.env.CLAWPAD_HOME;
+  delete process.env.KLODOCK_HOME;
 }
 
 /**
@@ -125,14 +125,14 @@ export function autostartArtifactPath(): string {
   switch (p) {
     case "windows":
       // Registry key path (not a file, but useful for documentation).
-      return "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\ClawPad";
+      return "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\KloDock";
     case "macos":
-      return join(home, "Library", "LaunchAgents", "com.clawpad.plist");
+      return join(home, "Library", "LaunchAgents", "com.klodock.plist");
     case "linux":
       return join(
         process.env.XDG_CONFIG_HOME || join(home, ".config"),
         "autostart",
-        "clawpad.desktop"
+        "klodock.desktop"
       );
   }
 }

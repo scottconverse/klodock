@@ -12,17 +12,17 @@ const NODE_VERSION: &str = "22.14.0";
 const NODE_DOWNLOAD_BASE: &str = "https://nodejs.org/dist/";
 
 fn main() {
-    println!("=== ClawPad Node.js Installer Spike ===\n");
+    println!("=== KloDock Node.js Installer Spike ===\n");
 
     // --- Phase 1: Detection ---
     println!("--- Phase 1: Detection ---\n");
 
-    // Check ClawPad-managed node
-    let clawpad_node = clawpad_node_path();
-    println!("ClawPad-managed node path: {}", clawpad_node.display());
-    println!("  Exists: {}", clawpad_node.exists());
-    if clawpad_node.exists() {
-        match run_node_version(&clawpad_node) {
+    // Check KloDock-managed node
+    let klodock_node = klodock_node_path();
+    println!("KloDock-managed node path: {}", klodock_node.display());
+    println!("  Exists: {}", klodock_node.exists());
+    if klodock_node.exists() {
+        match run_node_version(&klodock_node) {
             Ok(v) => println!("  Version: {v} (meets req: {})", parse_major(&v) >= REQUIRED_NODE_MAJOR),
             Err(e) => println!("  Error: {e}"),
         }
@@ -88,10 +88,10 @@ fn main() {
     });
 
     println!("\n--- Phase 4: Install directory check ---\n");
-    let install_dir = clawpad_base_dir().join("node");
+    let install_dir = klodock_base_dir().join("node");
     println!("Install target: {}", install_dir.display());
-    println!("  Parent exists: {}", clawpad_base_dir().exists());
-    println!("  Writable: {}", is_writable(&clawpad_base_dir()));
+    println!("  Parent exists: {}", klodock_base_dir().exists());
+    println!("  Writable: {}", is_writable(&klodock_base_dir()));
 
     println!("\n=== Spike Complete ===");
     println!("\nVerdict: Detection logic works. Ready to test full install.");
@@ -129,8 +129,8 @@ fn detect_version_manager(node_path: &std::path::Path) -> String {
     "system".into()
 }
 
-fn clawpad_node_path() -> PathBuf {
-    let base = clawpad_base_dir().join("node");
+fn klodock_node_path() -> PathBuf {
+    let base = klodock_base_dir().join("node");
     if cfg!(windows) {
         base.join("node.exe")
     } else {
@@ -138,8 +138,8 @@ fn clawpad_node_path() -> PathBuf {
     }
 }
 
-fn clawpad_base_dir() -> PathBuf {
-    dirs::home_dir().expect("no home dir").join(".clawpad")
+fn klodock_base_dir() -> PathBuf {
+    dirs::home_dir().expect("no home dir").join(".klodock")
 }
 
 fn platform_archive_name(version: &str) -> Result<(String, String), String> {
@@ -158,7 +158,7 @@ fn platform_archive_name(version: &str) -> Result<(String, String), String> {
 
 fn is_writable(path: &std::path::Path) -> bool {
     if path.exists() {
-        let test_file = path.join(".clawpad_write_test");
+        let test_file = path.join(".klodock_write_test");
         match std::fs::write(&test_file, "test") {
             Ok(_) => {
                 let _ = std::fs::remove_file(&test_file);

@@ -14,16 +14,16 @@ pub enum UninstallStep {
     StopDaemon,
     /// Remove launch-agent / systemd / startup-registry entries.
     RemoveAutostart,
-    /// Remove ClawPad entries from PATH / shell rc files.
+    /// Remove KloDock entries from PATH / shell rc files.
     ScrubEnv,
     /// Delete API-key entries from the OS keychain.
     ClearKeychain,
-    /// Delete `~/.clawpad/node/`.
+    /// Delete `~/.klodock/node/`.
     RemoveNode,
     /// Run `npm uninstall -g openclaw`.
     RemoveOpenClaw,
-    /// Delete `~/.clawpad/` (config, logs, state).
-    RemoveClawpadConfig,
+    /// Delete `~/.klodock/` (config, logs, state).
+    RemoveKlodockConfig,
 }
 
 /// Ordered list of all steps in the default removal sequence.
@@ -34,10 +34,10 @@ const ALL_STEPS: &[UninstallStep] = &[
     UninstallStep::ClearKeychain,
     UninstallStep::RemoveNode,
     UninstallStep::RemoveOpenClaw,
-    UninstallStep::RemoveClawpadConfig,
+    UninstallStep::RemoveKlodockConfig,
 ];
 
-/// Persisted to `~/.clawpad/uninstall-state.json` so we can resume after a
+/// Persisted to `~/.klodock/uninstall-state.json` so we can resume after a
 /// crash or forced quit.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UninstallState {
@@ -67,7 +67,7 @@ pub struct UninstallProgress {
 // Tauri commands
 // ---------------------------------------------------------------------------
 
-/// Begin a full uninstallation of ClawPad and its managed dependencies.
+/// Begin a full uninstallation of KloDock and its managed dependencies.
 ///
 /// Persists an [`UninstallState`] to disk before starting so the process can
 /// be resumed via [`resume_uninstall`] if interrupted.
@@ -77,7 +77,7 @@ pub struct UninstallProgress {
 ///
 /// Emits `uninstall-progress` events for each completed step.
 #[tauri::command]
-pub async fn uninstall_clawpad(
+pub async fn uninstall_klodock(
     app: tauri::AppHandle,
     remove_user_data: bool,
 ) -> Result<(), String> {
@@ -177,7 +177,7 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
             Ok(())
         }
         UninstallStep::ClearKeychain => {
-            // Delete all ClawPad-stored secrets from the OS keychain.
+            // Delete all KloDock-stored secrets from the OS keychain.
             if let Ok(keys) = crate::secrets::keychain::list_secrets() {
                 for name in keys {
                     let _ = crate::secrets::keychain::delete_secret(name);
@@ -186,7 +186,7 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
             Ok(())
         }
         UninstallStep::RemoveNode => {
-            let node_dir = clawpad_base_dir().join("node");
+            let node_dir = klodock_base_dir().join("node");
             if node_dir.exists() {
                 tokio::fs::remove_dir_all(&node_dir)
                     .await
@@ -195,8 +195,8 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
             Ok(())
         }
         UninstallStep::RemoveOpenClaw => {
-            // Try to run `npm uninstall -g openclaw` via ClawPad's managed npm.
-            let npm_path = crate::installer::node::clawpad_npm_path();
+            // Try to run `npm uninstall -g openclaw` via KloDock's managed npm.
+            let npm_path = crate::installer::node::klodock_npm_path();
             if npm_path.exists() {
                 let _ = tokio::process::Command::new(&npm_path)
                     .args(["uninstall", "-g", "openclaw"])
@@ -212,14 +212,14 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
             }
             Ok(())
         }
-        UninstallStep::RemoveClawpadConfig => {
-            // Remove ~/.clawpad/ (but leave uninstall-state.json until the
+        UninstallStep::RemoveKlodockConfig => {
+            // Remove ~/.klodock/ (but leave uninstall-state.json until the
             // very end, which is handled by the caller).
-            let base = clawpad_base_dir();
+            let base = klodock_base_dir();
             if base.exists() {
                 tokio::fs::remove_dir_all(&base)
                     .await
-                    .map_err(|e| format!("Failed to remove ~/.clawpad: {e}"))?;
+                    .map_err(|e| format!("Failed to remove ~/.klodock: {e}"))?;
             }
 
             // Optionally nuke user data.
@@ -243,14 +243,14 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn clawpad_base_dir() -> PathBuf {
+fn klodock_base_dir() -> PathBuf {
     dirs::home_dir()
         .expect("Could not determine home directory")
-        .join(".clawpad")
+        .join(".klodock")
 }
 
 fn uninstall_state_path() -> PathBuf {
-    clawpad_base_dir().join("uninstall-state.json")
+    klodock_base_dir().join("uninstall-state.json")
 }
 
 /// Write the current [`UninstallState`] to disk so it survives crashes.

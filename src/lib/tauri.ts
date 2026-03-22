@@ -172,8 +172,8 @@ export async function isAutostartEnabled(): Promise<boolean> {
 
 /* ── Uninstall ──────────────────────────────────────── */
 
-export async function uninstallClawpad(removeUserData: boolean): Promise<void> {
-  return invoke("uninstall_clawpad", { removeUserData });
+export async function uninstallKlodock(removeUserData: boolean): Promise<void> {
+  return invoke("uninstall_klodock", { removeUserData });
 }
 
 export async function resumeUninstall(): Promise<boolean> {

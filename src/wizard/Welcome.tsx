@@ -18,7 +18,7 @@ export function Welcome() {
       </div>
 
       <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
-        Welcome to ClawPad
+        Welcome to KloDock
       </h1>
 
       <p className="mt-3 max-w-md text-lg leading-relaxed text-neutral-600">

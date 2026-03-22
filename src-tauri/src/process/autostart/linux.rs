@@ -4,7 +4,7 @@ use std::path::PathBuf;
 /// Linux autostart via XDG `.desktop` file in `~/.config/autostart/`.
 pub struct LinuxAutostart;
 
-const DESKTOP_FILENAME: &str = "clawpad.desktop";
+const DESKTOP_FILENAME: &str = "klodock.desktop";
 
 fn autostart_dir() -> PathBuf {
     dirs::home_dir()
@@ -20,7 +20,7 @@ fn desktop_file_path() -> PathBuf {
 impl Autostart for LinuxAutostart {
     fn enable() -> Result<(), String> {
         let exe_path = std::env::current_exe()
-            .map_err(|e| format!("Failed to determine ClawPad executable path: {e}"))?;
+            .map_err(|e| format!("Failed to determine KloDock executable path: {e}"))?;
 
         let dir = autostart_dir();
         std::fs::create_dir_all(&dir)
@@ -29,10 +29,10 @@ impl Autostart for LinuxAutostart {
         let content = format!(
             "[Desktop Entry]\n\
              Type=Application\n\
-             Name=ClawPad\n\
+             Name=KloDock\n\
              Comment=Desktop GUI for OpenClaw\n\
              Exec={} --minimized\n\
-             Icon=clawpad\n\
+             Icon=klodock\n\
              Terminal=false\n\
              StartupNotify=false\n\
              X-GNOME-Autostart-enabled=true\n",

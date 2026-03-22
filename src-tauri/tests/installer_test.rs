@@ -1,10 +1,10 @@
-//! Integration tests for `clawpad_lib::installer::node`.
+//! Integration tests for `klodock_lib::installer::node`.
 //!
 //! These tests exercise the public helpers and types from the node installer
 //! module.  Tests that require network access or mutate the filesystem are
 //! marked `#[ignore]` and should be run manually with `cargo test -- --ignored`.
 
-use clawpad_lib::installer::node::{self, NodeStatus};
+use klodock_lib::installer::node::{self, NodeStatus};
 use std::path::Path;
 
 // ---------------------------------------------------------------------------
@@ -72,22 +72,22 @@ fn test_detect_version_manager_none() {
 }
 
 // ---------------------------------------------------------------------------
-// clawpad_node_path
+// klodock_node_path
 // ---------------------------------------------------------------------------
 
 #[test]
-fn test_clawpad_node_path_exists() {
-    let path = node::clawpad_node_path();
+fn test_klodock_node_path_exists() {
+    let path = node::klodock_node_path();
 
-    // The path should be under ~/.clawpad/node/ regardless of platform.
+    // The path should be under ~/.klodock/node/ regardless of platform.
     let path_str = path.to_string_lossy();
     assert!(
-        path_str.contains(".clawpad"),
-        "clawpad_node_path should be under ~/.clawpad/"
+        path_str.contains(".klodock"),
+        "klodock_node_path should be under ~/.klodock/"
     );
     assert!(
         path_str.contains("node"),
-        "clawpad_node_path should contain 'node' component"
+        "klodock_node_path should contain 'node' component"
     );
 
     // Platform-specific binary name check.
@@ -109,14 +109,14 @@ fn test_clawpad_node_path_exists() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
-#[ignore = "Requires network access and mutates ~/.clawpad/node/. Run manually."]
+#[ignore = "Requires network access and mutates ~/.klodock/node/. Run manually."]
 async fn test_install_node_clean_system() {
     // TODO: Implement once install_node is fleshed out.
     //
-    // Setup:  ensure ~/.clawpad/node/ does not exist.
+    // Setup:  ensure ~/.klodock/node/ does not exist.
     // Action: call install_node with a mock AppHandle (or real one).
-    // Assert: ~/.clawpad/node/bin/node (or node.exe) exists and runs --version.
-    // Cleanup: remove ~/.clawpad/node/.
+    // Assert: ~/.klodock/node/bin/node (or node.exe) exists and runs --version.
+    // Cleanup: remove ~/.klodock/node/.
 }
 
 #[tokio::test]
@@ -124,6 +124,6 @@ async fn test_install_node_clean_system() {
 async fn test_install_node_with_existing_nvm() {
     // TODO: Verify that install_node still works when nvm is present.
     //
-    // This test ensures that ClawPad's managed node does not conflict with
+    // This test ensures that KloDock's managed node does not conflict with
     // an existing nvm installation.
 }

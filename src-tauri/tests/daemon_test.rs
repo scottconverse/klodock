@@ -1,9 +1,9 @@
-//! Integration tests for `clawpad_lib::process::daemon`.
+//! Integration tests for `klodock_lib::process::daemon`.
 //!
 //! These tests exercise the daemon lifecycle helpers.  Tests that interact
 //! with real processes are marked `#[ignore]`.
 
-use clawpad_lib::process::daemon::{self, DaemonStatus};
+use klodock_lib::process::daemon::{self, DaemonStatus};
 use std::path::PathBuf;
 use tokio::fs;
 
@@ -76,7 +76,7 @@ async fn test_daemon_status_when_not_running() {
     // When no daemon.pid file exists, get_daemon_status should return Stopped.
     let pid_path = dirs::home_dir()
         .expect("home dir")
-        .join(".clawpad")
+        .join(".klodock")
         .join("daemon.pid");
 
     // Ensure no PID file exists.

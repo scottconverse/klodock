@@ -1,13 +1,13 @@
-/// ClawPad secret store — OS credential integration.
+/// KloDock secret store — OS credential integration.
 ///
 /// On Windows, uses DPAPI (Windows Data Protection API) via PowerShell for
-/// encrypted file-based storage in `~/.clawpad/secrets/`. The `keyring` crate
+/// encrypted file-based storage in `~/.klodock/secrets/`. The `keyring` crate
 /// v3 has a round-trip bug on Windows Credential Manager, so we bypass it.
 ///
 /// On macOS/Linux, uses the `keyring` crate (which wraps Keychain/libsecret).
 
 /// Special key whose value is a JSON array of all stored key names.
-const KEY_INDEX: &str = "_clawpad_key_index";
+const KEY_INDEX: &str = "_klodock_key_index";
 
 // ---------------------------------------------------------------------------
 // Platform-specific credential operations
@@ -91,7 +91,7 @@ mod platform {
 mod platform {
     use keyring::Entry;
 
-    const SERVICE: &str = "clawpad";
+    const SERVICE: &str = "klodock";
 
     fn entry(key: &str) -> Result<Entry, String> {
         Entry::new(SERVICE, key)
@@ -123,10 +123,10 @@ mod platform {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// `~/.clawpad/secrets/` — encrypted secret storage directory.
+/// `~/.klodock/secrets/` — encrypted secret storage directory.
 fn secrets_dir() -> Result<std::path::PathBuf, String> {
     let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
-    Ok(home.join(".clawpad").join("secrets"))
+    Ok(home.join(".klodock").join("secrets"))
 }
 
 /// Read the index of stored key names.
@@ -181,7 +181,7 @@ pub fn delete_secret(key: String) -> Result<(), String> {
     Ok(())
 }
 
-/// Return the names of all secrets stored by ClawPad.
+/// Return the names of all secrets stored by KloDock.
 #[tauri::command]
 pub fn list_secrets() -> Result<Vec<String>, String> {
     read_index()

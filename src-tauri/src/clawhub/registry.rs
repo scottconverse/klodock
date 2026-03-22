@@ -6,7 +6,7 @@ use super::safety::SafetyRating;
 /// Base URL for the ClawHub skill registry API.
 const CLAWHUB_REGISTRY_URL: &str = "https://api.clawhub.dev/v1";
 
-/// Subdirectory under ~/.clawpad/ used for cached registry data.
+/// Subdirectory under ~/.klodock/ used for cached registry data.
 const CACHE_DIR_NAME: &str = "cache";
 
 /// Filename for the local skill search cache.
@@ -43,10 +43,10 @@ pub struct SkillMetadata {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Return `~/.clawpad/cache/`, creating the directory if it does not exist.
+/// Return `~/.klodock/cache/`, creating the directory if it does not exist.
 fn cache_path() -> Result<PathBuf, String> {
     let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let path = home.join(".clawpad").join(CACHE_DIR_NAME);
+    let path = home.join(".klodock").join(CACHE_DIR_NAME);
     std::fs::create_dir_all(&path)
         .map_err(|e| format!("Failed to create cache directory: {e}"))?;
     Ok(path)
@@ -143,7 +143,7 @@ fn starter_recommendations() -> Vec<SkillMetadata> {
 
 /// Search the ClawHub registry for skills matching `query`.
 ///
-/// Results are cached locally in `~/.clawpad/cache/skills.json` so the UI can
+/// Results are cached locally in `~/.klodock/cache/skills.json` so the UI can
 /// display them while offline.
 #[tauri::command]
 pub async fn search_skills(query: String) -> Result<Vec<SkillMetadata>, String> {

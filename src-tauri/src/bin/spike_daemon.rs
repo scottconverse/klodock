@@ -16,7 +16,7 @@ use std::path::PathBuf;
 fn main() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
-        println!("=== ClawPad Daemon Lifecycle Spike ===\n");
+        println!("=== KloDock Daemon Lifecycle Spike ===\n");
 
         // --- Test 1: Keychain round-trip ---
         println!("--- Test 1: Keychain Store/Retrieve ---\n");
@@ -51,11 +51,11 @@ fn main() {
 }
 
 fn test_keychain() {
-    let test_key = "_clawpad_spike_test_key";
+    let test_key = "_klodock_spike_test_key";
     let test_value = "sk-test-1234567890abcdef";
 
     // Uses DPAPI on Windows (same approach as the updated keychain.rs)
-    let secrets = home_dir().join(".clawpad").join("secrets");
+    let secrets = home_dir().join(".klodock").join("secrets");
     let _ = std::fs::create_dir_all(&secrets);
 
     // Store
@@ -76,13 +76,13 @@ fn test_keychain() {
     // Key index round-trip
     print!("  Key index store...");
     let index_val = serde_json::to_string(&vec!["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]).unwrap();
-    match dpapi_store("_clawpad_spike_index", &index_val) {
+    match dpapi_store("_klodock_spike_index", &index_val) {
         Ok(()) => println!(" ✓"),
         Err(e) => println!(" ✗ ({e})"),
     }
 
     print!("  Key index retrieve...");
-    match dpapi_retrieve("_clawpad_spike_index") {
+    match dpapi_retrieve("_klodock_spike_index") {
         Ok(val) => {
             let keys: Vec<String> = serde_json::from_str(&val).unwrap_or_default();
             println!(" ✓ (keys: {:?})", keys);
@@ -96,7 +96,7 @@ fn test_keychain() {
         Ok(()) => println!(" ✓"),
         Err(e) => println!(" ✗ ({e})"),
     }
-    let _ = dpapi_delete("_clawpad_spike_index");
+    let _ = dpapi_delete("_klodock_spike_index");
 
     // Verify deleted
     print!("  Verify deleted...");
@@ -107,7 +107,7 @@ fn test_keychain() {
 }
 
 fn dpapi_store(key: &str, value: &str) -> Result<(), String> {
-    let dir = home_dir().join(".clawpad").join("secrets");
+    let dir = home_dir().join(".klodock").join("secrets");
     let _ = std::fs::create_dir_all(&dir);
     let output = std::process::Command::new("powershell.exe")
         .args(["-NoProfile", "-Command",
@@ -121,7 +121,7 @@ fn dpapi_store(key: &str, value: &str) -> Result<(), String> {
 }
 
 fn dpapi_retrieve(key: &str) -> Result<String, String> {
-    let path = home_dir().join(".clawpad").join("secrets").join(format!("{key}.enc"));
+    let path = home_dir().join(".klodock").join("secrets").join(format!("{key}.enc"));
     if !path.exists() { return Err("not found".into()); }
     let hex = std::fs::read_to_string(&path).map_err(|e| format!("{e}"))?.trim().to_string();
     let output = std::process::Command::new("powershell.exe")
@@ -137,7 +137,7 @@ fn dpapi_retrieve(key: &str) -> Result<String, String> {
 }
 
 fn dpapi_delete(key: &str) -> Result<(), String> {
-    let path = home_dir().join(".clawpad").join("secrets").join(format!("{key}.enc"));
+    let path = home_dir().join(".klodock").join("secrets").join(format!("{key}.enc"));
     if path.exists() { std::fs::remove_file(&path).map_err(|e| format!("{e}"))?; }
     Ok(())
 }
@@ -224,7 +224,7 @@ async fn test_env_scrub() {
 }
 
 async fn test_pid_lifecycle() {
-    let pid_path = home_dir().join(".clawpad").join("daemon.pid");
+    let pid_path = home_dir().join(".klodock").join("daemon.pid");
     let _ = tokio::fs::create_dir_all(pid_path.parent().unwrap()).await;
 
     // Write a PID file
@@ -318,7 +318,7 @@ fn test_autostart() {
 }
 
 fn cleanup_test_secrets() {
-    for key in &["_clawpad_spike_test_key", "_clawpad_spike_index"] {
+    for key in &["_klodock_spike_test_key", "_klodock_spike_index"] {
         let _ = dpapi_delete(key);
     }
     println!("  Cleaned up test keychain entries ✓");
@@ -357,7 +357,7 @@ fn enable_autostart() -> Result<(), String> {
     let output = std::process::Command::new("reg")
         .args([
             "add", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-            "/v", "ClawPad", "/t", "REG_SZ", "/d", &value, "/f",
+            "/v", "KloDock", "/t", "REG_SZ", "/d", &value, "/f",
         ])
         .output()
         .map_err(|e| format!("reg.exe failed: {e}"))?;
@@ -370,7 +370,7 @@ fn disable_autostart() -> Result<(), String> {
     let output = std::process::Command::new("reg")
         .args([
             "delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-            "/v", "ClawPad", "/f",
+            "/v", "KloDock", "/f",
         ])
         .output()
         .map_err(|e| format!("reg.exe failed: {e}"))?;
@@ -384,12 +384,12 @@ fn query_autostart() -> Result<bool, String> {
     let output = std::process::Command::new("reg")
         .args([
             "query", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-            "/v", "ClawPad",
+            "/v", "KloDock",
         ])
         .output()
         .map_err(|e| format!("reg.exe failed: {e}"))?;
     if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).contains("ClawPad"))
+        Ok(String::from_utf8_lossy(&output.stdout).contains("KloDock"))
     } else {
         Ok(false)
     }

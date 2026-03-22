@@ -49,7 +49,7 @@ pub async fn install_skill(slug: String) -> Result<String, String> {
         return Err("OpenClaw binary not found. Please install OpenClaw first.".into());
     }
 
-    let node_dir = super::node::clawpad_base_dir().join("node");
+    let node_dir = super::node::klodock_base_dir().join("node");
     let current_path = std::env::var("PATH").unwrap_or_default();
     let path_sep = if cfg!(windows) { ";" } else { ":" };
     let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);

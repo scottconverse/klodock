@@ -1,4 +1,4 @@
-//! Integration tests for `clawpad_lib::secrets::keychain`.
+//! Integration tests for `klodock_lib::secrets::keychain`.
 //!
 //! **WARNING**: These tests interact with the REAL operating system keychain.
 //! They are marked `#[ignore]` by default to prevent accidental mutation of
@@ -15,14 +15,14 @@
 //! These tests MUST run sequentially because they share a global key
 //! index file. Use: cargo test --test keychain_test -- --ignored --test-threads=1
 
-use clawpad_lib::secrets::keychain;
+use klodock_lib::secrets::keychain;
 use std::sync::Mutex;
 
 /// Lock to force serial execution of keychain tests.
 static KEYCHAIN_LOCK: Mutex<()> = Mutex::new(());
 
 /// Prefix used for test keys so they can be identified and cleaned up.
-const TEST_PREFIX: &str = "_clawpad_test_";
+const TEST_PREFIX: &str = "_klodock_test_";
 
 /// Generate a unique test key name.
 fn test_key(suffix: &str) -> String {

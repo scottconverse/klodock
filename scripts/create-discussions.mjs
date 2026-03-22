@@ -16,8 +16,8 @@ const CATEGORIES = {
 const DISCUSSIONS = [
   {
     category: "announcements",
-    title: "Welcome to ClawPad!",
-    body: `ClawPad is a desktop GUI that wraps OpenClaw in a visual setup wizard. No terminal, no JSON editing, no markdown.
+    title: "Welcome to KloDock!",
+    body: `KloDock is a desktop GUI that wraps OpenClaw in a visual setup wizard. No terminal, no JSON editing, no markdown.
 
 **Phase 1 (v0.1.0)** ships the full setup wizard:
 - Silent Node.js detection and installation
@@ -30,12 +30,12 @@ const DISCUSSIONS = [
 
 The Windows build is verified (MSI: 672 KB, NSIS: 415 KB). macOS and Linux builds are code-complete and awaiting CI validation.
 
-We welcome contributions, bug reports, and feature requests. Check the [README](https://github.com/scottconverse/clawpad#readme) for development setup instructions.`
+We welcome contributions, bug reports, and feature requests. Check the [README](https://github.com/scottconverse/klodock#readme) for development setup instructions.`
   },
   {
     category: "general",
     title: "Introduce yourself! What do you want your agent to do?",
-    body: `Tell us about yourself and what you're hoping to use ClawPad + OpenClaw for.
+    body: `Tell us about yourself and what you're hoping to use KloDock + OpenClaw for.
 
 Some questions to get started:
 - What's your technical background? (Non-technical, some coding, developer, etc.)
@@ -43,7 +43,7 @@ Some questions to get started:
 - Which messaging platform do you prefer? (Telegram, Discord, WhatsApp, etc.)
 - Which AI provider are you using or considering? (OpenAI, Anthropic, Gemini, Groq, Ollama, etc.)
 
-This helps us prioritize features and understand who's using ClawPad.`
+This helps us prioritize features and understand who's using KloDock.`
   },
   {
     category: "ideas",
@@ -67,36 +67,36 @@ Vote with reactions or reply with your own ideas.`
   },
   {
     category: "qanda",
-    title: "FAQ: Common questions about ClawPad",
-    body: `**Q: Is ClawPad free?**
+    title: "FAQ: Common questions about KloDock",
+    body: `**Q: Is KloDock free?**
 A: Yes. MIT licensed, free forever. No subscriptions, no accounts.
 
-**Q: Does ClawPad send my data anywhere?**
-A: No. ClawPad runs entirely on your machine. Your API keys are stored in your OS credential store (Windows Credential Manager, macOS Keychain, or Linux libsecret). No telemetry, no cloud services.
+**Q: Does KloDock send my data anywhere?**
+A: No. KloDock runs entirely on your machine. Your API keys are stored in your OS credential store (Windows Credential Manager, macOS Keychain, or Linux libsecret). No telemetry, no cloud services.
 
-**Q: Which AI providers does ClawPad support?**
-A: Six providers: OpenAI, Anthropic (Claude), Google Gemini, Groq, OpenRouter, and Ollama (local/free). You can use any of them - ClawPad is not locked to any single provider.
+**Q: Which AI providers does KloDock support?**
+A: Six providers: OpenAI, Anthropic (Claude), Google Gemini, Groq, OpenRouter, and Ollama (local/free). You can use any of them - KloDock is not locked to any single provider.
 
 **Q: Can I use Ollama instead of paying for an API?**
-A: Yes! If you have Ollama installed and running, ClawPad auto-detects it. No API key needed, no cost, no data leaves your machine. You just need a computer with enough RAM to run local models (8GB minimum for small models).
+A: Yes! If you have Ollama installed and running, KloDock auto-detects it. No API key needed, no cost, no data leaves your machine. You just need a computer with enough RAM to run local models (8GB minimum for small models).
 
-**Q: What platforms does ClawPad run on?**
+**Q: What platforms does KloDock run on?**
 A: Windows (verified), macOS and Linux (code-complete, CI validation pending). The Windows installer is 672 KB.
 
 **Q: What is OpenClaw?**
-A: OpenClaw is a fictional open-source AI agent framework used as the basis for this proof-of-concept. ClawPad demonstrates the architecture and UX patterns for wrapping any complex CLI tool in a native desktop GUI.
+A: OpenClaw is a fictional open-source AI agent framework used as the basis for this proof-of-concept. KloDock demonstrates the architecture and UX patterns for wrapping any complex CLI tool in a native desktop GUI.
 
 Have a question not covered here? Reply below!`
   },
   {
     category: "general",
     title: "Contributing: How to get involved",
-    body: `ClawPad is open source and contributions are welcome. Here's how to get started:
+    body: `KloDock is open source and contributions are welcome. Here's how to get started:
 
 **Development setup:**
 \`\`\`bash
-git clone https://github.com/scottconverse/clawpad.git
-cd clawpad
+git clone https://github.com/scottconverse/klodock.git
+cd klodock
 npm install
 npx tauri dev
 \`\`\`
@@ -114,12 +114,12 @@ npx tauri dev
 - React frontend: \`src/\` (8 wizard screens, 7 components, dashboard shell)
 - Tests: \`vitest\` for frontend, \`cargo test\` for Rust
 
-See the [full README](https://github.com/scottconverse/clawpad/blob/main/README-full.md) for detailed architecture docs.`
+See the [full README](https://github.com/scottconverse/klodock/blob/main/README-full.md) for detailed architecture docs.`
   },
   {
     category: "showandtell",
     title: "Build log: From PRD to working Windows installer in one session",
-    body: `ClawPad was built from a PRD to a working Windows installer (.msi + .exe) in a single development session. Here's what was accomplished:
+    body: `KloDock was built from a PRD to a working Windows installer (.msi + .exe) in a single development session. Here's what was accomplished:
 
 **Architecture:**
 - Tauri v2 (Rust backend + React frontend)

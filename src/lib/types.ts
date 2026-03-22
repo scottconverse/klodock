@@ -17,7 +17,7 @@ export interface InstallProgress {
 export interface OpenClawStatus {
   version: string | null;
   bin_path: string | null;
-  managed_by_clawpad: boolean;
+  managed_by_klodock: boolean;
 }
 
 /** Progress events emitted during OpenClaw installation. */

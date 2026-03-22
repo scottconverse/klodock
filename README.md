@@ -1,19 +1,19 @@
-# ClawPad
+# KloDock™
 
 Desktop GUI for [OpenClaw](https://github.com/openclaw/openclaw) — zero terminal, zero complexity.
 
-ClawPad lets non-technical users install, configure, personalize, and manage an OpenClaw AI agent through a visual interface. No command line, no JSON files, no markdown editing. Download, run the wizard, talk to your agent.
+KloDock lets non-technical users install, configure, personalize, and manage an OpenClaw AI agent through a visual interface. No command line, no JSON files, no markdown editing. Download, run the wizard, talk to your agent.
 
-## Why ClawPad?
+## Why KloDock?
 
 OpenClaw is powerful but hard to set up. It requires Node.js, terminal fluency, manual config files, and API key management. Hosted alternatives charge $10-40/month for what is free software — and hold your keys.
 
-ClawPad fills the gap: **easy + local + free.**
+KloDock fills the gap: **easy + local + free.**
 
 ```
                 More Control / Local
 
-                    ★ ClawPad
+                    ★ KloDock
                  (free, local, GUI)
 
   Easier ────                          ──── Harder
@@ -56,7 +56,7 @@ ClawPad fills the gap: **easy + local + free.**
 ## Project Structure
 
 ```
-clawpad/
+klodock/
 ├── src-tauri/src/         # Rust backend
 │   ├── installer/         # Node.js + OpenClaw + skill installation
 │   ├── config/            # SOUL.md, openclaw.json, .env management
@@ -87,8 +87,8 @@ clawpad/
 ### Setup
 
 ```bash
-git clone https://github.com/scottconverse/clawpad.git
-cd clawpad
+git clone https://github.com/scottconverse/klodock.git
+cd klodock
 npm install
 ```
 

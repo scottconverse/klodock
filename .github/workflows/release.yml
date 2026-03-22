@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: ClawPad ${{ github.ref_name }}
-          releaseBody: 'See the assets below to download ClawPad for your platform.'
+          releaseName: KloDock ${{ github.ref_name }}
+          releaseBody: 'See the assets below to download KloDock for your platform.'
           releaseDraft: false
           prerelease: false

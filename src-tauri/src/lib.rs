@@ -36,7 +36,7 @@ pub fn run() {
             installer::openclaw::check_openclaw,
             installer::skills::install_skill,
             installer::skills::list_installed_skills,
-            installer::uninstall::uninstall_clawpad,
+            installer::uninstall::uninstall_klodock,
             installer::uninstall::resume_uninstall,
             // Config commands
             config::soul::read_soul,
@@ -77,5 +77,5 @@ pub fn run() {
             update::skill_update::update_skill,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running ClawPad");
+        .expect("error while running KloDock");
 }

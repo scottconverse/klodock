@@ -1,4 +1,4 @@
-//! Integration tests for `clawpad_lib::process::autostart`.
+//! Integration tests for `klodock_lib::process::autostart`.
 //!
 //! Autostart behaviour is inherently platform-specific.  Tests are gated
 //! with `#[cfg(target_os = "...")]` and most are marked `#[ignore]` because
@@ -8,7 +8,7 @@
 //!
 //!     cargo test --test autostart_test -- --ignored
 
-use clawpad_lib::process::autostart;
+use klodock_lib::process::autostart;
 
 // ---------------------------------------------------------------------------
 // Windows

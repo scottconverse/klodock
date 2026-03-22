@@ -51,7 +51,7 @@ export function DashboardLayout() {
           >
             C
           </div>
-          <span className="text-sm font-bold text-neutral-900">ClawPad</span>
+          <span className="text-sm font-bold text-neutral-900">KloDock</span>
         </div>
 
         <nav className="flex-1 space-y-0.5 px-3 py-4" aria-label="Dashboard">

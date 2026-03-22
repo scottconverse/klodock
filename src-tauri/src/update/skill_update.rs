@@ -24,7 +24,7 @@ pub struct SkillUpdateInfo {
 /// Compare every installed skill's lock.json hash against the ClawHub registry
 /// to detect available updates.
 ///
-/// Reads `~/.clawpad/lock.json` for installed skill versions, then queries the
+/// Reads `~/.klodock/lock.json` for installed skill versions, then queries the
 /// registry for the latest version of each.
 #[tauri::command]
 pub async fn check_skill_updates() -> Result<Vec<SkillUpdateInfo>, String> {

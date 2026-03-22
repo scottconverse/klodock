@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Path to the built Tauri application
 const APP_PATH = path.resolve(
   __dirname,
-  "src-tauri/target/release/clawpad.exe"
+  "src-tauri/target/release/klodock.exe"
 );
 
 // Path to tauri-driver (installed via cargo install)

@@ -1,5 +1,5 @@
 ================================================================================
-                                   CLAWPAD
+                                  KLODOCK™
           Desktop GUI for OpenClaw -- zero terminal, zero complexity.
 ================================================================================
 
@@ -7,13 +7,13 @@
   Author:      Scott Converse
   License:     MIT
   Date:        March 2026
-  Repository:  https://github.com/scottconverse/clawpad
+  Repository:  https://github.com/scottconverse/klodock
 
 ================================================================================
 1. OVERVIEW
 ================================================================================
 
-ClawPad is a native desktop application that wraps the open-source OpenClaw AI
+KloDock is a native desktop application that wraps the open-source OpenClaw AI
 agent framework in a visual, point-and-click interface. OpenClaw has amassed
 over 250,000 stars on GitHub and is one of the most capable open-source agent
 platforms available, but it demands terminal fluency, manual JSON and Markdown
@@ -22,7 +22,7 @@ reach for most non-technical users. Meanwhile, hosted alternatives like
 Clawnify, OneClaw, and KiwiClaw charge between $10 and $40 per month for what
 is fundamentally free software, and they hold your API keys on their servers.
 
-ClawPad fills that gap. It packages the entire OpenClaw setup and management
+KloDock fills that gap. It packages the entire OpenClaw setup and management
 lifecycle into a guided wizard that takes minutes, not hours, from download to
 a running agent. There is no command line, no config file editing, and no
 Markdown to write. The user downloads a lightweight installer, runs the wizard,
@@ -34,7 +34,7 @@ provider requires.
 The application is built on Tauri v2, producing installers under 700 KB on
 Windows. It targets Windows, macOS, and Linux, with all three platforms
 passing CI builds and tests.
-ClawPad is designed for accessibility from the ground up, meeting WCAG 2.1 AA
+KloDock is designed for accessibility from the ground up, meeting WCAG 2.1 AA
 requirements with full keyboard navigation, screen reader support, and
 high-contrast theming.
 
@@ -48,8 +48,8 @@ high-contrast theming.
 
   - Silent Node.js installation
     Automatically detects existing Node.js installs, nvm, Volta, and
-    Homebrew-managed versions. If Node.js is missing or below v22, ClawPad
-    silently downloads and extracts it to ~/.clawpad/node/ with no elevation
+    Homebrew-managed versions. If Node.js is missing or below v22, KloDock
+    silently downloads and extracts it to ~/.klodock/node/ with no elevation
     prompt on any platform.
 
   - Visual personality builder
@@ -106,7 +106,7 @@ SYSTEM ARCHITECTURE DIAGRAM
 ----------------------------
 
   +-----------------------------------------------------------+
-  |                       ClawPad (Tauri v2)                  |
+  |                       KloDock (Tauri v2)                  |
   |                                                           |
   |  +-------------------------+   +------------------------+ |
   |  |    React Frontend       |   |    Rust Backend        | |
@@ -139,7 +139,7 @@ SYSTEM ARCHITECTURE DIAGRAM
            |                              |
            v                              v
     +-------------+              +------------------+
-    | System      |              | ~/.clawpad/      |
+    | System      |              | ~/.klodock/      |
     | Webview     |              |   node/          |
     | (WRY/Edge/  |              |   secrets/       |
     |  WebKitGTK) |              |   setup-state.json|
@@ -159,7 +159,7 @@ SYSTEM ARCHITECTURE DIAGRAM
 WHY TAURI V2
 -------------
 
-ClawPad uses Tauri v2 rather than Electron for three reasons:
+KloDock uses Tauri v2 rather than Electron for three reasons:
 
   1. Bundle size. Tauri leverages the operating system's native webview
      (Edge WebView2 on Windows, WebKitGTK on Linux, WKWebView on macOS)
@@ -168,7 +168,7 @@ ClawPad uses Tauri v2 rather than Electron for three reasons:
 
   2. Memory footprint. A Tauri app's baseline memory consumption is roughly
      30-50 MB compared to 150-300 MB for an equivalent Electron app, which
-     matters because ClawPad runs alongside the OpenClaw agent process.
+     matters because KloDock runs alongside the OpenClaw agent process.
 
   3. Security. Tauri's capability-based permission model restricts the
      frontend to only the IPC commands explicitly registered in the Rust
@@ -214,7 +214,7 @@ FRONTEND STACK
 4. SECURITY MODEL
 ================================================================================
 
-ClawPad treats API keys as the most sensitive data in the system. The security
+KloDock treats API keys as the most sensitive data in the system. The security
 model is designed around the principle that keys should never exist in plaintext
 at rest.
 
@@ -233,7 +233,7 @@ SECRET MATERIALIZATION FLOW (CLOUD PROVIDERS)
            |
            v
   3. Rust backend encrypts and stores in OS credential store
-     - Windows: DPAPI (ConvertTo-SecureString) -> ~/.clawpad/secrets/
+     - Windows: DPAPI (ConvertTo-SecureString) -> ~/.klodock/secrets/
      - macOS:   Keychain (via keyring crate)
      - Linux:   Secret Service / libsecret (via keyring crate)
            |
@@ -262,7 +262,7 @@ SECRET MATERIALIZATION FLOW (CLOUD PROVIDERS)
 ADDITIONAL SECURITY MEASURES
 ------------------------------
 
-  - Crash recovery scrub. On every ClawPad launch, the Rust backend checks
+  - Crash recovery scrub. On every KloDock launch, the Rust backend checks
     for and removes any stale .env file left behind by a prior crash.
 
   - SHA256 checksum verification. The Node.js download is verified against
@@ -279,16 +279,16 @@ ADDITIONAL SECURITY MEASURES
   - Ollama zero-key path. When the user selects Ollama as their provider, no
     API key is stored, no .env file is created, and no credentials leave the
     machine. The agent communicates directly with Ollama's local HTTP API.
-    ClawPad auto-detects Ollama, lists available models, and guards against
+    KloDock auto-detects Ollama, lists available models, and guards against
     the case where Ollama is running but has no models pulled.
 
-  - No telemetry. ClawPad collects and transmits no usage data by default.
+  - No telemetry. KloDock collects and transmits no usage data by default.
 
 ================================================================================
 5. PROJECT STRUCTURE
 ================================================================================
 
-  clawpad/
+  klodock/
   |-- .github/
   |   +-- workflows/
   |       |-- build.yml              Cross-platform build
@@ -428,8 +428,8 @@ PREREQUISITES
 INITIAL SETUP
 --------------
 
-  git clone https://github.com/scottconverse/clawpad.git
-  cd clawpad
+  git clone https://github.com/scottconverse/klodock.git
+  cd klodock
   npm install
 
 
@@ -538,7 +538,7 @@ RUST INTEGRATION TESTS (CARGO)
 
 Tests are located in src-tauri/tests/ and cover:
 
-  - installer_test: Node.js detection, version manager detection, ClawPad
+  - installer_test: Node.js detection, version manager detection, KloDock
     node path validation
 
   - setup_state_test: Fresh state generation, step completion persistence
@@ -562,7 +562,7 @@ These tests are marked #[ignore] because they interact with real OS resources:
     to avoid race conditions on the shared DPAPI key index.
 
   - installer_test (2 tests): Full Node.js download and install. Requires
-    network and writes to ~/.clawpad/node/.
+    network and writes to ~/.klodock/node/.
 
   - autostart_test (1 test per platform): Enable/disable round-trip.
     Modifies registry keys, launch agents, or systemd units.
@@ -612,8 +612,8 @@ VERIFIED WINDOWS BUILD SIZES
 
   | Artifact                          | Size   |
   |-----------------------------------|--------|
-  | ClawPad_0.1.0_x64_en-US.msi      | 672 KB |
-  | ClawPad_0.1.0_x64-setup.exe      | 415 KB |
+  | KloDock_0.1.0_x64_en-US.msi      | 672 KB |
+  | KloDock_0.1.0_x64-setup.exe      | 415 KB |
 
 These sizes reflect the Tauri advantage: no bundled browser engine. The
 application uses the system's Edge WebView2 (Windows), WebKitGTK (Linux),
@@ -703,7 +703,7 @@ PHASE 2: DASHBOARD AND ECOSYSTEM
 PHASE 3: FUTURE CONSIDERATIONS
 ---------------------------------
 
-  - Auto-update: Silent background updates for ClawPad via Tauri's updater
+  - Auto-update: Silent background updates for KloDock via Tauri's updater
   - Plugin system: Community-developed UI extensions
   - Team management: Shared configurations for organizations
   - Analytics dashboard: Usage metrics and conversation insights (local only)
@@ -715,7 +715,7 @@ PHASE 3: FUTURE CONSIDERATIONS
 
                   More Control / Local
 
-                      * ClawPad
+                      * KloDock
                    (free, local, GUI)
 
     Easier ----                          ---- Harder
@@ -731,13 +731,13 @@ PHASE 3: FUTURE CONSIDERATIONS
 
   | Product       | Price      | Local/Cloud | GUI | Terminal Required |
   |---------------|------------|-------------|-----|-------------------|
-  | ClawPad       | Free       | Local       | Yes | No                |
+  | KloDock       | Free       | Local       | Yes | No                |
   | OpenClaw CLI  | Free       | Local       | No  | Yes               |
   | Clawnify      | $20+/mo    | Cloud       | Yes | No                |
   | OneClaw       | $10/mo     | Cloud       | Yes | No                |
   | KiwiClaw      | $15-39/mo  | Cloud       | Yes | No                |
 
-ClawPad occupies the unique position of being both free and easy to use
+KloDock occupies the unique position of being both free and easy to use
 while keeping all data local. The only product in the "free + local" space
 is the OpenClaw CLI, which requires terminal proficiency. All GUI
 alternatives are cloud-hosted and paid.

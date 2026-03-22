@@ -30,7 +30,7 @@ pub enum DaemonStatus {
 /// Tracks the "Keep API keys accessible for manual OpenClaw use" setting.
 /// Defaults to false (always scrub .env on stop).
 fn keep_keys_setting() -> bool {
-    let path = clawpad_base_dir().join("settings.json");
+    let path = klodock_base_dir().join("settings.json");
     if let Ok(content) = std::fs::read_to_string(&path) {
         if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
             return val
@@ -53,7 +53,7 @@ fn keep_keys_setting() -> bool {
 /// 2. Read all secrets from OS keychain
 /// 3. Write them to .env with 600 permissions
 /// 4. Spawn the openclaw daemon as a child process
-/// 5. Write PID to ~/.clawpad/daemon.pid
+/// 5. Write PID to ~/.klodock/daemon.pid
 #[tauri::command]
 pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     let _ = app.emit(STATUS_EVENT, &DaemonStatus::Starting);
@@ -98,7 +98,7 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     }
 
     // Set up environment for the daemon
-    let node_dir = crate::installer::node::clawpad_base_dir().join("node");
+    let node_dir = crate::installer::node::klodock_base_dir().join("node");
     let current_path = std::env::var("PATH").unwrap_or_default();
     let path_sep = if cfg!(windows) { ";" } else { ":" };
     let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);
@@ -226,15 +226,15 @@ pub async fn scrub_stale_env() -> Result<(), String> {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-/// Path to `~/.clawpad/daemon.pid`.
+/// Path to `~/.klodock/daemon.pid`.
 fn pid_file_path() -> Result<PathBuf, String> {
-    Ok(clawpad_base_dir().join("daemon.pid"))
+    Ok(klodock_base_dir().join("daemon.pid"))
 }
 
-fn clawpad_base_dir() -> PathBuf {
+fn klodock_base_dir() -> PathBuf {
     dirs::home_dir()
         .expect("Cannot determine home directory")
-        .join(".clawpad")
+        .join(".klodock")
 }
 
 /// Monitor a running daemon child process. When it exits, clean up state.
@@ -272,7 +272,7 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
 
                     // Note: .env is preserved across retries (keys haven't changed)
                     let openclaw_path = openclaw::openclaw_bin_path();
-                    let node_dir = crate::installer::node::clawpad_base_dir().join("node");
+                    let node_dir = crate::installer::node::klodock_base_dir().join("node");
                     let current_path = std::env::var("PATH").unwrap_or_default();
                     let path_sep = if cfg!(windows) { ";" } else { ":" };
                     let new_path =

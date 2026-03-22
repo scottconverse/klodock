@@ -3,8 +3,8 @@
 fn main() {
     println!("=== Keychain Debug ===\n");
 
-    let service = "clawpad";
-    let key = "_clawpad_debug_test";
+    let service = "klodock";
+    let key = "_klodock_debug_test";
     let value = "test-secret-value-123";
 
     // Try with keyring crate
@@ -69,10 +69,10 @@ fn main() {
 
     // Try Windows-native approach via cmdkey
     println!("\n--- cmdkey (Windows native) ---");
-    let target = format!("clawpad/{key}");
+    let target = format!("klodock/{key}");
 
     let store = std::process::Command::new("cmdkey")
-        .args(["/generic", &target, "/user", "clawpad", "/pass", value])
+        .args(["/generic", &target, "/user", "klodock", "/pass", value])
         .output();
     match store {
         Ok(out) => {
@@ -88,8 +88,8 @@ fn main() {
     match retrieve {
         Ok(out) => {
             let stdout = String::from_utf8_lossy(&out.stdout);
-            let found = stdout.lines().any(|l| l.contains("clawpad"));
-            println!("  cmdkey list contains 'clawpad': {}", if found { "✓" } else { "✗" });
+            let found = stdout.lines().any(|l| l.contains("klodock"));
+            println!("  cmdkey list contains 'klodock': {}", if found { "✓" } else { "✗" });
         }
         Err(e) => println!("  cmdkey list: ✗ ({e})"),
     }

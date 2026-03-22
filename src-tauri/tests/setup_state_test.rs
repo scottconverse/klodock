@@ -1,9 +1,9 @@
-//! Integration tests for `clawpad_lib::setup::setup_state`.
+//! Integration tests for `klodock_lib::setup::setup_state`.
 //!
 //! These tests exercise the setup wizard state persistence and step
 //! completion logic.
 
-use clawpad_lib::setup::setup_state::{
+use klodock_lib::setup::setup_state::{
     self, SetupState, SetupStep, StepStatus,
 };
 
@@ -19,7 +19,7 @@ async fn test_get_state_no_file() {
     // To isolate this test, we temporarily rename any existing state file.
     let state_path = dirs::home_dir()
         .expect("home dir")
-        .join(".clawpad")
+        .join(".klodock")
         .join("setup-state.json");
     let backup_path = state_path.with_extension("json.bak");
 
@@ -63,7 +63,7 @@ async fn test_get_state_no_file() {
 async fn test_complete_step_persists() {
     let state_path = dirs::home_dir()
         .expect("home dir")
-        .join(".clawpad")
+        .join(".klodock")
         .join("setup-state.json");
     let backup_path = state_path.with_extension("json.bak");
 

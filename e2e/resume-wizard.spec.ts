@@ -1,7 +1,7 @@
 /**
  * E2E: Resume Wizard — interrupted setup recovery.
  *
- * Verifies that ClawPad correctly resumes the setup wizard when the app
+ * Verifies that KloDock correctly resumes the setup wizard when the app
  * was closed mid-setup:
  *
  *   1. Pre-condition: setup-state.json exists with some steps Completed,

@@ -71,7 +71,7 @@ fn main() {
 }
 
 fn secrets_dir() -> std::path::PathBuf {
-    dirs::home_dir().unwrap().join(".clawpad").join("secrets")
+    dirs::home_dir().unwrap().join(".klodock").join("secrets")
 }
 
 fn dpapi_store(key: &str, value: &str) -> Result<(), String> {

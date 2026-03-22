@@ -3,13 +3,13 @@ use super::Autostart;
 /// Registry path for current-user auto-start programs.
 const RUN_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
 
-/// Value name used for the ClawPad entry.
-const VALUE_NAME: &str = "ClawPad";
+/// Value name used for the KloDock entry.
+const VALUE_NAME: &str = "KloDock";
 
 /// Windows autostart via Registry key
 /// `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
 ///
-/// When enabled, this writes a registry value pointing to the ClawPad
+/// When enabled, this writes a registry value pointing to the KloDock
 /// executable with a `--minimized` flag so it launches to the system tray
 /// without opening a window.
 pub struct WindowsAutostart;
@@ -17,7 +17,7 @@ pub struct WindowsAutostart;
 impl Autostart for WindowsAutostart {
     fn enable() -> Result<(), String> {
         let exe_path = std::env::current_exe()
-            .map_err(|e| format!("Failed to determine ClawPad executable path: {e}"))?;
+            .map_err(|e| format!("Failed to determine KloDock executable path: {e}"))?;
 
         // Launch minimized to system tray
         let value = format!("\"{}\" --minimized", exe_path.display());

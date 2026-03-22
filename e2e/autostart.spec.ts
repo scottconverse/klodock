@@ -9,8 +9,8 @@
  *      - Calls enable_autostart.
  *      - Platform-specific entry is created:
  *        - Windows: HKCU\Software\Microsoft\Windows\CurrentVersion\Run
- *        - macOS: ~/Library/LaunchAgents/com.clawpad.plist
- *        - Linux: ~/.config/autostart/clawpad.desktop or systemd unit
+ *        - macOS: ~/Library/LaunchAgents/com.klodock.plist
+ *        - Linux: ~/.config/autostart/klodock.desktop or systemd unit
  *      - Toggle visually shows "enabled" state.
  *   4. Toggle OFF:
  *      - Calls disable_autostart.

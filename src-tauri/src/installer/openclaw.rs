@@ -14,8 +14,8 @@ pub struct OpenClawStatus {
     pub version: Option<String>,
     /// Absolute path to the openclaw binary, if located.
     pub bin_path: Option<String>,
-    /// True when the binary was installed by ClawPad's managed Node/npm.
-    pub managed_by_clawpad: bool,
+    /// True when the binary was installed by KloDock's managed Node/npm.
+    pub managed_by_klodock: bool,
 }
 
 /// Progress event payload emitted during `install_openclaw`.
@@ -31,21 +31,21 @@ pub struct InstallProgress {
 // Tauri commands
 // ---------------------------------------------------------------------------
 
-/// Install (or upgrade) OpenClaw globally using ClawPad-managed npm.
+/// Install (or upgrade) OpenClaw globally using KloDock-managed npm.
 ///
 /// Runs:
 /// ```text
-/// <clawpad_npm> install -g openclaw@latest
+/// <klodock_npm> install -g openclaw@latest
 /// ```
 ///
 /// Emits `openclaw-install-progress` events so the frontend can display a
 /// live status indicator.
 #[tauri::command]
 pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
-    let npm = super::node::clawpad_npm_path();
+    let npm = super::node::klodock_npm_path();
     if !npm.exists() {
         return Err(
-            "ClawPad-managed npm not found. Please install Node.js first \
+            "KloDock-managed npm not found. Please install Node.js first \
              (go back to the Dependencies step)."
                 .into(),
         );
@@ -53,13 +53,13 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
 
     emit(&app, "Preparing to install OpenClaw...", Some(0.0));
 
-    // Set up environment so npm uses ClawPad-managed node
+    // Set up environment so npm uses KloDock-managed node
     let node_dir = npm.parent().unwrap().to_path_buf();
     let current_path = std::env::var("PATH").unwrap_or_default();
     let new_path = format!("{}{}{}", node_dir.display(), path_separator(), current_path);
 
-    // Set the npm global prefix to ClawPad's node directory so global installs
-    // land in ~/.clawpad/node/ (same directory as our Node.js install).
+    // Set the npm global prefix to KloDock's node directory so global installs
+    // land in ~/.klodock/node/ (same directory as our Node.js install).
     // This avoids needing any system-level npm prefix.
     let prefix = node_dir.to_string_lossy().to_string();
 
@@ -114,7 +114,7 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
         // Provide a user-friendly error message
         let user_msg = if stderr_text.contains("EACCES") || stderr_text.contains("permission") {
             "OpenClaw couldn't be installed due to a permissions issue. \
-             Try restarting ClawPad."
+             Try restarting KloDock."
         } else if stderr_text.contains("ENOTFOUND") || stderr_text.contains("network") {
             "OpenClaw couldn't be installed — please check your internet connection \
              and try again."
@@ -166,11 +166,11 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
 
 /// Check whether OpenClaw is installed and return its status.
 ///
-/// Looks for the binary at the ClawPad-managed location first, then falls
+/// Looks for the binary at the KloDock-managed location first, then falls
 /// back to the system PATH.
 #[tauri::command]
 pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
-    // 1. Check ClawPad-managed location.
+    // 1. Check KloDock-managed location.
     let managed_path = openclaw_bin_path();
     if managed_path.exists() {
         match run_openclaw_version(&managed_path) {
@@ -178,7 +178,7 @@ pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
                 return Ok(OpenClawStatus {
                     version: Some(version),
                     bin_path: Some(managed_path.to_string_lossy().to_string()),
-                    managed_by_clawpad: true,
+                    managed_by_klodock: true,
                 });
             }
             Err(e) => {
@@ -187,7 +187,7 @@ pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
                 return Ok(OpenClawStatus {
                     version: None,
                     bin_path: Some(managed_path.to_string_lossy().to_string()),
-                    managed_by_clawpad: true,
+                    managed_by_klodock: true,
                 });
             }
         }
@@ -200,13 +200,13 @@ pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
             Ok(OpenClawStatus {
                 version,
                 bin_path: Some(path.to_string_lossy().to_string()),
-                managed_by_clawpad: false,
+                managed_by_klodock: false,
             })
         }
         Err(_) => Ok(OpenClawStatus {
             version: None,
             bin_path: None,
-            managed_by_clawpad: false,
+            managed_by_klodock: false,
         }),
     }
 }
@@ -215,12 +215,12 @@ pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Expected path to the `openclaw` binary when installed via ClawPad npm.
+/// Expected path to the `openclaw` binary when installed via KloDock npm.
 ///
 /// Global npm packages land in the `node/` prefix on Windows or
 /// `node/bin/` on Unix.
 pub(crate) fn openclaw_bin_path() -> PathBuf {
-    let base = super::node::clawpad_base_dir().join("node");
+    let base = super::node::klodock_base_dir().join("node");
     if cfg!(windows) {
         base.join("openclaw.cmd")
     } else {

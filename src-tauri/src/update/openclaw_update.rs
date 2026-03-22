@@ -49,5 +49,5 @@ pub async fn check_openclaw_update() -> Result<UpdateInfo, String> {
 /// the config module so it can be restored if the update fails.
 #[tauri::command]
 pub async fn update_openclaw() -> Result<String, String> {
-    Err("Automatic updates are not yet available. Please reinstall ClawPad to get the latest version.".into())
+    Err("Automatic updates are not yet available. Please reinstall KloDock to get the latest version.".into())
 }

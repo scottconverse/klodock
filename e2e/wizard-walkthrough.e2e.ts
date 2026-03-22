@@ -1,7 +1,7 @@
 /**
  * Full wizard walkthrough E2E test.
  *
- * Launches the real ClawPad app via tauri-driver and clicks through
+ * Launches the real KloDock app via tauri-driver and clicks through
  * the wizard screens. Tests navigate by clicking buttons (not URLs)
  * since the Tauri webview doesn't support arbitrary URL navigation.
  */

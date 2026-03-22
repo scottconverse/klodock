@@ -7,7 +7,7 @@ use tauri::Emitter;
 /// Minimum Node.js major version required by OpenClaw.
 const REQUIRED_NODE_MAJOR: u64 = 22;
 
-/// Pinned Node.js version for ClawPad-managed installs.
+/// Pinned Node.js version for KloDock-managed installs.
 const NODE_VERSION: &str = "22.14.0";
 
 /// Base URL for official Node.js release tarballs / zips.
@@ -25,7 +25,7 @@ pub struct NodeStatus {
     /// True when the installed major version >= REQUIRED_NODE_MAJOR.
     pub meets_requirement: bool,
     /// How Node was installed — "nvm", "volta", "homebrew", "system", or
-    /// "clawpad" when we installed it ourselves. None if not found.
+    /// "klodock" when we installed it ourselves. None if not found.
     pub managed_by: Option<String>,
     /// Absolute path to the node binary, if found.
     pub node_path: Option<String>,
@@ -44,24 +44,24 @@ pub struct InstallProgress {
 // ---------------------------------------------------------------------------
 
 /// Detect whether a usable Node.js is available on the user's PATH or inside
-/// the ClawPad-managed install directory.
+/// the KloDock-managed install directory.
 #[tauri::command]
 pub async fn check_node() -> Result<NodeStatus, String> {
-    // 1. Look for ClawPad-managed node first (highest priority).
-    let clawpad_node = clawpad_node_path();
-    if clawpad_node.exists() {
-        match run_node_version(&clawpad_node) {
+    // 1. Look for KloDock-managed node first (highest priority).
+    let klodock_node = klodock_node_path();
+    if klodock_node.exists() {
+        match run_node_version(&klodock_node) {
             Ok(version) => {
                 let meets = parse_major(&version) >= REQUIRED_NODE_MAJOR;
                 return Ok(NodeStatus {
                     version: Some(version),
                     meets_requirement: meets,
-                    managed_by: Some("clawpad".into()),
-                    node_path: Some(clawpad_node.to_string_lossy().to_string()),
+                    managed_by: Some("klodock".into()),
+                    node_path: Some(klodock_node.to_string_lossy().to_string()),
                 });
             }
             Err(e) => {
-                log::warn!("ClawPad-managed node exists but failed to get version: {e}");
+                log::warn!("KloDock-managed node exists but failed to get version: {e}");
                 // Fall through to system check
             }
         }
@@ -98,20 +98,20 @@ pub async fn check_node() -> Result<NodeStatus, String> {
     }
 }
 
-/// Download and install Node.js into `~/.clawpad/node/`.
+/// Download and install Node.js into `~/.klodock/node/`.
 ///
 /// Platform-specific behavior:
-/// - **Windows**: Downloads the .zip archive, extracts to `~/.clawpad/node/`
-/// - **macOS/Linux**: Downloads .tar.gz, extracts to `~/.clawpad/node/`
+/// - **Windows**: Downloads the .zip archive, extracts to `~/.klodock/node/`
+/// - **macOS/Linux**: Downloads .tar.gz, extracts to `~/.klodock/node/`
 ///
 /// Returns the installed version string on success.
 #[tauri::command]
 pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
-    let install_dir = clawpad_base_dir().join("node");
+    let install_dir = klodock_base_dir().join("node");
 
     // If already installed and meets requirements, skip
-    if clawpad_node_path().exists() {
-        if let Ok(version) = run_node_version(&clawpad_node_path()) {
+    if klodock_node_path().exists() {
+        if let Ok(version) = run_node_version(&klodock_node_path()) {
             if parse_major(&version) >= REQUIRED_NODE_MAJOR {
                 return Ok(version);
             }
@@ -128,7 +128,7 @@ pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
     emit_progress(&app, "download", 0.0, "Preparing to download Node.js...");
 
     // Create temp directory for download
-    let tmp_dir = clawpad_base_dir().join("tmp");
+    let tmp_dir = klodock_base_dir().join("tmp");
     tokio::fs::create_dir_all(&tmp_dir)
         .await
         .map_err(|e| format!("Failed to create temp directory: {e}"))?;
@@ -159,7 +159,7 @@ pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
     let _ = tokio::fs::remove_dir_all(&tmp_dir).await;
 
     // Verify installation
-    let node_path = clawpad_node_path();
+    let node_path = klodock_node_path();
     if !node_path.exists() {
         return Err(format!(
             "Installation completed but node binary not found at {}. \
@@ -209,9 +209,9 @@ pub fn detect_version_manager(node_path: &std::path::Path) -> String {
     "system".into()
 }
 
-/// Returns the absolute path to the ClawPad-managed `node` binary.
-pub fn clawpad_node_path() -> PathBuf {
-    let base = clawpad_base_dir().join("node");
+/// Returns the absolute path to the KloDock-managed `node` binary.
+pub fn klodock_node_path() -> PathBuf {
+    let base = klodock_base_dir().join("node");
     if cfg!(windows) {
         base.join("node.exe")
     } else {
@@ -219,9 +219,9 @@ pub fn clawpad_node_path() -> PathBuf {
     }
 }
 
-/// Returns the absolute path to the ClawPad-managed `npm` binary.
-pub fn clawpad_npm_path() -> PathBuf {
-    let base = clawpad_base_dir().join("node");
+/// Returns the absolute path to the KloDock-managed `npm` binary.
+pub fn klodock_npm_path() -> PathBuf {
+    let base = klodock_base_dir().join("node");
     if cfg!(windows) {
         base.join("npm.cmd")
     } else {
@@ -229,11 +229,11 @@ pub fn clawpad_npm_path() -> PathBuf {
     }
 }
 
-/// `~/.clawpad/` — root directory for all ClawPad-managed state.
-pub fn clawpad_base_dir() -> PathBuf {
+/// `~/.klodock/` — root directory for all KloDock-managed state.
+pub fn klodock_base_dir() -> PathBuf {
     dirs::home_dir()
         .expect("Could not determine home directory")
-        .join(".clawpad")
+        .join(".klodock")
 }
 
 // ---------------------------------------------------------------------------

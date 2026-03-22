@@ -7,16 +7,16 @@
 ## What was tested
 
 ### Phase 1: Detection (`check_node`)
-- **ClawPad-managed node** (`~/.clawpad/node/node.exe`): Correctly detected when present, version parsed, `managed_by: "clawpad"` returned.
+- **KloDock™-managed node** (`~/.klodock/node/node.exe`): Correctly detected when present, version parsed, `managed_by: "klodock"` returned.
 - **System PATH node**: Correctly detected via `which` crate. Version manager detection works for `$NVM_DIR` and `$VOLTA_HOME` env vars.
 - **No node**: Returns `NodeStatus { version: None, meets_requirement: false, managed_by: None }`.
-- **Edge case — Node exists but below v22**: Correctly detects and reports `meets_requirement: false`. ClawPad installs its own v22 alongside without touching the system node.
+- **Edge case — Node exists but below v22**: Correctly detects and reports `meets_requirement: false`. KloDock installs its own v22 alongside without touching the system node.
 
 ### Phase 2: Silent Install (`install_node`)
 - **Download**: 33.3 MB zip from `nodejs.org/dist/v22.14.0/node-v22.14.0-win-x64.zip`. Streaming download with progress events works.
 - **Checksum**: SHA256 verified against official `SHASUMS256.txt`. Mismatch correctly rejected.
 - **Extraction**: PowerShell `Expand-Archive` works without elevation. No admin prompt shown.
-- **Install location**: `~/.clawpad/node/` — user-writable, no `Program Files` needed.
+- **Install location**: `~/.klodock/node/` — user-writable, no `Program Files` needed.
 - **Post-install verification**: `node --version` returns `22.14.0`, `npm --version` returns `10.9.2`, `npx --version` returns `10.9.2`.
 - **No elevation required**: Entire flow runs as the current user.
 - **Time**: ~15 seconds on broadband (download dominates).
@@ -25,9 +25,9 @@
 
 | Platform | Silent install | Elevation needed | Approach | Status |
 |----------|---------------|------------------|----------|--------|
-| **Windows** | Yes | No | Download .zip, PowerShell Expand-Archive to `~/.clawpad/node/` | **PROVEN** |
-| **macOS** | Yes (expected) | No | Download .tar.gz, `tar xzf` to `~/.clawpad/node/` | Code written, needs CI test |
-| **Linux** | Yes (expected) | No | Same as macOS — `tar xzf` to `~/.clawpad/node/` | Code written, needs CI test |
+| **Windows** | Yes | No | Download .zip, PowerShell Expand-Archive to `~/.klodock/node/` | **PROVEN** |
+| **macOS** | Yes (expected) | No | Download .tar.gz, `tar xzf` to `~/.klodock/node/` | Code written, needs CI test |
+| **Linux** | Yes (expected) | No | Same as macOS — `tar xzf` to `~/.klodock/node/` | Code written, needs CI test |
 
 ## Decision
 
@@ -38,7 +38,7 @@
 1. Test macOS (Intel + Apple Silicon) and Linux (Ubuntu 22.04) in CI — Week 3.
 2. Proxy support: respect `HTTP_PROXY`/`HTTPS_PROXY` env vars in reqwest. Not tested yet.
 3. Antivirus edge case: if Windows Defender blocks the download or extraction, the error handling returns a plain-English message. Not tested with aggressive third-party AV.
-4. Existing nvm interaction: verified that ClawPad installs to its own directory and does not disturb nvm. The `detect_version_manager()` function correctly identifies nvm-managed installs.
+4. Existing nvm interaction: verified that KloDock installs to its own directory and does not disturb nvm. The `detect_version_manager()` function correctly identifies nvm-managed installs.
 
 ## Files
 

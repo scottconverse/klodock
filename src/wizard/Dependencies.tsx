@@ -125,7 +125,7 @@ export function Dependencies() {
               aria-hidden="true"
             />
             <p className="text-sm font-medium text-neutral-600" role="status">
-              Found version {foundVersion}, but ClawPad needs a newer version.
+              Found version {foundVersion}, but KloDock needs a newer version.
               Installing the latest alongside your current one...
             </p>
           </>

@@ -1,9 +1,9 @@
-//! Integration tests for `clawpad_lib::installer::uninstall`.
+//! Integration tests for `klodock_lib::installer::uninstall`.
 //!
 //! These tests exercise the uninstall state persistence and resume logic
 //! without actually performing destructive uninstall operations.
 
-use clawpad_lib::installer::uninstall::{UninstallState, UninstallStep};
+use klodock_lib::installer::uninstall::{UninstallState, UninstallStep};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tokio::fs;
@@ -12,7 +12,7 @@ use tokio::fs;
 fn uninstall_state_path() -> PathBuf {
     dirs::home_dir()
         .expect("home dir")
-        .join(".clawpad")
+        .join(".klodock")
         .join("uninstall-state.json")
 }
 
@@ -50,7 +50,7 @@ async fn test_uninstall_state_persistence() {
             UninstallStep::ClearKeychain,
             UninstallStep::RemoveNode,
             UninstallStep::RemoveOpenClaw,
-            UninstallStep::RemoveClawpadConfig,
+            UninstallStep::RemoveKlodockConfig,
         ],
         remove_user_data: false,
         started_at: "2026-01-01T00:00:00Z".to_string(),
@@ -122,7 +122,7 @@ async fn test_resume_detects_partial() {
             UninstallStep::ClearKeychain,
             UninstallStep::RemoveNode,
             UninstallStep::RemoveOpenClaw,
-            UninstallStep::RemoveClawpadConfig,
+            UninstallStep::RemoveKlodockConfig,
         ],
         remove_user_data: true,
         started_at: "2026-01-01T12:00:00Z".to_string(),
