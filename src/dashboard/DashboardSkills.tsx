@@ -250,12 +250,11 @@ export function DashboardSkills() {
       setSkills(await listAllSkills());
     } catch (err: any) {
       const msg = err?.toString() ?? "";
-      if (msg.includes("timed out") || msg.includes("not running")) {
-        setError("Your agent isn't running. Start it from the Overview page, then come back here.");
-      } else if (msg.includes("not installed") || msg.includes("not found")) {
+      if (msg.includes("not installed") || msg.includes("not found")) {
         setError("OpenClaw isn't installed yet. Complete the setup wizard first.");
       } else {
-        setError("Could not load skills. Try starting your agent first.");
+        // Most common cause: daemon isn't running, so openclaw CLI can't query skills
+        setError("Could not load skills. Start your agent from the Overview page, then come back here.");
       }
     } finally {
       setLoading(false);

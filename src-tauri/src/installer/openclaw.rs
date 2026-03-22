@@ -176,11 +176,13 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
 
 /// Check whether OpenClaw is installed and return its status.
 ///
-/// Looks for the binary at the KloDock-managed location first, then falls
-/// back to the system PATH.
+/// Only checks the KloDock-managed location (~/.klodock/node/openclaw).
+/// Does NOT fall back to system PATH — a system-level OpenClaw install
+/// would cause the wizard to skip the managed install, but the daemon
+/// only uses the managed path. This mismatch caused silent failures
+/// on clean installs where a stale global npm install existed.
 #[tauri::command]
 pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
-    // 1. Check KloDock-managed location.
     let managed_path = openclaw_bin_path()?;
     if managed_path.exists() {
         match run_openclaw_version(&managed_path) {
@@ -193,7 +195,6 @@ pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
             }
             Err(e) => {
                 log::warn!("Managed openclaw exists but version check failed: {e}");
-                // Binary exists but is broken — still report its location
                 return Ok(OpenClawStatus {
                     version: None,
                     bin_path: Some(managed_path.to_string_lossy().to_string()),
@@ -203,22 +204,12 @@ pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
         }
     }
 
-    // 2. Check system PATH.
-    match which::which("openclaw") {
-        Ok(path) => {
-            let version = run_openclaw_version(&path).ok();
-            Ok(OpenClawStatus {
-                version,
-                bin_path: Some(path.to_string_lossy().to_string()),
-                managed_by_klodock: false,
-            })
-        }
-        Err(_) => Ok(OpenClawStatus {
-            version: None,
-            bin_path: None,
-            managed_by_klodock: false,
-        }),
-    }
+    // Not found at managed location
+    Ok(OpenClawStatus {
+        version: None,
+        bin_path: None,
+        managed_by_klodock: false,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -256,13 +247,20 @@ fn run_openclaw_version(bin_path: &std::path::Path) -> Result<String, String> {
         return Err(format!("openclaw --version failed: {stderr}"));
     }
 
-    let version = String::from_utf8_lossy(&output.stdout)
-        .trim()
-        .trim_start_matches('v')
-        // Some CLIs output "openclaw v1.2.3" — strip the name prefix too
-        .trim_start_matches("openclaw ")
-        .trim_start_matches('v')
-        .to_string();
+    let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    // Handle formats like "OpenClaw 2026.3.13 (61d171a)" or "openclaw v1.2.3"
+    // Strip any leading name prefix (case-insensitive), then strip commit hash
+    let mut version = raw.clone();
+    // Remove "OpenClaw " or "openclaw " prefix (case-insensitive)
+    if let Some(pos) = version.to_lowercase().find("openclaw ") {
+        version = version[pos + "openclaw ".len()..].to_string();
+    }
+    version = version.trim_start_matches('v').to_string();
+    // Remove trailing commit hash like " (61d171a)"
+    if let Some(paren) = version.find(" (") {
+        version = version[..paren].to_string();
+    }
+    let version = version.trim().to_string();
 
     if version.is_empty() {
         return Err("openclaw --version returned empty output".into());
