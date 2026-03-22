@@ -52,3 +52,11 @@ path = "spike_daemon.rs"
 [[bin]]
 name = "test_real_key"
 path = "test_real_key.rs"
+
+[[bin]]
+name = "test_auth_flow"
+path = "test_auth_flow.rs"
+
+[[bin]]
+name = "test_anthropic"
+path = "test_anthropic.rs"

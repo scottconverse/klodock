@@ -210,12 +210,77 @@ pub fn store_secret(key: String, value: String) -> Result<(), String> {
     }
     platform::store(&key, &value)?;
 
+    // Write to OpenClaw's auth-profiles.json so the gateway can find the key
+    if let Some(provider) = env_var_to_openclaw_provider(&key) {
+        if let Err(e) = write_openclaw_auth_profile(&provider, &value) {
+            log::warn!("Failed to write OpenClaw auth profile for {}: {}", provider, e);
+        }
+    }
+
     let mut keys = read_index()?;
     if !keys.contains(&key) {
         keys.push(key);
         write_index(&keys)?;
     }
 
+    Ok(())
+}
+
+/// Map KloDock env var names to OpenClaw provider identifiers.
+fn env_var_to_openclaw_provider(env_var: &str) -> Option<String> {
+    match env_var {
+        "OPENAI_API_KEY" => Some("openai".to_string()),
+        "ANTHROPIC_API_KEY" => Some("anthropic".to_string()),
+        "GOOGLE_API_KEY" => Some("google".to_string()),
+        "GROQ_API_KEY" => Some("groq".to_string()),
+        "OPENROUTER_API_KEY" => Some("openrouter".to_string()),
+        _ => None,
+    }
+}
+
+/// Write an API key to OpenClaw's auth-profiles.json at
+/// `~/.openclaw/agents/main/agent/auth-profiles.json`.
+///
+/// This is the format OpenClaw's gateway reads for model provider auth.
+/// Merges with existing profiles so multiple providers can coexist.
+fn write_openclaw_auth_profile(provider: &str, api_key: &str) -> Result<(), String> {
+    let base = crate::paths::openclaw_base_dir()?;
+    let profile_path = base.join("agents").join("main").join("agent").join("auth-profiles.json");
+
+    // Ensure directory exists
+    if let Some(parent) = profile_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create auth profile dir: {e}"))?;
+    }
+
+    // Read existing profiles or start fresh
+    let mut profiles: serde_json::Value = if profile_path.exists() {
+        let content = std::fs::read_to_string(&profile_path)
+            .map_err(|e| format!("Failed to read auth-profiles.json: {e}"))?;
+        serde_json::from_str(&content).unwrap_or_else(|_| {
+            serde_json::json!({ "version": 1, "profiles": {} })
+        })
+    } else {
+        serde_json::json!({ "version": 1, "profiles": {} })
+    };
+
+    // Add/update the provider profile
+    let profile_key = format!("{}:default", provider);
+    if let Some(profs) = profiles.get_mut("profiles").and_then(|p| p.as_object_mut()) {
+        profs.insert(profile_key, serde_json::json!({
+            "type": "api_key",
+            "provider": provider,
+            "key": api_key
+        }));
+    }
+
+    // Write back
+    let json = serde_json::to_string_pretty(&profiles)
+        .map_err(|e| format!("Failed to serialize auth profiles: {e}"))?;
+    std::fs::write(&profile_path, json)
+        .map_err(|e| format!("Failed to write auth-profiles.json: {e}"))?;
+
+    log::info!("Wrote OpenClaw auth profile for provider '{}'", provider);
     Ok(())
 }
 
