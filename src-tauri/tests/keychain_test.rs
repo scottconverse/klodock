@@ -9,17 +9,35 @@
 //!     cargo test --test keychain_test -- --ignored
 //!
 //! On macOS, you may be prompted to allow keychain access.
-//! On Windows, the Credential Manager will be used.
+//! On Windows, the Credential Manager / DPAPI will be used.
 //! On Linux, the Secret Service (e.g. gnome-keyring) must be running.
+//!
+//! These tests MUST run sequentially because they share a global key
+//! index file. Use: cargo test --test keychain_test -- --ignored --test-threads=1
 
 use clawpad_lib::secrets::keychain;
+use std::sync::Mutex;
+
+/// Lock to force serial execution of keychain tests.
+static KEYCHAIN_LOCK: Mutex<()> = Mutex::new(());
 
 /// Prefix used for test keys so they can be identified and cleaned up.
 const TEST_PREFIX: &str = "_clawpad_test_";
 
-/// Generate a unique test key name to avoid collisions between test runs.
+/// Generate a unique test key name.
 fn test_key(suffix: &str) -> String {
     format!("{TEST_PREFIX}{suffix}")
+}
+
+/// Clean up any leftover test keys from previous runs.
+fn cleanup_test_keys() {
+    if let Ok(keys) = keychain::list_secrets() {
+        for key in keys {
+            if key.starts_with(TEST_PREFIX) {
+                let _ = keychain::delete_secret(key);
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -29,6 +47,9 @@ fn test_key(suffix: &str) -> String {
 #[test]
 #[ignore = "Interacts with the real OS keychain. Run manually with: cargo test --test keychain_test -- --ignored"]
 fn test_store_and_retrieve() {
+    let _lock = KEYCHAIN_LOCK.lock().unwrap();
+    cleanup_test_keys();
+
     let key = test_key("store_retrieve");
     let value = "sk-test-abc123-secret-value";
 
@@ -45,7 +66,7 @@ fn test_store_and_retrieve() {
         "retrieved value should match what was stored"
     );
 
-    // Cleanup: delete the test key.
+    // Cleanup
     keychain::delete_secret(key).ok();
 }
 
@@ -56,6 +77,9 @@ fn test_store_and_retrieve() {
 #[test]
 #[ignore = "Interacts with the real OS keychain. Run manually with: cargo test --test keychain_test -- --ignored"]
 fn test_delete_key() {
+    let _lock = KEYCHAIN_LOCK.lock().unwrap();
+    cleanup_test_keys();
+
     let key = test_key("delete");
     let value = "temporary-secret-to-delete";
 
@@ -80,32 +104,40 @@ fn test_delete_key() {
 #[test]
 #[ignore = "Interacts with the real OS keychain. Run manually with: cargo test --test keychain_test -- --ignored"]
 fn test_list_secrets() {
-    let keys = vec![
-        test_key("list_a"),
-        test_key("list_b"),
-        test_key("list_c"),
-    ];
+    let _lock = KEYCHAIN_LOCK.lock().unwrap();
+    cleanup_test_keys();
 
-    // Store multiple secrets.
-    for key in &keys {
-        keychain::store_secret(key.clone(), format!("value-for-{key}"))
-            .expect("store_secret should succeed");
-    }
+    // Store keys one at a time to avoid any index race
+    let key_a = test_key("list_a");
+    let key_b = test_key("list_b");
+    let key_c = test_key("list_c");
+
+    keychain::store_secret(key_a.clone(), "value-a".to_string())
+        .expect("store list_a should succeed");
+    keychain::store_secret(key_b.clone(), "value-b".to_string())
+        .expect("store list_b should succeed");
+    keychain::store_secret(key_c.clone(), "value-c".to_string())
+        .expect("store list_c should succeed");
 
     // List and verify all are present.
     let listed = keychain::list_secrets()
         .expect("list_secrets should succeed");
 
-    for key in &keys {
-        assert!(
-            listed.contains(key),
-            "list_secrets should include '{key}', got: {:?}",
-            listed
-        );
-    }
+    assert!(
+        listed.contains(&key_a),
+        "list_secrets should include '{key_a}', got: {listed:?}"
+    );
+    assert!(
+        listed.contains(&key_b),
+        "list_secrets should include '{key_b}', got: {listed:?}"
+    );
+    assert!(
+        listed.contains(&key_c),
+        "list_secrets should include '{key_c}', got: {listed:?}"
+    );
 
-    // Cleanup: delete all test keys.
-    for key in &keys {
-        keychain::delete_secret(key.clone()).ok();
-    }
+    // Cleanup
+    keychain::delete_secret(key_a).ok();
+    keychain::delete_secret(key_b).ok();
+    keychain::delete_secret(key_c).ok();
 }
