@@ -80,9 +80,13 @@ const PROVIDER_DEFAULTS: Record<string, { model_provider: string; default_model:
 export function ModelProvider() {
   const navigate = useNavigate();
   const [validated, setValidated] = useState<Set<string>>(new Set());
+  const [ollamaSelectedModel, setOllamaSelectedModel] = useState<string>("");
 
-  function handleValidated(providerId: string) {
+  function handleValidated(providerId: string, selectedModel?: string) {
     setValidated((prev) => new Set([...prev, providerId]));
+    if (providerId === "ollama" && selectedModel) {
+      setOllamaSelectedModel(selectedModel);
+    }
   }
 
   async function handleNext() {
@@ -91,9 +95,13 @@ export function ModelProvider() {
     const defaults = PROVIDER_DEFAULTS[primaryProvider];
     if (defaults) {
       try {
+        const isOllama = primaryProvider === "ollama";
         await writeConfig({
           model_provider: defaults.model_provider,
-          default_model: defaults.default_model,
+          default_model: isOllama && ollamaSelectedModel
+            ? ollamaSelectedModel
+            : defaults.default_model,
+          base_url: isOllama ? "http://localhost:11434" : undefined,
           channels: {},
           agent_name: "OpenClaw",
         });

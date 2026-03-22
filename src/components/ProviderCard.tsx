@@ -7,8 +7,9 @@ import {
   Download,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
-import { storeSecret, testApiKey, checkOllama } from "@/lib/tauri";
+import { storeSecret, testApiKey, checkOllama, listOllamaModels } from "@/lib/tauri";
 import type { ReactNode } from "react";
+import type { OllamaModel } from "@/lib/types";
 
 export interface ProviderCardProps {
   id: string;
@@ -19,7 +20,7 @@ export interface ProviderCardProps {
   icon: ReactNode;
   isLocal?: boolean;
   validated?: boolean;
-  onValidated: (providerId: string) => void;
+  onValidated: (providerId: string, selectedModel?: string) => void;
 }
 
 export function ProviderCard({
@@ -41,6 +42,8 @@ export function ProviderCard({
   // Ollama-specific state
   const [ollamaDetected, setOllamaDetected] = useState<boolean | null>(null);
   const [ollamaChecking, setOllamaChecking] = useState(false);
+  const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("");
 
   // Auto-detect Ollama on mount if this is the local provider
   useEffect(() => {
@@ -55,14 +58,27 @@ export function ProviderCard({
       const running = await checkOllama();
       setOllamaDetected(running);
       if (running) {
-        setSuccess(true);
-        onValidated(id);
+        // Fetch available models
+        const models = await listOllamaModels();
+        setOllamaModels(models);
+        if (models.length > 0) {
+          const defaultModel = models[0].name;
+          setSelectedModel(defaultModel);
+          setSuccess(true);
+          onValidated(id, defaultModel);
+        }
+        // If running but no models pulled, don't validate — user needs to pull one
       }
     } catch {
       setOllamaDetected(false);
     } finally {
       setOllamaChecking(false);
     }
+  }
+
+  function handleModelChange(modelName: string) {
+    setSelectedModel(modelName);
+    onValidated(id, modelName);
   }
 
   async function handleOpenUrl() {
@@ -150,15 +166,78 @@ export function ProviderCard({
               />
               Checking if Ollama is running...
             </div>
-          ) : ollamaDetected && success ? (
-            <div className="space-y-2">
+          ) : ollamaDetected && ollamaModels.length > 0 ? (
+            <div className="space-y-3">
               <p className="flex items-center gap-2 text-sm font-medium text-success-700">
                 <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                Ollama detected and running
+                Ollama detected — {ollamaModels.length} model{ollamaModels.length !== 1 ? "s" : ""} available
               </p>
+              <div className="space-y-1">
+                <label htmlFor="ollama-model" className="block text-xs font-medium text-neutral-600">
+                  Choose a model
+                </label>
+                <select
+                  id="ollama-model"
+                  value={selectedModel}
+                  onChange={(e) => handleModelChange(e.target.value)}
+                  className="
+                    w-full rounded-lg border border-neutral-300 bg-neutral-50
+                    px-3 py-2 text-sm
+                    focus:border-primary-400 focus:outline-none focus:ring-2
+                    focus:ring-primary-100
+                  "
+                  aria-label="Select Ollama model"
+                >
+                  {ollamaModels.map((m) => (
+                    <option key={m.name} value={m.name}>
+                      {m.name} ({m.size})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <p className="text-xs text-neutral-500">
                 Free, local AI — no API key needed. Your data never leaves your machine.
               </p>
+            </div>
+          ) : ollamaDetected && ollamaModels.length === 0 ? (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 space-y-2">
+                <p className="text-sm font-medium text-amber-800">
+                  Ollama is running but has no models downloaded.
+                </p>
+                <p className="text-xs text-amber-700">
+                  Open a terminal and run: <code className="bg-amber-100 px-1 rounded">ollama pull llama3</code>
+                </p>
+                <p className="text-xs text-amber-700">
+                  Then click "Check Again" below.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={detectOllama}
+                disabled={ollamaChecking}
+                className="
+                  inline-flex w-full items-center justify-center gap-1.5
+                  rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium
+                  text-white transition-colors hover:bg-primary-700
+                  focus-visible:outline-2 focus-visible:outline-offset-2
+                  focus-visible:outline-primary-500
+                  disabled:cursor-not-allowed disabled:opacity-50
+                "
+                aria-label="Check for Ollama models again"
+              >
+                {ollamaChecking ? (
+                  <>
+                    <Loader2
+                      className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                      aria-hidden="true"
+                    />
+                    Checking...
+                  </>
+                ) : (
+                  "Check Again"
+                )}
+              </button>
             </div>
           ) : (
             <div className="space-y-3">

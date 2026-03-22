@@ -85,8 +85,14 @@ export type Role =
 export interface OpenClawConfig {
   model_provider: string;
   default_model: string;
+  base_url?: string | null;
   channels: Record<string, unknown>;
   agent_name: string;
+}
+
+export interface OllamaModel {
+  name: string;
+  size: string;
 }
 
 /* ── Setup / Wizard ─────────────────────────────────── */

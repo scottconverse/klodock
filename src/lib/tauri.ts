@@ -116,6 +116,10 @@ export async function checkOllama(): Promise<boolean> {
   return invoke<boolean>("check_ollama");
 }
 
+export async function listOllamaModels(): Promise<import("./types").OllamaModel[]> {
+  return invoke<import("./types").OllamaModel[]>("list_ollama_models");
+}
+
 /* ── Setup State ─────────────────────────────────────── */
 
 export async function getSetupState(): Promise<SetupState> {

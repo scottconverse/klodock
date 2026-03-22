@@ -9,10 +9,14 @@ use std::path::PathBuf;
 /// Top-level structure of `~/.openclaw/openclaw.json`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpenClawConfig {
-    /// e.g. "anthropic", "openai", "openrouter"
+    /// e.g. "anthropic", "openai", "openrouter", "ollama"
     pub model_provider: String,
-    /// e.g. "claude-sonnet-4-20250514"
+    /// e.g. "claude-sonnet-4-20250514", "llama3", "gpt-4o"
     pub default_model: String,
+    /// Base URL for the model provider API. Only needed for local providers
+    /// like Ollama (e.g. "http://localhost:11434"). None for cloud providers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base_url: Option<String>,
     /// Named channel configs.  Keys are channel names (e.g. "default",
     /// "code-review"), values are channel-specific overrides serialized as
     /// arbitrary JSON objects.

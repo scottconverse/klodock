@@ -51,6 +51,7 @@ pub fn run() {
             secrets::keychain::list_secrets,
             secrets::keychain::test_api_key,
             secrets::keychain::check_ollama,
+            secrets::keychain::list_ollama_models,
             // Setup state commands
             setup::setup_state::get_setup_state,
             setup::setup_state::complete_step,

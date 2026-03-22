@@ -248,3 +248,66 @@ pub async fn check_ollama() -> Result<bool, String> {
         Err(_) => Ok(false), // Not running or not installed — not an error
     }
 }
+
+/// Ollama model info returned from the /api/tags endpoint.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OllamaModel {
+    /// Model name (e.g. "llama3:latest", "mistral:7b")
+    pub name: String,
+    /// Human-readable size (e.g. "4.7 GB")
+    pub size: String,
+}
+
+/// List models that Ollama has pulled locally.
+///
+/// Returns an empty list if Ollama is not running.
+/// Returns `Err` only for unexpected failures.
+#[tauri::command]
+pub async fn list_ollama_models() -> Result<Vec<OllamaModel>, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+
+    let resp = match client.get("http://localhost:11434/api/tags").send().await {
+        Ok(r) => r,
+        Err(_) => return Ok(Vec::new()), // Ollama not running
+    };
+
+    if !resp.status().is_success() {
+        return Ok(Vec::new());
+    }
+
+    let body: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse Ollama response: {e}"))?;
+
+    let models = body
+        .get("models")
+        .and_then(|m| m.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|m| {
+                    let name = m.get("name")?.as_str()?.to_string();
+                    let size_bytes = m.get("size")?.as_u64().unwrap_or(0);
+                    let size = format_bytes(size_bytes);
+                    Some(OllamaModel { name, size })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    Ok(models)
+}
+
+/// Format bytes into a human-readable string.
+fn format_bytes(bytes: u64) -> String {
+    if bytes >= 1_073_741_824 {
+        format!("{:.1} GB", bytes as f64 / 1_073_741_824.0)
+    } else if bytes >= 1_048_576 {
+        format!("{:.0} MB", bytes as f64 / 1_048_576.0)
+    } else {
+        format!("{:.0} KB", bytes as f64 / 1024.0)
+    }
+}
