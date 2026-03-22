@@ -21,6 +21,7 @@
   "license": "MIT",
   "description": "Desktop GUI for OpenClaw -- zero terminal, zero complexity",
   "dependencies": {
+    "@tauri-apps/plugin-fs": "^2.4.5",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",
