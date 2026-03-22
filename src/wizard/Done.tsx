@@ -9,6 +9,8 @@ import {
   CheckCircle2,
   RefreshCw,
   LayoutDashboard,
+  Globe,
+  ExternalLink,
 } from "lucide-react";
 import { startDaemon, onDaemonStatus, retrieveSecret } from "@/lib/tauri";
 import type { DaemonStatus } from "@/lib/types";
@@ -210,42 +212,67 @@ export function Done() {
         )}
       </div>
 
-      {/* Channel-specific guidance */}
-      <div className="mt-8 w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-50"
-            aria-hidden="true"
-          >
-            {configuredChannel ? (
-              <MessageCircle className="h-5 w-5 text-primary-500" />
-            ) : (
-              <LayoutDashboard className="h-5 w-5 text-primary-500" />
-            )}
+      {/* WebChat — always shown, primary way to talk */}
+      <div className="mt-8 w-full max-w-md space-y-3">
+        <div className="rounded-xl border border-primary-200 bg-primary-50 p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100"
+              aria-hidden="true"
+            >
+              <Globe className="h-5 w-5 text-primary-600" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-neutral-900">
+                Chat in your browser
+              </p>
+              <p className="text-xs text-neutral-500">
+                OpenClaw has a built-in web chat — no apps needed.
+              </p>
+            </div>
           </div>
-          <div className="text-left">
-            {configuredChannel ? (
-              <>
-                <p className="text-sm font-semibold text-neutral-900">
-                  Say hi to your bot!
-                </p>
-                <p className="text-xs text-neutral-500">
-                  Send a message to your bot on {configuredChannel} to get
-                  started.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-neutral-900">
-                  Connect a channel
-                </p>
-                <p className="text-xs text-neutral-500">
-                  Head to the dashboard to connect a messaging channel.
-                </p>
-              </>
-            )}
-          </div>
+          {isRunning && (
+            <a
+              href="http://127.0.0.1:18789"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+                mt-3 inline-flex w-full items-center justify-center gap-2
+                rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium
+                text-white transition-colors hover:bg-primary-700
+                focus-visible:outline-2 focus-visible:outline-offset-2
+                focus-visible:outline-primary-500
+              "
+              aria-label="Open WebChat in browser"
+            >
+              Open WebChat
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
+          )}
         </div>
+
+        {/* Channel-specific guidance */}
+        {configuredChannel && (
+          <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-50"
+                aria-hidden="true"
+              >
+                <MessageCircle className="h-5 w-5 text-neutral-500" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-neutral-900">
+                  Also on {configuredChannel}
+                </p>
+                <p className="text-xs text-neutral-500">
+                  Send a message to your bot on {configuredChannel} to chat there
+                  too.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Open Dashboard button */}
