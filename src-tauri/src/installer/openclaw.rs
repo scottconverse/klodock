@@ -65,11 +65,21 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
 
     emit(&app, "Installing OpenClaw (this may take a minute)...", Some(0.1));
 
-    let mut child = tokio::process::Command::new(&npm)
-        .args(["install", "-g", "openclaw@latest", "--prefix", &prefix])
+    let mut cmd = tokio::process::Command::new(&npm);
+    cmd.args(["install", "-g", "openclaw@latest", "--prefix", &prefix])
         .env("PATH", &new_path)
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    // Hide the console window on Windows so the user doesn't see a black CMD box.
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let mut child = cmd
         .spawn()
         .map_err(|e| format!("Failed to start npm install: {e}"))?;
 
@@ -230,9 +240,15 @@ pub(crate) fn openclaw_bin_path() -> Result<PathBuf, String> {
 
 /// Run `openclaw --version` and parse the output.
 fn run_openclaw_version(bin_path: &std::path::Path) -> Result<String, String> {
-    let output = std::process::Command::new(bin_path)
-        .arg("--version")
-        .output()
+    let mut cmd = std::process::Command::new(bin_path);
+    cmd.arg("--version");
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    let output = cmd.output()
         .map_err(|e| format!("Failed to run openclaw: {e}"))?;
 
     if !output.status.success() {

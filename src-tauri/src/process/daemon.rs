@@ -109,19 +109,29 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     // The openclaw config directory
     let openclaw_dir = crate::paths::openclaw_base_dir()?;
 
-    let child = tokio::process::Command::new(&openclaw_path)
-        .args(["gateway", "--port", "18789"])
+    // Enable Vulkan GPU acceleration for Ollama. Ollama's own runtime
+    // safely ignores this if no Vulkan-capable GPU is present.
+    let mut cmd = tokio::process::Command::new(&openclaw_path);
+    cmd.args(["gateway", "--port", "18789"])
         .env("PATH", &new_path)
+        .env("OLLAMA_VULKAN", "1")
         .current_dir(&openclaw_dir)
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .spawn()
-        .map_err(|e| {
-            format!(
-                "Failed to start OpenClaw daemon: {e}. \
-                 Make sure OpenClaw is installed correctly."
-            )
-        })?;
+        .stderr(std::process::Stdio::piped());
+
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let child = cmd.spawn().map_err(|e| {
+        format!(
+            "Failed to start OpenClaw daemon: {e}. \
+             Make sure OpenClaw is installed correctly."
+        )
+    })?;
 
     let pid = child.id().unwrap_or(0);
 
@@ -306,12 +316,22 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
                     let new_path =
                         format!("{}{}{}", node_dir.display(), path_sep, current_path);
 
-                    match tokio::process::Command::new(&openclaw_path)
+                    let mut restart_cmd = tokio::process::Command::new(&openclaw_path);
+                    restart_cmd
                         .args(["gateway", "--port", "18789"])
                         .env("PATH", &new_path)
+                        .env("OLLAMA_VULKAN", "1")
                         .stdout(std::process::Stdio::piped())
-                        .stderr(std::process::Stdio::piped())
-                        .spawn()
+                        .stderr(std::process::Stdio::piped());
+
+                    #[cfg(windows)]
+                    {
+                        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+                        restart_cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+                    }
+
+                    match restart_cmd.spawn()
                     {
                         Ok(new_child) => {
                             // Update PID file
@@ -378,10 +398,12 @@ async fn cleanup_after_stop() {
 async fn kill_process(pid: u32) {
     #[cfg(windows)]
     {
-        let _ = tokio::process::Command::new("C:\\Windows\\System32\\taskkill.exe")
-            .args(["/F", "/PID", &pid.to_string()])
-            .output()
-            .await;
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        let mut cmd = tokio::process::Command::new("C:\\Windows\\System32\\taskkill.exe");
+        cmd.args(["/F", "/PID", &pid.to_string()]);
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        let _ = cmd.output().await;
     }
 
     #[cfg(unix)]
@@ -404,10 +426,14 @@ fn is_process_alive(pid: u32) -> bool {
     #[cfg(windows)]
     {
         // Use tasklist to check if PID exists
-        match std::process::Command::new("C:\\Windows\\System32\\tasklist.exe")
-            .args(["/FI", &format!("PID eq {pid}"), "/NH"])
-            .output()
-        {
+        let output = {
+            use std::os::windows::process::CommandExt;
+            std::process::Command::new("C:\\Windows\\System32\\tasklist.exe")
+                .args(["/FI", &format!("PID eq {pid}"), "/NH"])
+                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                .output()
+        };
+        match output {
             Ok(output) => {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 // tasklist returns info line if process exists, or "no tasks" message

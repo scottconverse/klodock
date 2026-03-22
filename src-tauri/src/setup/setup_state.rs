@@ -150,7 +150,17 @@ async fn verify_node_install() -> StepStatus {
     // Check system PATH
     match which::which("node") {
         Ok(path) => {
-            match std::process::Command::new(&path).arg("--version").output() {
+            let cmd_output = {
+                let mut cmd = std::process::Command::new(&path);
+                cmd.arg("--version");
+                #[cfg(windows)]
+                {
+                    use std::os::windows::process::CommandExt;
+                    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+                }
+                cmd.output()
+            };
+            match cmd_output {
                 Ok(output) => {
                     let version = String::from_utf8_lossy(&output.stdout);
                     let major: u64 = version.trim().trim_start_matches('v')

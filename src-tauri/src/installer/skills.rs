@@ -54,10 +54,16 @@ pub async fn install_skill(slug: String) -> Result<String, String> {
     let path_sep = if cfg!(windows) { ";" } else { ":" };
     let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);
 
-    let output = tokio::process::Command::new(&openclaw)
-        .args(["clawhub", "install", &slug])
-        .env("PATH", &new_path)
-        .output()
+    let mut cmd = tokio::process::Command::new(&openclaw);
+    cmd.args(["clawhub", "install", &slug])
+        .env("PATH", &new_path);
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    let output = cmd.output()
         .await
         .map_err(|e| format!("Failed to run skill install: {e}"))?;
 

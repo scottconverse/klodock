@@ -198,10 +198,15 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
             // Try to run `npm uninstall -g openclaw` via KloDock's managed npm.
             let npm_path = crate::installer::node::klodock_npm_path()?;
             if npm_path.exists() {
-                let _ = tokio::process::Command::new(&npm_path)
-                    .args(["uninstall", "-g", "openclaw"])
-                    .output()
-                    .await;
+                let mut cmd = tokio::process::Command::new(&npm_path);
+                cmd.args(["uninstall", "-g", "openclaw"]);
+                #[cfg(windows)]
+                {
+                    #[allow(unused_imports)]
+                    use std::os::windows::process::CommandExt;
+                    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+                }
+                let _ = cmd.output().await;
             } else {
                 // npm already removed (e.g. RemoveNode ran first) — try to
                 // delete the openclaw binary directly.

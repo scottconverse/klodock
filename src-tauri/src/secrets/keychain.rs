@@ -55,8 +55,8 @@ mod platform {
 
         // Write encrypted output directly to file via Out-File to avoid
         // stdout buffer issues with large values
-        let mut child = Command::new("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
-            .args([
+        let mut cmd = Command::new("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+        cmd.args([
                 "-NoProfile",
                 "-Command",
                 &format!(
@@ -68,8 +68,14 @@ mod platform {
             ])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .spawn()
+            .stderr(std::process::Stdio::piped());
+
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        }
+
+        let mut child = cmd.spawn()
             .map_err(|e| format!("DPAPI encrypt failed: {e}"))?;
 
         if let Some(ref mut stdin) = child.stdin {
@@ -104,20 +110,23 @@ mod platform {
         }
         let path_str = path.to_string_lossy().to_string();
 
-        let output = Command::new("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
-            .args([
-                "-NoProfile",
-                "-Command",
-                &format!(
-                    "$hex = (Get-Content -Path '{}' -Raw).Trim(); \
-                     $ss = ConvertTo-SecureString $hex; \
-                     $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ss); \
-                     [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)",
-                    path_str.replace('\'', "''")
-                ),
-            ])
-            .output()
-            .map_err(|e| format!("DPAPI decrypt failed: {e}"))?;
+        let output = {
+            use std::os::windows::process::CommandExt;
+            Command::new("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
+                .args([
+                    "-NoProfile",
+                    "-Command",
+                    &format!(
+                        "$hex = (Get-Content -Path '{}' -Raw).Trim(); \
+                         $ss = ConvertTo-SecureString $hex; \
+                         $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ss); \
+                         [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)",
+                        path_str.replace('\'', "''")
+                    ),
+                ])
+                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                .output()
+        }.map_err(|e| format!("DPAPI decrypt failed: {e}"))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);

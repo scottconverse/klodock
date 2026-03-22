@@ -23,20 +23,23 @@ impl Autostart for WindowsAutostart {
         let value = format!("\"{}\" --minimized", exe_path.display());
 
         // Use reg.exe to write the value (avoids pulling in the winreg crate)
-        let output = std::process::Command::new("C:\\Windows\\System32\\reg.exe")
-            .args([
-                "add",
-                &format!("HKCU\\{RUN_KEY}"),
-                "/v",
-                VALUE_NAME,
-                "/t",
-                "REG_SZ",
-                "/d",
-                &value,
-                "/f", // Force overwrite if exists
-            ])
-            .output()
-            .map_err(|e| format!("Failed to run reg.exe: {e}"))?;
+        let output = {
+            use std::os::windows::process::CommandExt;
+            std::process::Command::new("C:\\Windows\\System32\\reg.exe")
+                .args([
+                    "add",
+                    &format!("HKCU\\{RUN_KEY}"),
+                    "/v",
+                    VALUE_NAME,
+                    "/t",
+                    "REG_SZ",
+                    "/d",
+                    &value,
+                    "/f", // Force overwrite if exists
+                ])
+                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                .output()
+        }.map_err(|e| format!("Failed to run reg.exe: {e}"))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -48,16 +51,19 @@ impl Autostart for WindowsAutostart {
     }
 
     fn disable() -> Result<(), String> {
-        let output = std::process::Command::new("C:\\Windows\\System32\\reg.exe")
-            .args([
-                "delete",
-                &format!("HKCU\\{RUN_KEY}"),
-                "/v",
-                VALUE_NAME,
-                "/f",
-            ])
-            .output()
-            .map_err(|e| format!("Failed to run reg.exe: {e}"))?;
+        let output = {
+            use std::os::windows::process::CommandExt;
+            std::process::Command::new("C:\\Windows\\System32\\reg.exe")
+                .args([
+                    "delete",
+                    &format!("HKCU\\{RUN_KEY}"),
+                    "/v",
+                    VALUE_NAME,
+                    "/f",
+                ])
+                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                .output()
+        }.map_err(|e| format!("Failed to run reg.exe: {e}"))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -73,15 +79,18 @@ impl Autostart for WindowsAutostart {
     }
 
     fn is_enabled() -> Result<bool, String> {
-        let output = std::process::Command::new("C:\\Windows\\System32\\reg.exe")
-            .args([
-                "query",
-                &format!("HKCU\\{RUN_KEY}"),
-                "/v",
-                VALUE_NAME,
-            ])
-            .output()
-            .map_err(|e| format!("Failed to run reg.exe: {e}"))?;
+        let output = {
+            use std::os::windows::process::CommandExt;
+            std::process::Command::new("C:\\Windows\\System32\\reg.exe")
+                .args([
+                    "query",
+                    &format!("HKCU\\{RUN_KEY}"),
+                    "/v",
+                    VALUE_NAME,
+                ])
+                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                .output()
+        }.map_err(|e| format!("Failed to run reg.exe: {e}"))?;
 
         // If the query succeeds and contains our value name, it's enabled
         if output.status.success() {

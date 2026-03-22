@@ -49,8 +49,8 @@ high-contrast theming.
   - Silent Node.js installation
     Automatically detects existing Node.js installs, nvm, Volta, and
     Homebrew-managed versions. If Node.js is missing or below v22, KloDock
-    silently downloads and extracts it to ~/.klodock/node/ with no elevation
-    prompt on any platform.
+    silently downloads v24.14.0 LTS and extracts it to ~/.klodock/node/ with
+    no elevation prompt and no visible console window on any platform.
 
   - Visual personality builder
     Choose from role templates (assistant, creative writer, coder, etc.),
@@ -432,7 +432,7 @@ PREREQUISITES
 
   | Requirement     | Details                                            |
   |-----------------|----------------------------------------------------|
-  | Node.js         | >= 22 (https://nodejs.org/)                        |
+  | Node.js         | >= 22, v24.14.0 LTS pinned (https://nodejs.org/)  |
   | Rust            | Stable toolchain (https://rustup.rs/)              |
   | Windows         | Visual Studio Build Tools with C++ workload        |
   | macOS           | Xcode Command Line Tools                           |

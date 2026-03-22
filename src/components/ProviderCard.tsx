@@ -364,40 +364,50 @@ export function ProviderCard({
               <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
 
-            <button
-              type="button"
-              onClick={handleTest}
-              disabled={!apiKey.trim() || testing || success}
-              className="
-                inline-flex flex-1 items-center justify-center gap-1.5
-                rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium
-                text-white transition-colors hover:bg-primary-700
-                focus-visible:outline-2 focus-visible:outline-offset-2
-                focus-visible:outline-primary-500
-                disabled:cursor-not-allowed disabled:opacity-50
-              "
-              aria-label={`Test ${name} API key`}
-            >
-              {testing ? (
-                <>
-                  <Loader2
-                    className="h-4 w-4 animate-spin motion-reduce:animate-none"
-                    aria-hidden="true"
-                  />
-                  Testing...
-                </>
-              ) : success ? (
-                <>
-                  <CheckCircle2
-                    className="h-4 w-4"
-                    aria-hidden="true"
-                  />
-                  Connected
-                </>
-              ) : (
-                "Test Connection"
-              )}
-            </button>
+            {success ? (
+              <div
+                className="
+                  inline-flex flex-1 items-center justify-center gap-1.5
+                  rounded-lg bg-success-600 px-3 py-1.5 text-sm font-medium
+                  text-white
+                "
+                aria-label={`${name} connected`}
+              >
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                Connected
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleTest}
+                disabled={!apiKey.trim() || testing}
+                className={`
+                  inline-flex flex-1 items-center justify-center gap-1.5
+                  rounded-lg px-3 py-1.5 text-sm font-medium
+                  text-white transition-colors
+                  focus-visible:outline-2 focus-visible:outline-offset-2
+                  focus-visible:outline-primary-500
+                  ${apiKey.trim()
+                    ? "bg-primary-600 hover:bg-primary-700 cursor-pointer"
+                    : "bg-neutral-300 cursor-not-allowed"
+                  }
+                  disabled:cursor-not-allowed
+                `}
+                aria-label={`Test ${name} API key`}
+              >
+                {testing ? (
+                  <>
+                    <Loader2
+                      className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                      aria-hidden="true"
+                    />
+                    Testing...
+                  </>
+                ) : (
+                  "Test Connection"
+                )}
+              </button>
+            )}
           </div>
         </>
       )}
