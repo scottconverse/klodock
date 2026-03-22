@@ -74,3 +74,8 @@ required-features = ["spike"]
 name = "e2e_verify"
 path = "src/bin/e2e_verify.rs"
 required-features = ["spike"]
+
+[[bin]]
+name = "test_node_install"
+path = "src/bin/test_node_install.rs"
+required-features = ["spike"]
