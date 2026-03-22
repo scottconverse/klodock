@@ -218,9 +218,13 @@ ClawPad treats API keys as the most sensitive data in the system. The security
 model is designed around the principle that keys should never exist in plaintext
 at rest.
 
+Note: Users who choose Ollama (local AI) skip the entire key management flow.
+No API key is stored, no .env is materialized, and no credentials exist
+anywhere. The agent talks directly to Ollama at http://localhost:11434.
 
-SECRET MATERIALIZATION FLOW
------------------------------
+
+SECRET MATERIALIZATION FLOW (CLOUD PROVIDERS)
+-----------------------------------------------
 
   1. User enters API key in the wizard UI
            |
@@ -271,6 +275,12 @@ ADDITIONAL SECURITY MEASURES
     that are explicitly registered in the invoke_handler. There is no shell
     access, no arbitrary filesystem access, and no network access from the
     webview context.
+
+  - Ollama zero-key path. When the user selects Ollama as their provider, no
+    API key is stored, no .env file is created, and no credentials leave the
+    machine. The agent communicates directly with Ollama's local HTTP API.
+    ClawPad auto-detects Ollama, lists available models, and guards against
+    the case where Ollama is running but has no models pulled.
 
   - No telemetry. ClawPad collects and transmits no usage data by default.
 

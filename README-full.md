@@ -146,7 +146,9 @@ ClawPad uses Tauri v2 rather than Electron for three reasons:
 
 ClawPad treats API keys as the most sensitive data in the system. The security model is designed around the principle that keys should never exist in plaintext at rest.
 
-### Secret Materialization Flow
+**Note:** Users who choose Ollama (local AI) skip the entire key management flow. No API key is stored, no `.env` is materialized, and no credentials exist anywhere. The agent talks directly to Ollama at `http://localhost:11434`.
+
+### Secret Materialization Flow (Cloud Providers)
 
 ```
 1. User enters API key in the wizard UI
@@ -191,6 +193,8 @@ ClawPad treats API keys as the most sensitive data in the system. The security m
 - **Windows file permissions.** The `.env` file and secret storage directory are locked to the current user via `icacls` with inheritance removed.
 
 - **Tauri capability restrictions.** The frontend can only invoke IPC commands that are explicitly registered in the `invoke_handler`. There is no shell access, no arbitrary filesystem access, and no network access from the webview context.
+
+- **Ollama zero-key path.** When the user selects Ollama as their provider, no API key is stored, no `.env` file is created, and no credentials leave the machine. The agent communicates directly with Ollama's local HTTP API. ClawPad auto-detects Ollama, lists available models, and guards against the case where Ollama is running but has no models pulled.
 
 - **No telemetry.** ClawPad collects and transmits no usage data by default.
 
