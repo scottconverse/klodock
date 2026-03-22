@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Clock, Radio, Puzzle, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { Clock, Radio, Puzzle, AlertCircle, CheckCircle, XCircle, ExternalLink, MessageSquare } from "lucide-react";
+import { open } from "@tauri-apps/plugin-shell";
 import { runHealthCheck } from "@/lib/tauri";
 import type { HealthStatus } from "@/lib/types";
 
@@ -13,8 +14,16 @@ export function Overview() {
       .catch(() => setError(true));
   }, []);
 
+  async function openWebChat() {
+    try {
+      await open("http://127.0.0.1:18789");
+    } catch {
+      window.open("http://127.0.0.1:18789", "_blank");
+    }
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-neutral-900">Overview</h2>
         <p className="mt-1 text-sm text-neutral-500">
@@ -111,21 +120,41 @@ export function Overview() {
               </p>
             </div>
           </div>
+
+          {/* WebChat quick access */}
+          {health.daemon_alive && (
+            <div className="rounded-xl border border-primary-200 bg-primary-50 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="h-5 w-5 text-primary-600" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-primary-900">Chat with your agent</h3>
+                    <p className="text-xs text-primary-700">Open WebChat in your browser</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={openWebChat}
+                  className="
+                    inline-flex items-center gap-1.5 rounded-lg bg-primary-600
+                    px-4 py-2 text-sm font-medium text-white
+                    transition-colors hover:bg-primary-700
+                    focus-visible:outline-2 focus-visible:outline-offset-2
+                    focus-visible:outline-primary-500
+                  "
+                >
+                  Open WebChat
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="flex justify-center py-12" role="status" aria-label="Loading dashboard data">
           <div className="h-6 w-6 animate-spin motion-reduce:animate-none rounded-full border-2 border-neutral-200 border-t-primary-600" />
         </div>
       )}
-
-      <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
-        <p className="text-lg font-semibold text-neutral-500">
-          More dashboard features coming in v1.5
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Conversation history, analytics, and skill management will live here.
-        </p>
-      </div>
     </div>
   );
 }

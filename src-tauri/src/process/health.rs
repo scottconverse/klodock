@@ -54,7 +54,19 @@ async fn check_api_key_health(issues: &mut Vec<String>) -> Option<bool> {
     };
 
     if key_names.is_empty() {
-        issues.push("No API key configured. Go to Settings to add one.".into());
+        // Check if the configured model is Ollama — no API key needed
+        let uses_ollama = match crate::config::openclaw_json::read_config().await {
+            Ok(config) => config.agents.as_ref()
+                .and_then(|a| a.defaults.as_ref())
+                .and_then(|d| d.model.as_ref())
+                .map(|m| m.primary.starts_with("ollama/"))
+                .unwrap_or(false),
+            Err(_) => false,
+        };
+
+        if !uses_ollama {
+            issues.push("No API key configured. Go to Settings to add one.".into());
+        }
         return None;
     }
 
