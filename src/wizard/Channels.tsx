@@ -9,10 +9,17 @@ import {
   Star,
   Send,
   MessageSquare,
+  ExternalLink,
 } from "lucide-react";
+import { open } from "@tauri-apps/plugin-shell";
 import { storeSecret, completeStep } from "@/lib/tauri";
 
 /* ── Channel definitions ─────────────────────────────────── */
+
+interface InstructionStep {
+  text: string;
+  link?: { label: string; url: string };
+}
 
 interface ChannelDef {
   id: string;
@@ -20,8 +27,11 @@ interface ChannelDef {
   icon: typeof Send;
   recommended: boolean;
   secretKey: string;
-  instructions: string[];
+  whatIsIt: string;
+  whyConnect: string;
+  instructions: InstructionStep[];
   tokenPlaceholder: string;
+  helpUrl: string;
   /** Client-side token format validation. */
   validate: (token: string) => boolean;
 }
@@ -33,13 +43,31 @@ const CHANNELS: ChannelDef[] = [
     icon: Send,
     recommended: true,
     secretKey: "TELEGRAM_BOT_TOKEN",
+    whatIsIt:
+      "Telegram is a free messaging app. A \"bot\" is an automated account your AI agent uses to chat with you there.",
+    whyConnect:
+      "Once connected, you can message your AI agent anytime from your phone or computer — just like texting a friend.",
     instructions: [
-      "Open Telegram and search for @BotFather",
-      "Send /newbot and follow the prompts",
-      "Copy the bot token BotFather gives you",
-      "Paste it below",
+      {
+        text: "Download Telegram if you don't have it",
+        link: { label: "Get Telegram", url: "https://telegram.org/apps" },
+      },
+      {
+        text: "Open Telegram and search for @BotFather (Telegram's built-in bot creator)",
+        link: {
+          label: "Open @BotFather",
+          url: "https://t.me/BotFather",
+        },
+      },
+      {
+        text: 'Send the message /newbot — BotFather will ask you for a name and username. Pick anything you like.',
+      },
+      {
+        text: "BotFather will reply with a token (a long string of numbers and letters). Copy it and paste it below.",
+      },
     ],
     tokenPlaceholder: "123456:ABC-DEF1234ghIkl-zyx...",
+    helpUrl: "https://core.telegram.org/bots/tutorial",
     validate: (t) => /^\d+:.+$/.test(t.trim()),
   },
   {
@@ -48,13 +76,30 @@ const CHANNELS: ChannelDef[] = [
     icon: MessageSquare,
     recommended: false,
     secretKey: "DISCORD_BOT_TOKEN",
+    whatIsIt:
+      "Discord is a chat platform popular with communities and teams. A bot lets your AI agent join your Discord server.",
+    whyConnect:
+      "Your AI agent will appear as a member of your Discord server and respond when you message it.",
     instructions: [
-      "Go to discord.com/developers/applications",
-      "Create a New Application",
-      "Go to Bot tab, click Reset Token",
-      "Copy the token and paste below",
+      {
+        text: "Go to the Discord Developer Portal and log in",
+        link: {
+          label: "Open Developer Portal",
+          url: "https://discord.com/developers/applications",
+        },
+      },
+      {
+        text: 'Click "New Application" and give it a name (e.g., "My AI Agent").',
+      },
+      {
+        text: 'Go to the "Bot" tab on the left, then click "Reset Token" to generate a new token.',
+      },
+      {
+        text: "Copy the token and paste it below.",
+      },
     ],
     tokenPlaceholder: "MTIzNDU2Nzg5MDEyMzQ1...",
+    helpUrl: "https://discord.com/developers/docs/intro",
     validate: (t) => /^[A-Za-z0-9_\-.]{50,}$/.test(t.trim()),
   },
 ];
@@ -85,6 +130,14 @@ function ChannelSection({
 }) {
   const Icon = channel.icon;
 
+  async function handleOpenLink(url: string) {
+    try {
+      await open(url);
+    } catch {
+      window.open(url, "_blank");
+    }
+  }
+
   async function handleTest() {
     const trimmed = state.token.trim();
     if (!trimmed) return;
@@ -97,7 +150,7 @@ function ChannelSection({
         ...state,
         testing: false,
         error:
-          "Token format looks incorrect. Please double-check and try again.",
+          "That doesn't look like a valid token. Make sure you copied the full token from step 4.",
       });
       return;
     }
@@ -181,26 +234,57 @@ function ChannelSection({
           role="region"
           aria-label={`${channel.name} setup instructions`}
         >
-          <ol className="space-y-2">
-            {channel.instructions.map((step, idx) => (
-              <li
-                key={idx}
-                className="flex gap-2.5 text-sm leading-relaxed text-neutral-600"
-              >
-                <span
-                  className="
-                    flex h-5 w-5 shrink-0 items-center justify-center
-                    rounded-full bg-primary-100 text-xs font-semibold
-                    text-primary-700
-                  "
-                  aria-hidden="true"
+          {/* What is it + Why connect */}
+          <div className="rounded-lg bg-primary-50 border border-primary-100 p-3 space-y-1.5">
+            <p className="text-sm text-primary-800">{channel.whatIsIt}</p>
+            <p className="text-sm font-medium text-primary-900">
+              {channel.whyConnect}
+            </p>
+          </div>
+
+          {/* Step-by-step instructions with links */}
+          <div className="space-y-1">
+            <h4 className="text-sm font-semibold text-neutral-800">
+              How to get your bot token:
+            </h4>
+            <ol className="space-y-2.5">
+              {channel.instructions.map((step, idx) => (
+                <li
+                  key={idx}
+                  className="flex gap-2.5 text-sm leading-relaxed text-neutral-600"
                 >
-                  {idx + 1}
-                </span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
+                  <span
+                    className="
+                      flex h-5 w-5 shrink-0 items-center justify-center
+                      rounded-full bg-primary-100 text-xs font-semibold
+                      text-primary-700 mt-0.5
+                    "
+                    aria-hidden="true"
+                  >
+                    {idx + 1}
+                  </span>
+                  <div className="space-y-1">
+                    <span>{step.text}</span>
+                    {step.link && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenLink(step.link!.url)}
+                        className="
+                          flex items-center gap-1 text-xs font-medium
+                          text-primary-600 hover:text-primary-700
+                          hover:underline
+                        "
+                        aria-label={step.link.label}
+                      >
+                        {step.link.label}
+                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
 
           {/* Token input */}
           <div className="space-y-2">
@@ -208,7 +292,7 @@ function ChannelSection({
               htmlFor={`token-${channel.id}`}
               className="block text-sm font-medium text-neutral-700"
             >
-              Bot Token
+              Paste your bot token here
             </label>
             <input
               id={`token-${channel.id}`}
@@ -259,33 +343,48 @@ function ChannelSection({
             </p>
           )}
 
-          {/* Test connection button */}
-          <button
-            type="button"
-            onClick={handleTest}
-            disabled={!state.token.trim() || state.testing}
-            className="
-              inline-flex items-center justify-center gap-1.5 rounded-lg
-              bg-primary-600 px-4 py-2 text-sm font-medium text-white
-              transition-colors hover:bg-primary-700
-              focus-visible:outline-2 focus-visible:outline-offset-2
-              focus-visible:outline-primary-500
-              disabled:cursor-not-allowed disabled:opacity-50
-            "
-            aria-label={`Test ${channel.name} connection`}
-          >
-            {state.testing ? (
-              <>
-                <Loader2
-                  className="h-4 w-4 animate-spin motion-reduce:animate-none"
-                  aria-hidden="true"
-                />
-                Testing...
-              </>
-            ) : (
-              "Test Connection"
-            )}
-          </button>
+          {/* Actions row */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleTest}
+              disabled={!state.token.trim() || state.testing}
+              className="
+                inline-flex items-center justify-center gap-1.5 rounded-lg
+                bg-primary-600 px-4 py-2 text-sm font-medium text-white
+                transition-colors hover:bg-primary-700
+                focus-visible:outline-2 focus-visible:outline-offset-2
+                focus-visible:outline-primary-500
+                disabled:cursor-not-allowed disabled:opacity-50
+              "
+              aria-label={`Save ${channel.name} token`}
+            >
+              {state.testing ? (
+                <>
+                  <Loader2
+                    className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                    aria-hidden="true"
+                  />
+                  Saving...
+                </>
+              ) : (
+                "Save Token"
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOpenLink(channel.helpUrl)}
+              className="
+                inline-flex items-center gap-1 text-xs font-medium
+                text-neutral-500 hover:text-neutral-700
+              "
+              aria-label={`${channel.name} setup help`}
+            >
+              Need help?
+              <ExternalLink className="h-3 w-3" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -296,7 +395,8 @@ function ChannelSection({
 
 export function Channels() {
   const navigate = useNavigate();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Telegram expanded by default so the user sees instructions immediately
+  const [expandedId, setExpandedId] = useState<string | null>("telegram");
   const [cardStates, setCardStates] = useState<Record<string, CardState>>(
     () => {
       const init: Record<string, CardState> = {};
@@ -335,10 +435,12 @@ export function Channels() {
         Connect a Channel
       </h2>
       <p className="mt-2 text-neutral-600">
-        Choose where you'll chat with your agent. You can add more later.
+        A channel is how you'll talk to your AI agent — through a messaging app
+        you already use. Pick one below and follow the steps, or skip this for
+        now and use the built-in WebChat instead.
       </p>
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-6 space-y-4">
         {CHANNELS.map((ch) => (
           <ChannelSection
             key={ch.id}
@@ -359,7 +461,7 @@ export function Channels() {
         ))}
       </div>
 
-      <div className="mt-8 flex items-center justify-between">
+      <div className="mt-6 flex items-center justify-between">
         <button
           type="button"
           onClick={handleSkip}
@@ -370,9 +472,9 @@ export function Channels() {
             focus-visible:outline-2 focus-visible:outline-offset-2
             focus-visible:outline-primary-500
           "
-          aria-label="Skip channel setup for now"
+          aria-label="Skip channel setup and use WebChat instead"
         >
-          Skip for now
+          Skip — I'll use WebChat
         </button>
 
         <button

@@ -4,7 +4,8 @@ use std::path::PathBuf;
 use super::safety::SafetyRating;
 
 /// Base URL for the ClawHub skill registry API.
-const CLAWHUB_REGISTRY_URL: &str = "https://clawhub.com/api/v1";
+#[allow(dead_code)]
+const CLAWHUB_REGISTRY_URL: &str = "https://clawhub.ai";
 
 /// Subdirectory under ~/.klodock/ used for cached registry data.
 const CACHE_DIR_NAME: &str = "cache";
@@ -16,10 +17,11 @@ const SKILLS_CACHE_FILE: &str = "skills.json";
 // Types
 // ---------------------------------------------------------------------------
 
-/// Metadata describing a single skill published to the ClawHub registry.
+/// Metadata describing a single skill from OpenClaw's bundled skill set
+/// or from the ClawHub registry.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SkillMetadata {
-    /// URL-safe identifier, e.g. "code-review".
+    /// URL-safe identifier, e.g. "weather".
     pub slug: String,
     /// Human-readable display name.
     pub name: String,
@@ -29,7 +31,7 @@ pub struct SkillMetadata {
     pub author: String,
     /// Semantic version string.
     pub version: String,
-    /// Total number of installs across all users.
+    /// Total number of installs across all users (0 for bundled skills).
     pub install_count: u64,
     /// Safety review status.
     pub safety_rating: SafetyRating,
@@ -52,6 +54,7 @@ fn cache_path() -> Result<PathBuf, String> {
 }
 
 /// Write search results to the local skills cache file.
+#[allow(dead_code)]
 fn write_cache(skills: &[SkillMetadata]) -> Result<(), String> {
     let path = cache_path()?.join(SKILLS_CACHE_FILE);
     let json = serde_json::to_string_pretty(skills)
@@ -74,66 +77,103 @@ fn read_cache() -> Result<Vec<SkillMetadata>, String> {
         .map_err(|e| format!("Failed to parse skills cache: {e}"))
 }
 
-/// Hardcoded starter skills returned by [`get_recommended_skills`] until the
-/// recommendation engine is built out.
-fn starter_recommendations() -> Vec<SkillMetadata> {
-    vec![
-        SkillMetadata {
-            slug: "code-review".into(),
-            name: "Code Review".into(),
-            description: "Automated code review with style and bug checks".into(),
-            author: "clawhub".into(),
-            version: "1.0.0".into(),
-            install_count: 12_500,
-            safety_rating: SafetyRating::Verified,
-            required_permissions: vec!["filesystem".into()],
-            updated_at: "2025-06-01T00:00:00Z".into(),
-        },
-        SkillMetadata {
-            slug: "test-gen".into(),
-            name: "Test Generator".into(),
-            description: "Generate unit tests from function signatures".into(),
-            author: "clawhub".into(),
-            version: "1.2.0".into(),
-            install_count: 8_300,
-            safety_rating: SafetyRating::Verified,
-            required_permissions: vec!["filesystem".into()],
-            updated_at: "2025-05-20T00:00:00Z".into(),
-        },
-        SkillMetadata {
-            slug: "doc-writer".into(),
-            name: "Documentation Writer".into(),
-            description: "Auto-generate docs from source code".into(),
-            author: "clawhub".into(),
-            version: "0.9.0".into(),
-            install_count: 6_100,
-            safety_rating: SafetyRating::Community,
-            required_permissions: vec!["filesystem".into()],
-            updated_at: "2025-05-15T00:00:00Z".into(),
-        },
-        SkillMetadata {
-            slug: "git-commit-craft".into(),
-            name: "Commit Crafter".into(),
-            description: "Generate meaningful git commit messages".into(),
-            author: "community".into(),
-            version: "1.1.0".into(),
-            install_count: 4_200,
-            safety_rating: SafetyRating::Community,
-            required_permissions: vec!["shell".into()],
-            updated_at: "2025-04-30T00:00:00Z".into(),
-        },
-        SkillMetadata {
-            slug: "refactor-assist".into(),
-            name: "Refactor Assistant".into(),
-            description: "Suggest and apply safe refactoring patterns".into(),
-            author: "clawhub".into(),
-            version: "0.8.0".into(),
-            install_count: 3_700,
-            safety_rating: SafetyRating::Verified,
-            required_permissions: vec!["filesystem".into()],
-            updated_at: "2025-05-10T00:00:00Z".into(),
-        },
-    ]
+/// JSON shape returned by `openclaw skills list --json`.
+#[derive(Debug, Deserialize)]
+struct SkillsListOutput {
+    skills: Vec<SkillEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SkillEntry {
+    name: String,
+    description: String,
+    #[serde(default)]
+    emoji: String,
+    eligible: bool,
+    source: String,
+    #[serde(default)]
+    bundled: bool,
+}
+
+/// Run `openclaw skills list` and return parsed results.
+async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
+    let openclaw = crate::installer::openclaw::openclaw_bin_path()?;
+    if !openclaw.exists() {
+        return Err("OpenClaw binary not found.".into());
+    }
+
+    let node_dir = crate::paths::klodock_base_dir()?.join("node");
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let path_sep = if cfg!(windows) { ";" } else { ":" };
+    let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);
+
+    // Use --json for reliable parsing (avoids Unicode encoding issues on Windows).
+    // Use std::process::Command (blocking) wrapped in spawn_blocking to avoid
+    // tokio .cmd file issues on Windows.
+    let new_path_clone = new_path.clone();
+    let openclaw_clone = openclaw.clone();
+    let output = tokio::task::spawn_blocking(move || {
+        let mut cmd = std::process::Command::new(&openclaw_clone);
+        cmd.args(["skills", "list", "--json"])
+            .env("PATH", &new_path_clone)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped());
+        #[cfg(windows)]
+        {
+            #[allow(unused_imports)]
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        }
+        cmd.output()
+    })
+    .await
+    .map_err(|e| format!("Task join error: {e}"))?
+    .map_err(|e| format!("Failed to run openclaw skills list: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("openclaw skills list failed: {stderr}"));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parsed: SkillsListOutput = serde_json::from_str(&stdout)
+        .map_err(|e| format!("Failed to parse skills JSON: {e}"))?;
+
+    Ok(parsed.skills.into_iter().map(|entry| {
+        let is_ready = entry.eligible;
+        let name = entry.name.clone();
+        let display_name = format!(
+            "{} {}",
+            entry.emoji,
+            name.split('-')
+                .map(|w| {
+                    let mut c = w.chars();
+                    match c.next() {
+                        None => String::new(),
+                        Some(f) => f.to_uppercase().to_string() + c.as_str(),
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(" ")
+        ).trim().to_string();
+
+        let skill = SkillMetadata {
+            slug: name,
+            name: display_name,
+            description: entry.description,
+            author: entry.source,
+            version: String::new(),
+            install_count: 0,
+            safety_rating: if entry.bundled {
+                SafetyRating::Verified
+            } else {
+                SafetyRating::Community
+            },
+            required_permissions: Vec::new(),
+            updated_at: String::new(),
+        };
+        (is_ready, skill)
+    }).collect())
 }
 
 // ---------------------------------------------------------------------------
@@ -141,67 +181,68 @@ fn starter_recommendations() -> Vec<SkillMetadata> {
 // ---------------------------------------------------------------------------
 
 /// Search the ClawHub registry for skills matching `query`.
-///
-/// Results are cached locally in `~/.klodock/cache/skills.json` so the UI can
-/// display them while offline.
 #[tauri::command]
 pub async fn search_skills(query: String) -> Result<Vec<SkillMetadata>, String> {
-    // TODO: HTTP GET to {CLAWHUB_REGISTRY_URL}/skills?q={query}
-    //       Parse JSON response into Vec<SkillMetadata>.
-    //       On success, write_cache(&results).
-    //       On network failure, fall back to read_cache().
     let _ = (query, CLAWHUB_REGISTRY_URL);
-    Err("Skill search is not yet connected to the ClawHub registry. This feature is coming in a future update.".into())
+    Err("Skill search is not yet connected to the ClawHub registry. Browse skills at https://clawhub.ai".into())
 }
 
 /// Fetch the full metadata for a single skill identified by its slug.
 #[tauri::command]
 pub async fn get_skill_details(slug: String) -> Result<SkillMetadata, String> {
-    // TODO: HTTP GET to {CLAWHUB_REGISTRY_URL}/skills/{slug}
-    //       Parse JSON response into SkillMetadata.
-    let _ = CLAWHUB_REGISTRY_URL;
-    Err(format!("Skill details for '{}' are not yet available. The ClawHub registry connection is coming in a future update.", slug))
+    Err(format!("Skill details for '{slug}' — browse at https://clawhub.ai"))
 }
 
-/// Return 3-5 recommended skills based on the user's stated goals from the
-/// setup wizard.
-///
-/// Currently returns hardcoded starter recommendations filtered by simple
-/// keyword matching against the provided goals.
+/// Return recommended skills for the wizard by querying the real OpenClaw
+/// skills list. Returns ready skills first, then a selection of useful
+/// missing skills the user might want to know about.
 #[tauri::command]
 pub async fn get_recommended_skills(
-    goals: Vec<String>,
+    _goals: Vec<String>,
 ) -> Result<Vec<SkillMetadata>, String> {
-    let all = starter_recommendations();
+    let all = match query_openclaw_skills().await {
+        Ok(skills) => skills,
+        Err(e) => {
+            log::error!("Failed to query OpenClaw skills: {e}");
+            return Err(format!("Could not load skills: {e}"));
+        }
+    };
 
-    if goals.is_empty() {
-        // No goals provided — return the top 3 by install count.
-        let mut sorted = all;
-        sorted.sort_by(|a, b| b.install_count.cmp(&a.install_count));
-        sorted.truncate(3);
-        return Ok(sorted);
-    }
-
-    // Simple keyword matching: keep skills whose name or description contains
-    // any of the goal keywords.
-    let lower_goals: Vec<String> = goals.iter().map(|g| g.to_lowercase()).collect();
-    let matched: Vec<SkillMetadata> = all
-        .into_iter()
-        .filter(|s| {
-            let haystack = format!("{} {}", s.name, s.description).to_lowercase();
-            lower_goals.iter().any(|g| haystack.contains(g.as_str()))
-        })
+    // Separate ready and missing
+    let ready: Vec<SkillMetadata> = all.iter()
+        .filter(|(is_ready, _)| *is_ready)
+        .map(|(_, s)| s.clone())
         .collect();
 
-    if matched.is_empty() {
-        // Fallback: return top 3 starters.
-        let mut fallback = starter_recommendations();
-        fallback.sort_by(|a, b| b.install_count.cmp(&a.install_count));
-        fallback.truncate(3);
-        Ok(fallback)
-    } else {
-        let mut result = matched;
-        result.truncate(5);
-        Ok(result)
-    }
+    let mut missing: Vec<SkillMetadata> = all.iter()
+        .filter(|(is_ready, _)| !*is_ready)
+        .map(|(_, s)| s.clone())
+        .collect();
+
+    // Curate a useful subset of missing skills for the wizard
+    // Prioritize well-known, generally useful skills
+    let priority_slugs = [
+        "weather", "skill-creator", "healthcheck", "node-connect",
+        "summarize", "notion", "slack", "discord",
+        "gh-issues", "coding-agent", "clawhub",
+    ];
+
+    // Sort missing by priority order, then alphabetically
+    missing.sort_by(|a, b| {
+        let a_priority = priority_slugs.iter().position(|s| *s == a.slug);
+        let b_priority = priority_slugs.iter().position(|s| *s == b.slug);
+        match (a_priority, b_priority) {
+            (Some(ap), Some(bp)) => ap.cmp(&bp),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => a.name.cmp(&b.name),
+        }
+    });
+
+    // Return: all ready skills + top missing skills (up to 8 total)
+    let mut result = ready;
+    let remaining = 8_usize.saturating_sub(result.len());
+    result.extend(missing.into_iter().take(remaining));
+
+    Ok(result)
 }

@@ -43,15 +43,20 @@ export function Dependencies() {
     try {
       const status = await checkNode();
 
-      if (status.meets_requirement) {
+      // Only skip install if KloDock's own managed copy exists and meets requirements.
+      // We never rely on the user's system Node — KloDock controls its own stack.
+      if (status.meets_requirement && status.managed_by === "klodock") {
         setPhase("success");
         await completeStep("node_install");
         setTimeout(() => navigate("/wizard/install"), 1500);
         return;
       }
 
-      // Node exists but version too low
-      if (status.version) {
+      // Node exists on system but KloDock-managed copy is missing or outdated
+      if (status.version && status.managed_by !== "klodock") {
+        setFoundVersion(status.version);
+        // Don't show "outdated" message — just silently install managed copy
+      } else if (status.version) {
         setFoundVersion(status.version);
         setPhase("found_outdated");
         // Brief pause so user can read the message

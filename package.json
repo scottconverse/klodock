@@ -10,7 +10,13 @@
     "test:e2e": "wdio run ./wdio.conf.ts",
     "tauri": "tauri"
   },
-  "keywords": ["openclaw", "ai-agent", "desktop", "tauri", "gui"],
+  "keywords": [
+    "openclaw",
+    "ai-agent",
+    "desktop",
+    "tauri",
+    "gui"
+  ],
   "author": "Scott Converse",
   "license": "MIT",
   "description": "Desktop GUI for OpenClaw -- zero terminal, zero complexity",
