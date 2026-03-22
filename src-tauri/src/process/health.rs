@@ -104,24 +104,21 @@ async fn check_channel_health(issues: &mut Vec<String>) -> HashMap<String, bool>
         Err(_) => return channels,
     };
 
-    for (channel_name, channel_config) in &config.channels {
-        // Check if the channel has the minimum required configuration
-        let is_configured = match channel_name.as_str() {
-            "telegram" => channel_config.get("bot_token").is_some(),
-            "discord" => channel_config.get("bot_token").is_some(),
-            "whatsapp" => channel_config.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false),
-            _ => true, // Unknown channels assumed OK if present
-        };
-
-        if !is_configured {
-            issues.push(format!(
-                "{} is configured but appears incomplete. Check your {} settings.",
-                capitalize(channel_name),
-                channel_name
-            ));
+    if let Some(ref ch) = config.channels {
+        if let Some(ref tg) = ch.telegram {
+            let ok = tg.enabled && !tg.bot_token.is_empty();
+            if !ok {
+                issues.push("Telegram is configured but appears incomplete. Check your telegram settings.".to_string());
+            }
+            channels.insert("telegram".to_string(), ok);
         }
-
-        channels.insert(channel_name.clone(), is_configured);
+        if let Some(ref dc) = ch.discord {
+            let ok = dc.enabled && !dc.bot_token.is_empty();
+            if !ok {
+                issues.push("Discord is configured but appears incomplete. Check your discord settings.".to_string());
+            }
+            channels.insert("discord".to_string(), ok);
+        }
     }
 
     channels

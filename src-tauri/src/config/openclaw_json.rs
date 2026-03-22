@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 // ---------------------------------------------------------------------------
@@ -7,28 +6,109 @@ use std::path::PathBuf;
 // ---------------------------------------------------------------------------
 
 /// Top-level structure of `~/.openclaw/openclaw.json`.
+///
+/// OpenClaw uses JSON5 and has a strict schema — unknown keys cause the
+/// Gateway to refuse to start. We only write the fields KloDock manages
+/// and preserve any existing config by merging.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpenClawConfig {
-    /// e.g. "anthropic", "openai", "openrouter", "ollama"
-    pub model_provider: String,
-    /// e.g. "claude-sonnet-4-20250514", "llama3", "gpt-4o"
-    pub default_model: String,
-    /// Base URL for the model provider API. Only needed for local providers
-    /// like Ollama (e.g. "http://localhost:11434"). None for cloud providers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub base_url: Option<String>,
-    /// Named channel configs.  Keys are channel names (e.g. "default",
-    /// "code-review"), values are channel-specific overrides serialized as
-    /// arbitrary JSON objects.
-    #[serde(default)]
-    pub channels: HashMap<String, serde_json::Value>,
-    /// Display name for the agent shown in the UI.
-    #[serde(default = "default_agent_name")]
-    pub agent_name: String,
+    pub agents: Option<AgentsConfig>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub channels: Option<ChannelsConfig>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gateway: Option<GatewayConfig>,
+    /// Preserve any other fields OpenClaw expects (session, hooks, etc.)
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
-fn default_agent_name() -> String {
-    "OpenClaw".to_string()
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GatewayConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<GatewayAuth>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<u16>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GatewayAuth {
+    pub mode: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentsConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub defaults: Option<AgentDefaults>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentDefaults {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workspace: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<ModelConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelConfig {
+    /// Primary model in "provider/model" format, e.g. "google/gemini-pro"
+    pub primary: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fallbacks: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChannelsConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub telegram: Option<TelegramChannelConfig>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub discord: Option<DiscordChannelConfig>,
+    /// Preserve any other channel configs
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TelegramChannelConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    pub bot_token: String,
+    #[serde(default = "default_dm_policy")]
+    pub dm_policy: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscordChannelConfig {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    pub bot_token: String,
+    #[serde(default = "default_dm_policy")]
+    pub dm_policy: String,
+}
+
+fn default_true() -> bool { true }
+fn default_dm_policy() -> String { "pairing".to_string() }
+
+/// Helper to build the model ref string in "provider/model" format.
+pub fn model_ref(provider: &str, model: &str) -> String {
+    match provider {
+        "openai" => format!("openai/{}", model),
+        "anthropic" => format!("anthropic/{}", model),
+        "gemini" | "google" => format!("google/{}", model),
+        "groq" => format!("groq/{}", model),
+        "openrouter" => model.to_string(), // OpenRouter models already have provider prefix
+        "ollama" => format!("ollama/{}", model),
+        _ => format!("{}/{}", provider, model),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -45,9 +125,18 @@ pub fn config_path() -> Result<PathBuf, String> {
 // ---------------------------------------------------------------------------
 
 /// Read and deserialize `openclaw.json` from disk.
+/// If the file doesn't exist, returns a default empty config.
 #[tauri::command]
 pub async fn read_config() -> Result<OpenClawConfig, String> {
     let path = config_path()?;
+    if !path.exists() {
+        return Ok(OpenClawConfig {
+            agents: None,
+            channels: None,
+            gateway: None,
+            extra: serde_json::Map::new(),
+        });
+    }
     let bytes = tokio::fs::read(&path)
         .await
         .map_err(|e| format!("Failed to read config at {}: {}", path.display(), e))?;
@@ -56,7 +145,9 @@ pub async fn read_config() -> Result<OpenClawConfig, String> {
         .map_err(|e| format!("Failed to parse openclaw.json: {}", e))
 }
 
-/// Serialize and write the config to `openclaw.json`.
+/// Merge and write the config to `openclaw.json`.
+/// Reads the existing file first and merges KloDock's fields on top,
+/// preserving any fields set by OpenClaw or the user directly.
 #[tauri::command]
 pub async fn write_config(config: OpenClawConfig) -> Result<(), String> {
     let path = config_path()?;
@@ -68,7 +159,29 @@ pub async fn write_config(config: OpenClawConfig) -> Result<(), String> {
             .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
     }
 
-    let json = serde_json::to_string_pretty(&config)
+    // Read existing config to merge
+    let mut existing: serde_json::Value = if path.exists() {
+        let bytes = tokio::fs::read(&path)
+            .await
+            .map_err(|e| format!("Failed to read existing config: {}", e))?;
+        serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Object(serde_json::Map::new()))
+    } else {
+        serde_json::Value::Object(serde_json::Map::new())
+    };
+
+    // Merge our config on top
+    let new_value = serde_json::to_value(&config)
+        .map_err(|e| format!("Failed to serialize config: {}", e))?;
+
+    if let (Some(existing_obj), Some(new_obj)) = (existing.as_object_mut(), new_value.as_object()) {
+        for (k, v) in new_obj {
+            if !v.is_null() {
+                existing_obj.insert(k.clone(), v.clone());
+            }
+        }
+    }
+
+    let json = serde_json::to_string_pretty(&existing)
         .map_err(|e| format!("Failed to serialize config: {}", e))?;
 
     tokio::fs::write(&path, json.as_bytes())

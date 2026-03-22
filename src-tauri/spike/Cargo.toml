@@ -11,6 +11,7 @@ reqwest = { version = "0.12", features = ["json"] }
 serde_json = "1.0"
 dirs = "6"
 sha2 = "0.10"
+which = "7"
 
 [[bin]]
 name = "stress_test"
@@ -47,3 +48,7 @@ path = "spike_dpapi.rs"
 [[bin]]
 name = "spike_daemon"
 path = "spike_daemon.rs"
+
+[[bin]]
+name = "test_real_key"
+path = "test_real_key.rs"

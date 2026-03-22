@@ -68,13 +68,14 @@ const PROVIDERS = [
   },
 ] as const;
 
-const PROVIDER_DEFAULTS: Record<string, { model_provider: string; default_model: string }> = {
-  openai: { model_provider: "openai", default_model: "gpt-4o" },
-  anthropic: { model_provider: "anthropic", default_model: "claude-sonnet-4-20250514" },
-  gemini: { model_provider: "gemini", default_model: "gemini-pro" },
-  groq: { model_provider: "groq", default_model: "llama-3.3-70b-versatile" },
-  openrouter: { model_provider: "openrouter", default_model: "anthropic/claude-sonnet-4" },
-  ollama: { model_provider: "ollama", default_model: "llama3" },
+// Model refs use "provider/model" format per OpenClaw spec
+const PROVIDER_MODEL_REFS: Record<string, string> = {
+  openai: "openai/gpt-4o",
+  anthropic: "anthropic/claude-sonnet-4-6",
+  gemini: "google/gemini-pro",
+  groq: "groq/llama-3.3-70b-versatile",
+  openrouter: "anthropic/claude-sonnet-4",
+  ollama: "ollama/llama3",
 };
 
 export function ModelProvider() {
@@ -92,18 +93,30 @@ export function ModelProvider() {
   async function handleNext() {
     // Write the first validated provider as the default in openclaw.json
     const primaryProvider = [...validated][0];
-    const defaults = PROVIDER_DEFAULTS[primaryProvider];
-    if (defaults) {
+    const modelRef = PROVIDER_MODEL_REFS[primaryProvider];
+    if (modelRef) {
       try {
         const isOllama = primaryProvider === "ollama";
+        const primary = isOllama && ollamaSelectedModel
+          ? `ollama/${ollamaSelectedModel}`
+          : modelRef;
+        // Generate a random password for gateway auth
+        const gwPassword = crypto.randomUUID().slice(0, 12);
         await writeConfig({
-          model_provider: defaults.model_provider,
-          default_model: isOllama && ollamaSelectedModel
-            ? ollamaSelectedModel
-            : defaults.default_model,
-          base_url: isOllama ? "http://localhost:11434" : undefined,
-          channels: {},
-          agent_name: "OpenClaw",
+          agents: {
+            defaults: {
+              workspace: "~/.openclaw/workspace",
+              model: { primary },
+            },
+          },
+          gateway: {
+            mode: "local",
+            port: 18789,
+            auth: {
+              mode: "password",
+              password: gwPassword,
+            },
+          },
         });
       } catch {
         // Non-critical — config can be set later

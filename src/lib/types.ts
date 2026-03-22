@@ -83,11 +83,30 @@ export type Role =
 /* ── Config ─────────────────────────────────────────── */
 
 export interface OpenClawConfig {
-  model_provider: string;
-  default_model: string;
-  base_url?: string | null;
-  channels: Record<string, unknown>;
-  agent_name: string;
+  agents?: {
+    defaults?: {
+      workspace?: string;
+      model?: {
+        primary: string;
+        fallbacks?: string[];
+      };
+    };
+  };
+  channels?: {
+    telegram?: { enabled: boolean; bot_token: string; dm_policy?: string };
+    discord?: { enabled: boolean; bot_token: string; dm_policy?: string };
+    [key: string]: unknown;
+  };
+  gateway?: {
+    mode?: string;
+    port?: number;
+    auth?: {
+      mode: string;
+      password?: string;
+      token?: string;
+    };
+  };
+  [key: string]: unknown;
 }
 
 export interface OllamaModel {
