@@ -44,6 +44,10 @@ export interface SkillMetadata {
   safety_rating: SafetyRating;
   required_permissions: string[];
   updated_at: string;
+  /** Whether this skill is ready to use (all requirements met). */
+  eligible: boolean;
+  /** What's missing for this skill to work (empty array if eligible). */
+  missing_requirements: string[];
 }
 
 export type SafetyRating = "Verified" | "Community" | "Unreviewed";
