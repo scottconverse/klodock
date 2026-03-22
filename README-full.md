@@ -26,7 +26,7 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 
 - **Quick setup wizard** --- An 8-screen guided flow that takes a new user from first launch to a running AI agent in minutes, not hours. No terminal, no manual steps.
 
-- **Silent Node.js installation** --- Automatically detects existing Node.js installs, nvm, Volta, and Homebrew-managed versions. If Node.js is missing or below v22, KloDock silently downloads and extracts it to `~/.klodock/node/` with no elevation prompt on any platform.
+- **Silent Node.js installation** --- Automatically detects existing Node.js installs, nvm, Volta, and Homebrew-managed versions. If Node.js is missing or below v22, KloDock silently downloads v24.14.0 LTS and extracts it to `~/.klodock/node/` with no elevation prompt and no visible console window on any platform.
 
 - **Visual personality builder** --- Choose from role templates (assistant, creative writer, coder, etc.), adjust a tone slider from formal to casual, and watch a live SOUL.md preview update in real time.
 
@@ -340,7 +340,7 @@ klodock/
 
 | Requirement | Details |
 |-------------|---------|
-| Node.js | >= 22 ([nodejs.org](https://nodejs.org/)) |
+| Node.js | >= 22 (v24.14.0 LTS pinned, [nodejs.org](https://nodejs.org/)) |
 | Rust | Stable toolchain ([rustup.rs](https://rustup.rs/)) |
 | Windows | Visual Studio Build Tools with C++ workload |
 | macOS | Xcode Command Line Tools |

@@ -8,10 +8,10 @@ use tauri::Emitter;
 const REQUIRED_NODE_MAJOR: u64 = 22;
 
 /// Minimum Node.js minor version required by OpenClaw (within the required major).
-const REQUIRED_NODE_MINOR: u64 = 16;
+const REQUIRED_NODE_MINOR: u64 = 0;
 
 /// Pinned Node.js version for KloDock-managed installs.
-const NODE_VERSION: &str = "22.16.0";
+const NODE_VERSION: &str = "24.14.0";
 
 /// Base URL for official Node.js release tarballs / zips.
 const NODE_DOWNLOAD_BASE: &str = "https://nodejs.org/dist/";
@@ -239,8 +239,17 @@ pub fn klodock_npm_path() -> Result<PathBuf, String> {
 /// Run `node --version` at a specific path and return the version string
 /// (e.g., "22.16.0") without the leading "v".
 fn run_node_version(node_path: &std::path::Path) -> Result<String, String> {
-    let output = Command::new(node_path)
-        .arg("--version")
+    let mut cmd = Command::new(node_path);
+    cmd.arg("--version");
+
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let output = cmd
         .output()
         .map_err(|e| format!("Failed to execute node: {e}"))?;
 
@@ -474,15 +483,21 @@ async fn extract_zip(
     // Clean up any previous extract attempt
     let _ = tokio::fs::remove_dir_all(&extract_tmp).await;
 
-    let output = tokio::process::Command::new("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
-        .args([
-            "-NoProfile",
-            "-Command",
-            &format!(
-                "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
-                archive_str, extract_tmp_str
-            ),
-        ])
+    let mut cmd = tokio::process::Command::new("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+    cmd.args([
+        "-NoProfile",
+        "-Command",
+        &format!(
+            "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
+            archive_str, extract_tmp_str
+        ),
+    ]);
+
+    #[allow(unused_imports)]
+    use std::os::windows::process::CommandExt;
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+    let output = cmd
         .output()
         .await
         .map_err(|e| format!("Failed to run PowerShell Expand-Archive: {e}"))?;
@@ -492,7 +507,7 @@ async fn extract_zip(
         return Err(format!("Zip extraction failed: {stderr}"));
     }
 
-    // The zip contains a top-level directory like `node-v22.16.0-win-x64/`.
+    // The zip contains a top-level directory like `node-v24.14.0-win-x64/`.
     // We need to move its contents to install_dir.
     let mut entries = tokio::fs::read_dir(&extract_tmp)
         .await

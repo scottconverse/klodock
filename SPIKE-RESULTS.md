@@ -13,11 +13,11 @@
 - **Edge case — Node exists but below v22**: Correctly detects and reports `meets_requirement: false`. KloDock installs its own v22 alongside without touching the system node.
 
 ### Phase 2: Silent Install (`install_node`)
-- **Download**: 33.3 MB zip from `nodejs.org/dist/v22.16.0/node-v22.16.0-win-x64.zip`. Streaming download with progress events works.
+- **Download**: zip from `nodejs.org/dist/v24.14.0/node-v24.14.0-win-x64.zip`. Streaming download with progress events works.
 - **Checksum**: SHA256 verified against official `SHASUMS256.txt`. Mismatch correctly rejected.
-- **Extraction**: PowerShell `Expand-Archive` works without elevation. No admin prompt shown.
+- **Extraction**: PowerShell `Expand-Archive` works without elevation. No admin prompt, no console window (CREATE_NO_WINDOW).
 - **Install location**: `~/.klodock/node/` — user-writable, no `Program Files` needed.
-- **Post-install verification**: `node --version` returns `22.16.0`, `npm --version` returns `10.9.2`, `npx --version` returns `10.9.2`.
+- **Post-install verification**: `node --version` returns `24.14.0`.
 - **No elevation required**: Entire flow runs as the current user.
 - **Time**: ~15 seconds on broadband (download dominates).
 

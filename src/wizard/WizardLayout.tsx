@@ -55,7 +55,7 @@ export function WizardLayout() {
       </header>
 
       <main className="flex flex-1 flex-col">
-        <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+        <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-6">
           {showBack && (
             <button
               type="button"

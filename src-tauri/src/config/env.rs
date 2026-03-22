@@ -32,9 +32,13 @@ pub fn set_file_permissions(path: &std::path::Path, mode: u32) -> Result<(), Str
         let path_str = path.to_string_lossy().to_string();
         let username = std::env::var("USERNAME").unwrap_or_else(|_| "".to_string());
         if !username.is_empty() {
-            let output = std::process::Command::new("C:\\Windows\\System32\\icacls.exe")
-                .args([&path_str, "/inheritance:r", "/grant:r", &format!("{username}:(R,W)")])
-                .output();
+            let output = {
+                use std::os::windows::process::CommandExt;
+                std::process::Command::new("C:\\Windows\\System32\\icacls.exe")
+                    .args([&path_str, "/inheritance:r", "/grant:r", &format!("{username}:(R,W)")])
+                    .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                    .output()
+            };
             match output {
                 Ok(o) if !o.status.success() => {
                     let stderr = String::from_utf8_lossy(&o.stderr);

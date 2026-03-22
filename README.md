@@ -81,7 +81,7 @@ klodock/
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 22
+- [Node.js](https://nodejs.org/) >= 22 (v24.14.0 LTS pinned for managed installs)
 - [Rust](https://rustup.rs/) stable
 - Visual Studio Build Tools with C++ workload (Windows)
 - Xcode Command Line Tools (macOS)
