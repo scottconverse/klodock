@@ -110,7 +110,7 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     let openclaw_dir = crate::paths::openclaw_base_dir()?;
 
     let child = tokio::process::Command::new(&openclaw_path)
-        .args(["start", "--daemon"])
+        .args(["gateway", "--port", "18789"])
         .env("PATH", &new_path)
         .current_dir(&openclaw_dir)
         .stdout(std::process::Stdio::piped())
@@ -307,7 +307,7 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
                         format!("{}{}{}", node_dir.display(), path_sep, current_path);
 
                     match tokio::process::Command::new(&openclaw_path)
-                        .args(["start", "--daemon"])
+                        .args(["gateway", "--port", "18789"])
                         .env("PATH", &new_path)
                         .stdout(std::process::Stdio::piped())
                         .stderr(std::process::Stdio::piped())
