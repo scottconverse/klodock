@@ -101,13 +101,13 @@ npx tauri dev
 ### Run tests
 
 ```bash
-# Frontend (19 tests)
+# Frontend (26 tests)
 npx vitest run
 
 # Rust (12 tests + 7 ignored)
 cd src-tauri && cargo test
 
-# E2E (15 tests — requires built app + msedgedriver)
+# E2E (13 tests — requires built app + msedgedriver)
 npm run test:e2e
 ```
 
@@ -135,4 +135,4 @@ MIT
 
 ## Status
 
-**Phase 1 (v0.1.0)** — Setup wizard functional, all core modules implemented. CI passes on all 3 platforms (Windows, macOS, Ubuntu). 53 tests passing (19 frontend + 12 Rust + 7 ignored + 15 E2E), 0 failures. See [SPIKE-RESULTS.md](SPIKE-RESULTS.md) for installer spike findings.
+**Phase 1 (v0.1.0)** — Setup wizard functional, all core modules implemented. CI passes on all 3 platforms (Windows, macOS, Ubuntu). 51 tests passing (26 frontend + 12 Rust + 13 E2E), 0 failures. See [SPIKE-RESULTS.md](SPIKE-RESULTS.md) for installer spike findings.

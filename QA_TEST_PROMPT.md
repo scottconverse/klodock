@@ -40,6 +40,8 @@ These bugs exist in the codebase right now. If the developer claims they're fixe
 
 ### 1.3 Unit Tests Test Placeholder Components
 
+**STATUS: FIXED** — All 5 test files rewritten to import and test real components. @tauri-apps/plugin-shell mock added to test setup.
+
 Every frontend unit test imports a placeholder, NOT the real component:
 
 | Test File | What It Tests | What It Should Test |
@@ -54,6 +56,8 @@ Every frontend unit test imports a placeholder, NOT the real component:
 
 ### 1.4 Version Mismatch
 
+**STATUS: FIXED** — package.json version corrected to 0.1.0, all files now consistent.
+
 - `package.json`: version `1.0.0`
 - `Cargo.toml`: version `0.1.0`
 - `tauri.conf.json`: version `0.1.0`
@@ -61,6 +65,8 @@ Every frontend unit test imports a placeholder, NOT the real component:
 - **Test:** Which is it? 0.1.0 or 1.0.0? The MSI/DMG installer will show one version, the npm package another. The Windows "Add/Remove Programs" will show the Cargo version.
 
 ### 1.5 package.json Metadata
+
+**STATUS: FIXED** — author set to 'Scott Converse', description populated, license corrected to MIT, keywords added.
 
 - `"author": ""` -- empty
 - `"description": ""` -- empty
@@ -74,6 +80,8 @@ Every frontend unit test imports a placeholder, NOT the real component:
 
 ### 2.1 Gemini API Key in URL Query Parameter
 
+**STATUS: FIXED** — Gemini API key now sent via `x-goog-api-key` header instead of URL query parameter.
+
 - File: `src-tauri/src/secrets/keychain.rs`, line ~208
 - Code: `format!("https://generativelanguage.googleapis.com/v1beta/models?key={}", key)`
 - The API key is passed as a URL query parameter, meaning it appears in:
@@ -85,6 +93,8 @@ Every frontend unit test imports a placeholder, NOT the real component:
 
 ### 2.2 .env Newline Injection
 
+**STATUS: FIXED** — `write_env` now strips `\n` and `\r` from both keys and values before writing.
+
 - File: `src-tauri/src/config/env.rs`
 - The `write_env` function writes `key=value` pairs but does NOT validate or sanitize values
 - A value containing `\n` followed by `MALICIOUS_KEY=evil` would inject an additional environment variable
@@ -92,12 +102,16 @@ Every frontend unit test imports a placeholder, NOT the real component:
 
 ### 2.3 PowerShell Injection in Windows Keychain
 
+**STATUS: FIXED** — Secret values now passed via stdin to PowerShell instead of inline string interpolation.
+
 - File: `src-tauri/src/secrets/keychain.rs`, Windows platform module
 - Values are escaped with `value.replace('\'', "''")` for PowerShell single quotes
 - But values containing `$()` or backticks could potentially be interpreted by PowerShell despite `-AsPlainText`
 - **Test (Windows only):** Store a secret with value `$(whoami)` or `` `whoami` ``. Retrieve it. Is the value the literal string, or was it executed?
 
 ### 2.4 Windows icacls Silently Ignored
+
+**STATUS: FIXED** — icacls failure now returns an error instead of being silently swallowed.
 
 - File: `src-tauri/src/config/env.rs`, line ~36
 - On Windows, `icacls` failure is wrapped in `let _ = ...` -- silently ignored
@@ -111,6 +125,8 @@ Every frontend unit test imports a placeholder, NOT the real component:
 - **Timing test:** Add a 5-second sleep to the Rust startup before scrub. During those 5 seconds, can another process read the .env? (This tests whether the scrub is truly the FIRST thing that happens.)
 
 ### 2.6 DPAPI Secret Filenames Leak Key Names
+
+**STATUS: FIXED** — Filenames are now SHA-256 hashes of the key name, no longer revealing provider identity.
 
 - File: `src-tauri/src/secrets/keychain.rs`, Windows module
 - Encrypted files stored at `~/.klodock/secrets/{key}.enc`
@@ -390,10 +406,11 @@ Verify these are truly unused:
 
 | File | Evidence of Non-Use |
 |------|-------------------|
-| `src/components/SkillCard.tsx` | Not imported by any file. Skills.tsx uses inline cards. |
-| `src/components/ChannelCard.tsx` | Not imported by any file. Channels.tsx uses inline ChannelSection. Also uses different secret key format (`${id}_token` vs `TELEGRAM_BOT_TOKEN`). |
+| `src/components/SkillCard.tsx` | **DELETED** — removed from codebase. |
+| `src/components/ChannelCard.tsx` | **DELETED** — removed from codebase. |
 | `src/lib/wizard-state.ts` exports: `formData`, `updateFormData`, `goToStep`, `markComplete` | Not imported by any component. Each wizard screen manages its own state. |
 | `WizardFormData` type in `types.ts` | Not used by any component. |
+| `friendlyError()` in Dependencies.tsx and Install.tsx | **FIXED** — extracted to `src/lib/friendly-error.ts`. |
 
 ### 9.2 Duplicated Logic
 
@@ -401,7 +418,7 @@ Verify these are truly unused:
 |---------|------------|
 | `klodock_base_dir()` returning `~/.klodock/` | 3 separate implementations in node.rs, uninstall.rs, daemon.rs |
 | `dirs::home_dir().expect(...)` | 11 occurrences across the codebase, each with slightly different error messages |
-| `friendlyError()` error message converter | Duplicated in Dependencies.tsx and Install.tsx with slightly different error patterns |
+| `friendlyError()` error message converter | **FIXED** — extracted to shared `src/lib/friendly-error.ts`. |
 | `InstallProgress` struct name | Defined in both `installer/node.rs` and `installer/openclaw.rs` (different fields) |
 
 ### 9.3 Spike Binaries in Production
@@ -410,6 +427,8 @@ Verify these are truly unused:
 - `spike_node.rs`, `spike_install.rs`, `spike_keychain.rs`, `spike_kc2.rs`, `spike_dpapi.rs`, `spike_daemon.rs`
 
 These are development artifacts with `.unwrap()` and `.expect()` everywhere. They ship with the crate. Are they excluded from the release build? Does `cargo build --release` compile them? They shouldn't be in the final distribution.
+
+**FIXED** — Spike binaries gated behind `[features] spike = []` in Cargo.toml with `required-features = ["spike"]`. They won't compile in normal `cargo build` or release builds.
 
 ---
 

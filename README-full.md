@@ -232,17 +232,17 @@ klodock/
 │   │   │   └── Personality.test.tsx
 │   │   └── setup.ts               # Test setup (mocks)
 │   ├── components/
-│   │   ├── ChannelCard.tsx         # Channel selection card
 │   │   ├── ProgressBar.tsx         # Animated progress indicator
 │   │   ├── ProviderCard.tsx        # AI provider selection card
 │   │   ├── SafetyBadge.tsx         # Skill safety rating badge
-│   │   ├── SkillCard.tsx           # Skill browser card
 │   │   ├── StatusIndicator.tsx     # Agent status light
 │   │   └── ToneSlider.tsx          # Personality tone range slider
 │   ├── dashboard/
+│   │   ├── ComingSoon.tsx          # Coming soon placeholder (Phase 2)
 │   │   ├── DashboardLayout.tsx     # Dashboard shell (Phase 2)
 │   │   └── Overview.tsx            # Agent overview panel (Phase 2)
 │   ├── lib/
+│   │   ├── friendly-error.ts      # User-friendly error messages
 │   │   ├── tauri.ts               # Tauri IPC wrappers
 │   │   ├── templates.ts           # Personality role templates
 │   │   ├── types.ts               # Shared TypeScript types
@@ -411,11 +411,11 @@ This compiles an optimized Rust binary, bundles the Vite-built frontend, and pro
 
 | Layer | Framework | Count | Status |
 |-------|-----------|-------|--------|
-| Frontend unit/component | Vitest + Testing Library | 19 | Passing |
+| Frontend unit/component | Vitest + Testing Library | 26 | Passing |
 | Rust integration | Cargo test | 12 | Passing |
 | Rust (ignored, require real state) | Cargo test --ignored | 7 | Passing |
-| End-to-end | WebdriverIO v9 + tauri-driver + msedgedriver | 15 | Passing |
-| **Total** | | **53** | **0 failures** |
+| End-to-end | WebdriverIO v9 + tauri-driver + msedgedriver | 13 | Passing |
+| **Total** | | **58** | **0 failures** |
 
 ### Frontend Tests (Vitest)
 
@@ -452,7 +452,7 @@ Run with: `cd src-tauri && cargo test -- --ignored`
 
 ### End-to-End Tests (WebdriverIO)
 
-15 real E2E tests launch the compiled application using WebdriverIO v9 with tauri-driver and msedgedriver (Edge WebView2). Configuration is in `wdio.conf.ts`. Run with `npm run test:e2e`.
+13 real E2E tests launch the compiled application using WebdriverIO v9 with tauri-driver and msedgedriver (Edge WebView2). Configuration is in `wdio.conf.ts`. Run with `npm run test:e2e`.
 
 - `e2e/wizard-walkthrough.e2e.ts` (8 tests) --- Full wizard walkthrough from Welcome screen through Done, exercising each step of the setup flow.
 - `e2e/accessibility.e2e.ts` (7 tests) --- WCAG 2.1 AA compliance checks including keyboard navigation, ARIA labels, focus management, and screen reader compatibility.

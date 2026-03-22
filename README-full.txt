@@ -317,17 +317,17 @@ ADDITIONAL SECURITY MEASURES
   |   |   |   +-- Personality.test.tsx
   |   |   +-- setup.ts               Test setup (mocks)
   |   |-- components/
-  |   |   |-- ChannelCard.tsx         Channel selection card
   |   |   |-- ProgressBar.tsx         Animated progress indicator
   |   |   |-- ProviderCard.tsx        AI provider selection card
   |   |   |-- SafetyBadge.tsx         Skill safety rating badge
-  |   |   |-- SkillCard.tsx           Skill browser card
   |   |   |-- StatusIndicator.tsx     Agent status light
   |   |   +-- ToneSlider.tsx          Personality tone range slider
   |   |-- dashboard/
+  |   |   |-- ComingSoon.tsx          Coming soon placeholder (Phase 2)
   |   |   |-- DashboardLayout.tsx     Dashboard shell (Phase 2)
   |   |   +-- Overview.tsx            Agent overview panel (Phase 2)
   |   |-- lib/
+  |   |   |-- friendly-error.ts      User-friendly error messages
   |   |   |-- tauri.ts               Tauri IPC wrappers
   |   |   |-- templates.ts           Personality role templates
   |   |   |-- types.ts               Shared TypeScript types
@@ -509,11 +509,11 @@ TEST SUMMARY
 
   | Layer                        | Framework                        | Count | Status     |
   |------------------------------|----------------------------------|-------|------------|
-  | Frontend unit/component      | Vitest + Testing Lib             | 19    | Passing    |
+  | Frontend unit/component      | Vitest + Testing Lib             | 26    | Passing    |
   | Rust integration             | Cargo test                       | 12    | Passing    |
   | Rust (ignored, real state)   | Cargo test --ignored             | 7     | Passing    |
-  | End-to-end                   | WebdriverIO v9 + tauri-driver    | 15    | Passing    |
-  | TOTAL                        |                                  | 53    | 0 failures |
+  | End-to-end                   | WebdriverIO v9 + tauri-driver    | 13    | Passing    |
+  | TOTAL                        |                                  | 58    | 0 failures |
 
 
 FRONTEND TESTS (VITEST)
@@ -575,7 +575,7 @@ Run with: cd src-tauri && cargo test -- --ignored
 END-TO-END TESTS (WEBDRIVERIO)
 ---------------------------------
 
-15 real E2E tests launch the compiled application using WebdriverIO v9 with
+13 real E2E tests launch the compiled application using WebdriverIO v9 with
 tauri-driver and msedgedriver (Edge WebView2). Configuration is in
 wdio.conf.ts. Run with: npm run test:e2e
 
