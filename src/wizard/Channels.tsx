@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronDown,
@@ -395,6 +395,10 @@ function ChannelSection({
 
 export function Channels() {
   const navigate = useNavigate();
+
+  // Scroll to top on mount so the user sees the heading first
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+
   // Telegram expanded by default so the user sees instructions immediately
   const [expandedId, setExpandedId] = useState<string | null>("telegram");
   const [cardStates, setCardStates] = useState<Record<string, CardState>>(
@@ -461,20 +465,20 @@ export function Channels() {
         ))}
       </div>
 
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-6 flex items-center gap-3">
         <button
           type="button"
           onClick={handleSkip}
           className="
-            rounded text-sm font-medium text-neutral-500
-            underline decoration-neutral-300 underline-offset-2
-            transition-colors hover:text-neutral-700
+            flex-1 rounded-xl border-2 border-neutral-300 bg-white
+            px-6 py-3 text-sm font-semibold text-neutral-700
+            transition-all hover:border-neutral-400 hover:bg-neutral-50
             focus-visible:outline-2 focus-visible:outline-offset-2
             focus-visible:outline-primary-500
           "
           aria-label="Skip channel setup and use WebChat instead"
         >
-          Skip — I'll use WebChat
+          Just use WebChat
         </button>
 
         <button
@@ -483,7 +487,7 @@ export function Channels() {
           disabled={!canProceed}
           aria-label="Next: choose skills"
           className="
-            rounded-xl bg-primary-600 px-6 py-3 text-sm font-semibold
+            flex-1 rounded-xl bg-primary-600 px-6 py-3 text-sm font-semibold
             text-white shadow-lg shadow-primary-200 transition-all
             hover:bg-primary-700
             focus-visible:outline-2 focus-visible:outline-offset-2

@@ -149,7 +149,9 @@ async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
         cmd.output()
     });
 
-    let output = match tokio::time::timeout(std::time::Duration::from_secs(15), task).await {
+    // 60s timeout — first-ever run after fresh install can take 30-60s
+    // as Node loads 500+ modules for the first time.
+    let output = match tokio::time::timeout(std::time::Duration::from_secs(60), task).await {
         Ok(join_result) => join_result
             .map_err(|e| format!("Task join error: {e}"))?
             .map_err(|e| format!("Failed to run openclaw skills list: {e}"))?,

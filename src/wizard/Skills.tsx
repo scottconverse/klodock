@@ -30,23 +30,35 @@ export function Skills() {
   useEffect(() => {
     mountedRef.current = true;
 
-    getRecommendedSkills(["general", "productivity"])
-      .then((list) => {
-        if (!mountedRef.current) return;
-        setSkills(list);
-        // Pre-select all recommended skills
-        setSelected(new Set(list.map((s) => s.slug)));
-        setLoadError(false);
-      })
-      .catch((err) => {
-        console.error("Failed to load skills:", err);
-        if (!mountedRef.current) return;
+    // On a fresh install, the first `openclaw skills list` can take 30-60s
+    // because Node loads 500+ npm modules for the first time.
+    // The backend has a 30s timeout, so we retry twice (total ~65s max).
+    async function loadWithRetry(attempts = 2, delayMs = 5000) {
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const list = await getRecommendedSkills(["general", "productivity"]);
+          if (!mountedRef.current) return;
+          setSkills(list);
+          setSelected(new Set(list.map((s) => s.slug)));
+          setLoadError(false);
+          setLoading(false);
+          return;
+        } catch (err) {
+          console.warn(`Skills load attempt ${i + 1}/${attempts} failed:`, err);
+          if (i < attempts - 1) {
+            await new Promise((r) => setTimeout(r, delayMs));
+          }
+        }
+      }
+      // All retries exhausted
+      if (mountedRef.current) {
         setSkills([]);
         setLoadError(true);
-      })
-      .finally(() => {
-        if (mountedRef.current) setLoading(false);
-      });
+        setLoading(false);
+      }
+    }
+
+    loadWithRetry();
 
     return () => {
       mountedRef.current = false;

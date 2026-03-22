@@ -182,6 +182,12 @@ export function DashboardSettings() {
       setActiveProvider(providerId);
       setSaved(true);
 
+      // Re-read config to update the "Active Model" display
+      try {
+        const newConfig = await readConfig();
+        setConfig(newConfig);
+      } catch { /* best effort */ }
+
       // Restart daemon to pick up new config
       try { await restartDaemon(); } catch { /* best effort */ }
 
@@ -285,14 +291,14 @@ export function DashboardSettings() {
                 onValidated={handleValidated}
               />
               {/* Action row below card */}
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 space-y-1.5">
                 {validated.has(p.id) && activeProvider !== p.id && (
                   <button
                     type="button"
                     onClick={() => handleSetPrimary(p.id)}
                     disabled={saving}
                     className="
-                      flex-1 rounded-lg bg-primary-600 px-3 py-1.5
+                      w-full rounded-lg bg-primary-600 px-3 py-1.5
                       text-xs font-medium text-white
                       hover:bg-primary-700 disabled:opacity-50
                     "
@@ -301,21 +307,21 @@ export function DashboardSettings() {
                   </button>
                 )}
                 {activeProvider === p.id && (
-                  <span className="
-                    flex-1 inline-flex items-center justify-center gap-1.5
+                  <div className="
+                    w-full inline-flex items-center justify-center gap-1.5
                     rounded-lg bg-success-100 border border-success-200
                     px-3 py-1.5 text-xs font-medium text-success-700
                   ">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Primary Provider
-                  </span>
+                  </div>
                 )}
                 {validated.has(p.id) && !p.isLocal && (
                   <button
                     type="button"
                     onClick={() => handleRemoveKey(p.id)}
                     className="
-                      rounded-lg border border-neutral-200 px-3 py-1.5
+                      w-full rounded-lg border border-neutral-200 px-3 py-1.5
                       text-xs font-medium text-neutral-500
                       hover:text-error-600 hover:border-error-200 hover:bg-error-50
                     "
@@ -365,34 +371,39 @@ export function DashboardSettings() {
         </div>
       </div>
 
-      {/* Danger zone */}
-      <div className="rounded-xl border border-error-200 bg-error-50/30 p-5">
-        <h3 className="text-sm font-semibold text-error-700 mb-1">Danger Zone</h3>
-        <p className="text-xs text-error-600 mb-3">
-          Uninstall KloDock and remove all managed dependencies (Node.js, OpenClaw, API keys).
-        </p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={async () => {
-              if (!confirm("Uninstall KloDock? This will stop your agent and remove all managed software. Your personal data (conversations, SOUL.md) will be kept unless you choose otherwise.")) return;
-              const removeData = confirm("Also remove your personal data (conversations, personality)?");
-              try {
-                await uninstallKlodock(removeData);
-                toast.success("Uninstall complete. You can close KloDock now.");
-              } catch (err: any) {
-                toast.error(`Uninstall failed: ${err}`);
-              }
-            }}
-            className="
-              rounded-lg border border-error-300 bg-white
-              px-4 py-2 text-xs font-medium text-error-700
-              hover:bg-error-50
-            "
-          >
-            Uninstall KloDock
-          </button>
-        </div>
+      {/* Uninstall — understated, not alarming */}
+      <div className="border-t border-neutral-100 pt-4">
+        <details className="group">
+          <summary className="cursor-pointer text-xs text-neutral-400 hover:text-neutral-600 select-none">
+            Uninstall KloDock...
+          </summary>
+          <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+            <p className="text-xs text-neutral-500 mb-3">
+              This will stop your agent and remove Node.js, OpenClaw, and stored API keys.
+              Your personal data (conversations, personality) is kept unless you choose otherwise.
+            </p>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirm("Uninstall KloDock? This will stop your agent and remove all managed software.")) return;
+                const removeData = confirm("Also remove your personal data (conversations, personality)?");
+                try {
+                  await uninstallKlodock(removeData);
+                  toast.success("Uninstall complete. You can close KloDock now.");
+                } catch (err: any) {
+                  toast.error(`Uninstall failed: ${err}`);
+                }
+              }}
+              className="
+                rounded-lg border border-neutral-300 bg-white
+                px-4 py-2 text-xs font-medium text-neutral-600
+                hover:text-error-600 hover:border-error-200 hover:bg-error-50
+              "
+            >
+              Uninstall
+            </button>
+          </div>
+        </details>
       </div>
     </div>
   );
