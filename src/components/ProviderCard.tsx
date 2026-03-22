@@ -206,7 +206,7 @@ export function ProviderCard({
                   Ollama is running but has no models downloaded.
                 </p>
                 <p className="text-xs text-amber-700">
-                  Open a terminal and run: <code className="bg-amber-100 px-1 rounded">ollama pull llama3</code>
+                  Open a terminal and run: <code className="bg-amber-100 px-1 rounded">ollama pull qwen2.5:7b</code> (tool-capable, 4.7 GB)
                 </p>
                 <p className="text-xs text-amber-700">
                   Then click "Check Again" below.

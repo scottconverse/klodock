@@ -32,7 +32,15 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 
 - **Secure API key management** --- Keys are stored in the OS credential store: DPAPI on Windows, Keychain on macOS, libsecret on Linux. Keys never exist in plaintext at rest.
 
-- **Ollama integration** --- Auto-detection of a local Ollama instance, model listing via `/api/tags`, model picker dropdown, no-models guard (prompts user to `ollama pull`), and writes `base_url` (`http://localhost:11434`) and selected model to `openclaw.json`.
+- **Ollama integration** --- Auto-detection of a local Ollama instance, model listing via `/api/tags`, model picker dropdown, no-models guard (prompts user to `ollama pull`), and writes `base_url` (`http://localhost:11434`) and selected model to `openclaw.json`. **Ollama requires a model that supports tool calling** (function calling). Models without tool support will fail at runtime with an error like `"does not support tools"`. Recommended tool-capable models:
+
+  | Model | Size | Notes |
+  |-------|------|-------|
+  | `qwen2.5:7b` | 4.7 GB | Good balance of speed and capability |
+  | `llama3.1:8b` | 4.7 GB | Meta's flagship small model with tool support |
+  | `mistral:7b` | 4.1 GB | Fast inference, solid tool calling |
+
+  Pull one with: `ollama pull qwen2.5:7b`
 
 - **Channel setup** --- Guided configuration flows for Telegram and Discord, with token entry, validation, and connection testing built into the wizard.
 
@@ -194,7 +202,7 @@ KloDock treats API keys as the most sensitive data in the system. The security m
 
 - **Tauri capability restrictions.** The frontend can only invoke IPC commands that are explicitly registered in the `invoke_handler`. There is no shell access, no arbitrary filesystem access, and no network access from the webview context.
 
-- **Ollama zero-key path.** When the user selects Ollama as their provider, no API key is stored, no `.env` file is created, and no credentials leave the machine. The agent communicates directly with Ollama's local HTTP API. KloDock auto-detects Ollama, lists available models, and guards against the case where Ollama is running but has no models pulled.
+- **Ollama zero-key path.** When the user selects Ollama as their provider, no API key is stored, no `.env` file is created, and no credentials leave the machine. The agent communicates directly with Ollama's local HTTP API. KloDock auto-detects Ollama, lists available models, and guards against the case where Ollama is running but has no models pulled. Note: the selected Ollama model must support **tool calling** (function calling). Models that lack tool support will produce a `"does not support tools"` error at runtime. Recommended models: `qwen2.5:7b`, `llama3.1:8b`, or `mistral:7b`.
 
 - **No telemetry.** KloDock collects and transmits no usage data by default.
 

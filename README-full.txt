@@ -67,6 +67,17 @@ high-contrast theming.
     and writes base_url (http://localhost:11434) and selected model to
     openclaw.json.
 
+    IMPORTANT: Ollama requires a model that supports tool calling (function
+    calling). Not all Ollama models support this. Models without tool support
+    will fail at runtime with an error like "does not support tools".
+
+    Recommended tool-capable models:
+      - qwen2.5:7b   (4.7 GB) -- good balance of speed and capability
+      - llama3.1:8b   (4.7 GB) -- Meta's flagship small model with tool support
+      - mistral:7b    (4.1 GB) -- fast inference, solid tool calling
+
+    Pull one with: ollama pull qwen2.5:7b
+
   - Channel setup
     Guided configuration flows for Telegram and Discord, with token entry,
     validation, and connection testing built into the wizard.
@@ -280,7 +291,11 @@ ADDITIONAL SECURITY MEASURES
     API key is stored, no .env file is created, and no credentials leave the
     machine. The agent communicates directly with Ollama's local HTTP API.
     KloDock auto-detects Ollama, lists available models, and guards against
-    the case where Ollama is running but has no models pulled.
+    the case where Ollama is running but has no models pulled. Note: the
+    selected Ollama model must support tool calling (function calling).
+    Models that lack tool support will produce a "does not support tools"
+    error at runtime. Recommended models: qwen2.5:7b, llama3.1:8b, or
+    mistral:7b.
 
   - No telemetry. KloDock collects and transmits no usage data by default.
 

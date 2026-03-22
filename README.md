@@ -33,7 +33,10 @@ KloDock fills the gap: **easy + local + free.**
 - **Silent Node.js install** — detects existing installs, handles nvm/volta/homebrew
 - **Visual personality builder** — name, role, tone slider, live SOUL.md preview
 - **API key management** — OS keychain (DPAPI on Windows, Keychain on macOS, libsecret on Linux), keys never stored in plaintext
-- **Ollama integration** — auto-detection, model listing, model picker dropdown, no-models guard, writes base_url and selected model to openclaw.json
+- **Ollama integration** — auto-detection, model listing, model picker dropdown, no-models guard, writes base_url and selected model to openclaw.json. **Important:** Ollama requires a model that supports **tool calling** (function calling). Not all Ollama models support this. Recommended tool-capable models:
+  - `qwen2.5:7b` — 4.7 GB, good balance of speed and capability
+  - `llama3.1:8b` — 4.7 GB, Meta's flagship small model with tool support
+  - `mistral:7b` — 4.1 GB, fast inference, solid tool calling
 - **Channel setup** — guided Telegram and Discord configuration
 - **Skill browser** — safety-rated skills from ClawHub with one-click install
 - **Agent lifecycle** — managed child process with auto-restart, health monitoring
