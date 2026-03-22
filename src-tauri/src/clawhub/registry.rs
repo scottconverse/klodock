@@ -39,6 +39,10 @@ pub struct SkillMetadata {
     pub required_permissions: Vec<String>,
     /// ISO-8601 timestamp of the last publish.
     pub updated_at: String,
+    /// Whether all requirements are met and the skill is ready to use.
+    pub eligible: bool,
+    /// Human-readable list of what's missing (empty if eligible).
+    pub missing_requirements: Vec<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -93,6 +97,22 @@ struct SkillEntry {
     source: String,
     #[serde(default)]
     bundled: bool,
+    #[serde(default)]
+    missing: Option<MissingRequirements>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct MissingRequirements {
+    #[serde(default)]
+    bins: Vec<String>,
+    #[serde(default, rename = "anyBins")]
+    any_bins: Vec<String>,
+    #[serde(default)]
+    env: Vec<String>,
+    #[serde(default)]
+    config: Vec<String>,
+    #[serde(default)]
+    os: Vec<String>,
 }
 
 /// Run `openclaw skills list` and return parsed results.
@@ -157,6 +177,18 @@ async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
                 .join(" ")
         ).trim().to_string();
 
+        // Build human-readable missing requirements list
+        let mut missing_reqs = Vec::new();
+        if let Some(ref m) = entry.missing {
+            for bin in &m.bins { missing_reqs.push(format!("Requires: {bin}")); }
+            if !m.any_bins.is_empty() {
+                missing_reqs.push(format!("Requires one of: {}", m.any_bins.join(", ")));
+            }
+            for env in &m.env { missing_reqs.push(format!("Needs env: {env}")); }
+            for cfg in &m.config { missing_reqs.push(format!("Needs config: {cfg}")); }
+            for os in &m.os { missing_reqs.push(format!("Requires: {os}")); }
+        }
+
         let skill = SkillMetadata {
             slug: name,
             name: display_name,
@@ -171,6 +203,8 @@ async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
             },
             required_permissions: Vec::new(),
             updated_at: String::new(),
+            eligible: entry.eligible,
+            missing_requirements: missing_reqs,
         };
         (is_ready, skill)
     }).collect())

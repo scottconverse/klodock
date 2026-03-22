@@ -60,6 +60,13 @@ function buildRole(roleType: RoleType, customText: string): Role {
 
 export function Personality() {
   const navigate = useNavigate();
+
+  // Scroll to top when this step mounts so the name field is visible
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    document.querySelector("main")?.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
   const [name, setName] = useState("");
   const [roleType, setRoleType] = useState<RoleType>("GeneralAssistant");
   const [customRoleText, setCustomRoleText] = useState("");
