@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 use std::process::Command;
 
-const NODE_VERSION: &str = "22.14.0";
+const NODE_VERSION: &str = "22.16.0";
 const NODE_DOWNLOAD_BASE: &str = "https://nodejs.org/dist/";
 
 fn main() {

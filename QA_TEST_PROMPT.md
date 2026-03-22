@@ -291,7 +291,7 @@ The PRD claims WCAG 2.1 AA compliance (R-13). Verify:
 
 1. Complete steps 1-3 (Node, OpenClaw, API key). Force-kill KloDock.
 2. Relaunch. Does it offer to resume from step 4?
-3. Now manually delete `~/.openclaw/SOUL.md` (simulating a step that was previously completed but is now broken).
+3. Now manually delete `~/.openclaw/workspace/SOUL.md` (simulating a step that was previously completed but is now broken).
 4. Does `verify_all_steps` detect the missing SOUL.md and mark PersonalitySetup as failed?
 5. Does the wizard let you re-do that step?
 
@@ -348,7 +348,7 @@ For each role template (GeneralAssistant, ResearchHelper, WritingPartner, Produc
 2. It contains the agent name exactly as entered
 3. The tone is reflected (formal vs. casual language)
 4. Custom instructions appear verbatim
-5. The file is written to `~/.openclaw/SOUL.md` (not `~/.klodock/SOUL.md`)
+5. The file is written to `~/.openclaw/workspace/SOUL.md` (not `~/.klodock/SOUL.md`)
 6. File permissions are appropriate
 
 ### 7.2 openclaw.json Generation

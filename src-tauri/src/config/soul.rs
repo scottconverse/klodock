@@ -62,11 +62,12 @@ impl Role {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Returns `~/.openclaw/SOUL.md`.
+/// Returns `~/.openclaw/workspace/SOUL.md`.
 pub fn soul_path() -> PathBuf {
     dirs::home_dir()
         .expect("could not resolve home directory")
         .join(".openclaw")
+        .join("workspace")
         .join("SOUL.md")
 }
 
@@ -88,7 +89,7 @@ pub async fn read_soul() -> Result<String, String> {
 pub async fn write_soul(content: String) -> Result<(), String> {
     let path = soul_path();
 
-    // Ensure parent directory exists
+    // Ensure parent directory (~/.openclaw/workspace/) exists
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await

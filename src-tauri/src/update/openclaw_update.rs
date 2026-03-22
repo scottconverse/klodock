@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// npm registry URL used to look up the latest published OpenClaw version.
-const NPM_REGISTRY_URL: &str = "https://registry.npmjs.org/@anthropic/openclaw";
+const NPM_REGISTRY_URL: &str = "https://registry.npmjs.org/openclaw";
 
 // ---------------------------------------------------------------------------
 // Types

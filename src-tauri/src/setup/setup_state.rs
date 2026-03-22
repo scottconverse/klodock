@@ -179,13 +179,13 @@ async fn verify_api_key_setup() -> StepStatus {
     }
 }
 
-/// Checks if `~/.openclaw/SOUL.md` exists.
+/// Checks if `~/.openclaw/workspace/SOUL.md` exists.
 async fn verify_personality_setup() -> StepStatus {
     let home = match dirs::home_dir() {
         Some(h) => h,
         None => return StepStatus::Failed("Cannot determine home directory".into()),
     };
-    let soul_path = home.join(".openclaw").join("SOUL.md");
+    let soul_path = home.join(".openclaw").join("workspace").join("SOUL.md");
     if soul_path.exists() {
         StepStatus::Completed
     } else {

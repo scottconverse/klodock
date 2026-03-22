@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 const REQUIRED_NODE_MAJOR: u64 = 22;
-const NODE_VERSION: &str = "22.14.0";
+const NODE_VERSION: &str = "22.16.0";
 const NODE_DOWNLOAD_BASE: &str = "https://nodejs.org/dist/";
 
 fn main() {

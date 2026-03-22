@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use super::safety::SafetyRating;
 
 /// Base URL for the ClawHub skill registry API.
-const CLAWHUB_REGISTRY_URL: &str = "https://api.clawhub.dev/v1";
+const CLAWHUB_REGISTRY_URL: &str = "https://clawhub.com/api/v1";
 
 /// Subdirectory under ~/.klodock/ used for cached registry data.
 const CACHE_DIR_NAME: &str = "cache";

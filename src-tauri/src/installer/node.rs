@@ -7,8 +7,11 @@ use tauri::Emitter;
 /// Minimum Node.js major version required by OpenClaw.
 const REQUIRED_NODE_MAJOR: u64 = 22;
 
+/// Minimum Node.js minor version required by OpenClaw (within the required major).
+const REQUIRED_NODE_MINOR: u64 = 16;
+
 /// Pinned Node.js version for KloDock-managed installs.
-const NODE_VERSION: &str = "22.14.0";
+const NODE_VERSION: &str = "22.16.0";
 
 /// Base URL for official Node.js release tarballs / zips.
 const NODE_DOWNLOAD_BASE: &str = "https://nodejs.org/dist/";
@@ -20,9 +23,9 @@ const NODE_DOWNLOAD_BASE: &str = "https://nodejs.org/dist/";
 /// Describes the state of Node.js on this machine.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeStatus {
-    /// Parsed version string (e.g. "22.14.0"), None if node not found.
+    /// Parsed version string (e.g. "22.16.0"), None if node not found.
     pub version: Option<String>,
-    /// True when the installed major version >= REQUIRED_NODE_MAJOR.
+    /// True when the installed version >= REQUIRED_NODE_MAJOR.REQUIRED_NODE_MINOR.
     pub meets_requirement: bool,
     /// How Node was installed — "nvm", "volta", "homebrew", "system", or
     /// "klodock" when we installed it ourselves. None if not found.
@@ -52,7 +55,7 @@ pub async fn check_node() -> Result<NodeStatus, String> {
     if klodock_node.exists() {
         match run_node_version(&klodock_node) {
             Ok(version) => {
-                let meets = parse_major(&version) >= REQUIRED_NODE_MAJOR;
+                let meets = meets_node_requirement(&version);
                 return Ok(NodeStatus {
                     version: Some(version),
                     meets_requirement: meets,
@@ -73,7 +76,7 @@ pub async fn check_node() -> Result<NodeStatus, String> {
             let manager = detect_version_manager(&path);
             match run_node_version(&path) {
                 Ok(version) => {
-                    let meets = parse_major(&version) >= REQUIRED_NODE_MAJOR;
+                    let meets = meets_node_requirement(&version);
                     Ok(NodeStatus {
                         version: Some(version),
                         meets_requirement: meets,
@@ -112,7 +115,7 @@ pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
     // If already installed and meets requirements, skip
     if klodock_node_path().exists() {
         if let Ok(version) = run_node_version(&klodock_node_path()) {
-            if parse_major(&version) >= REQUIRED_NODE_MAJOR {
+            if meets_node_requirement(&version) {
                 return Ok(version);
             }
         }
@@ -241,7 +244,7 @@ pub fn klodock_base_dir() -> PathBuf {
 // ---------------------------------------------------------------------------
 
 /// Run `node --version` at a specific path and return the version string
-/// (e.g., "22.14.0") without the leading "v".
+/// (e.g., "22.16.0") without the leading "v".
 fn run_node_version(node_path: &std::path::Path) -> Result<String, String> {
     let output = Command::new(node_path)
         .arg("--version")
@@ -265,11 +268,33 @@ fn run_node_version(node_path: &std::path::Path) -> Result<String, String> {
     Ok(version_str)
 }
 
-/// Parse the major version number from a semver string like "22.14.0".
+/// Check whether a version string meets the minimum requirement (22.16+).
+fn meets_node_requirement(version: &str) -> bool {
+    let major = parse_major(version);
+    if major > REQUIRED_NODE_MAJOR {
+        return true;
+    }
+    if major < REQUIRED_NODE_MAJOR {
+        return false;
+    }
+    // major == REQUIRED_NODE_MAJOR, check minor
+    parse_minor(version) >= REQUIRED_NODE_MINOR
+}
+
+/// Parse the major version number from a semver string like "22.16.0".
 fn parse_major(version: &str) -> u64 {
     version
         .split('.')
         .next()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0)
+}
+
+/// Parse the minor version number from a semver string like "22.16.0".
+fn parse_minor(version: &str) -> u64 {
+    version
+        .split('.')
+        .nth(1)
         .and_then(|s| s.parse().ok())
         .unwrap_or(0)
 }
@@ -426,7 +451,7 @@ async fn verify_checksum(
 /// Extract the Node.js archive into the install directory.
 ///
 /// On Windows: extracts .zip, then moves contents from the nested directory
-/// (e.g., node-v22.14.0-win-x64/) up to the install_dir root.
+/// (e.g., node-v22.16.0-win-x64/) up to the install_dir root.
 ///
 /// On macOS/Linux: extracts .tar.gz, then moves contents from the nested
 /// directory up to the install_dir root.
@@ -474,7 +499,7 @@ async fn extract_zip(
         return Err(format!("Zip extraction failed: {stderr}"));
     }
 
-    // The zip contains a top-level directory like `node-v22.14.0-win-x64/`.
+    // The zip contains a top-level directory like `node-v22.16.0-win-x64/`.
     // We need to move its contents to install_dir.
     let mut entries = tokio::fs::read_dir(&extract_tmp)
         .await
