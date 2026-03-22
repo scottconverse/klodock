@@ -28,23 +28,43 @@ mod platform {
 
     /// Encrypt and store a secret using DPAPI.
     ///
-    /// Passes the plaintext value via stdin to avoid PowerShell interpretation
-    /// of special characters ($, backticks, etc.) in the value.
+    /// Passes the plaintext value via stdin and writes the encrypted output
+    /// directly to the target file via PowerShell's Out-File. This avoids
+    /// both shell interpretation of special characters and the "filename too
+    /// long" error that occurs when capturing very large DPAPI hex strings
+    /// through stdout.
     pub fn store(key: &str, value: &str) -> Result<(), String> {
         use std::io::Write;
+
+        // Reject empty values — ConvertTo-SecureString can't handle them
+        if value.is_empty() {
+            return Err("Cannot store an empty secret value".to_string());
+        }
+
+        // Reject empty key names
+        if key.is_empty() {
+            return Err("Cannot store a secret with an empty key name".to_string());
+        }
 
         let dir = super::secrets_dir()?;
         std::fs::create_dir_all(&dir)
             .map_err(|e| format!("Failed to create secrets dir: {e}"))?;
 
-        // Use stdin to pass the value safely — no shell interpretation possible
+        let path = dir.join(hashed_filename(key));
+        let path_str = path.to_string_lossy().to_string();
+
+        // Write encrypted output directly to file via Out-File to avoid
+        // stdout buffer issues with large values
         let mut child = Command::new("powershell.exe")
             .args([
                 "-NoProfile",
                 "-Command",
-                "$val = [Console]::In.ReadToEnd().TrimEnd(); \
-                 $ss = ConvertTo-SecureString $val -AsPlainText -Force; \
-                 ConvertFrom-SecureString $ss",
+                &format!(
+                    "$val = [Console]::In.ReadToEnd().TrimEnd(); \
+                     $ss = ConvertTo-SecureString $val -AsPlainText -Force; \
+                     ConvertFrom-SecureString $ss | Out-File -FilePath '{}' -NoNewline -Encoding ASCII",
+                    path_str.replace('\'', "''")
+                ),
             ])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
@@ -56,7 +76,6 @@ mod platform {
             stdin.write_all(value.as_bytes())
                 .map_err(|e| format!("Failed to write to PowerShell stdin: {e}"))?;
         }
-        // Drop stdin to close it so PowerShell reads EOF
         drop(child.stdin.take());
 
         let output = child.wait_with_output()
@@ -67,29 +86,34 @@ mod platform {
             return Err(format!("DPAPI encrypt failed: {stderr}"));
         }
 
-        let path = dir.join(hashed_filename(key));
-        std::fs::write(&path, &output.stdout)
-            .map_err(|e| format!("Failed to write encrypted secret: {e}"))
+        if !path.exists() {
+            return Err("DPAPI encrypt completed but output file was not created".to_string());
+        }
+
+        Ok(())
     }
 
     /// Retrieve and decrypt a secret using DPAPI.
+    ///
+    /// Reads the encrypted file directly in PowerShell via Get-Content to
+    /// avoid command-line length limits with large encrypted values.
     pub fn retrieve(key: &str) -> Result<String, String> {
         let path = super::secrets_dir()?.join(hashed_filename(key));
         if !path.exists() {
             return Err(format!("No secret found for key '{key}'"));
         }
-        let encrypted = std::fs::read_to_string(&path)
-            .map_err(|e| format!("Failed to read encrypted secret: {e}"))?;
-        let hex_str = encrypted.trim();
+        let path_str = path.to_string_lossy().to_string();
 
         let output = Command::new("powershell.exe")
             .args([
                 "-NoProfile",
                 "-Command",
                 &format!(
-                    "$ss = ConvertTo-SecureString '{hex_str}'; \
+                    "$hex = (Get-Content -Path '{}' -Raw).Trim(); \
+                     $ss = ConvertTo-SecureString $hex; \
                      $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ss); \
-                     [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)"
+                     [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)",
+                    path_str.replace('\'', "''")
                 ),
             ])
             .output()
@@ -179,6 +203,12 @@ fn write_index(keys: &[String]) -> Result<(), String> {
 /// Store a secret in the OS credential store and track its key name in the index.
 #[tauri::command]
 pub fn store_secret(key: String, value: String) -> Result<(), String> {
+    if key.is_empty() {
+        return Err("Secret key name cannot be empty".to_string());
+    }
+    if value.is_empty() {
+        return Err("Secret value cannot be empty".to_string());
+    }
     platform::store(&key, &value)?;
 
     let mut keys = read_index()?;

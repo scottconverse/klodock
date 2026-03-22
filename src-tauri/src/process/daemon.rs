@@ -195,10 +195,15 @@ pub async fn get_daemon_status() -> Result<DaemonStatus, String> {
         .await
         .map_err(|e| format!("Failed to read PID file: {e}"))?;
 
-    let pid: u32 = pid_str
-        .trim()
-        .parse()
-        .map_err(|e| format!("Invalid PID in file: {e}"))?;
+    let pid: u32 = match pid_str.trim().parse() {
+        Ok(p) => p,
+        Err(_) => {
+            // Corrupt PID file — remove it and report stopped
+            log::warn!("Corrupt PID file (non-numeric content), removing");
+            let _ = tokio::fs::remove_file(&pid_path).await;
+            return Ok(DaemonStatus::Stopped);
+        }
+    };
 
     if is_process_alive(pid) {
         Ok(DaemonStatus::Running)

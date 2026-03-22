@@ -70,9 +70,16 @@ pub async fn get_setup_state() -> Result<SetupState, String> {
     let contents = tokio::fs::read_to_string(&path)
         .await
         .map_err(|e| format!("Failed to read setup state: {e}"))?;
-    let state: SetupState =
-        serde_json::from_str(&contents).map_err(|e| format!("Failed to parse setup state: {e}"))?;
-    Ok(state)
+    // If the file is corrupt, empty, or wrong schema, return fresh state
+    // instead of crashing. The user shouldn't lose progress because of a
+    // malformed JSON file — they just restart the wizard.
+    match serde_json::from_str::<SetupState>(&contents) {
+        Ok(state) => Ok(state),
+        Err(e) => {
+            log::warn!("Corrupt setup-state.json ({}), returning fresh state", e);
+            Ok(SetupState::new_all_not_started())
+        }
+    }
 }
 
 /// Marks a single step as `Completed` and persists to disk.
