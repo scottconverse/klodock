@@ -378,7 +378,7 @@ async fn cleanup_after_stop() {
 async fn kill_process(pid: u32) {
     #[cfg(windows)]
     {
-        let _ = tokio::process::Command::new("taskkill")
+        let _ = tokio::process::Command::new("C:\\Windows\\System32\\taskkill.exe")
             .args(["/F", "/PID", &pid.to_string()])
             .output()
             .await;
@@ -404,7 +404,7 @@ fn is_process_alive(pid: u32) -> bool {
     #[cfg(windows)]
     {
         // Use tasklist to check if PID exists
-        match std::process::Command::new("tasklist")
+        match std::process::Command::new("C:\\Windows\\System32\\tasklist.exe")
             .args(["/FI", &format!("PID eq {pid}"), "/NH"])
             .output()
         {

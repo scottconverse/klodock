@@ -23,7 +23,7 @@ impl Autostart for WindowsAutostart {
         let value = format!("\"{}\" --minimized", exe_path.display());
 
         // Use reg.exe to write the value (avoids pulling in the winreg crate)
-        let output = std::process::Command::new("reg")
+        let output = std::process::Command::new("C:\\Windows\\System32\\reg.exe")
             .args([
                 "add",
                 &format!("HKCU\\{RUN_KEY}"),
@@ -48,7 +48,7 @@ impl Autostart for WindowsAutostart {
     }
 
     fn disable() -> Result<(), String> {
-        let output = std::process::Command::new("reg")
+        let output = std::process::Command::new("C:\\Windows\\System32\\reg.exe")
             .args([
                 "delete",
                 &format!("HKCU\\{RUN_KEY}"),
@@ -73,7 +73,7 @@ impl Autostart for WindowsAutostart {
     }
 
     fn is_enabled() -> Result<bool, String> {
-        let output = std::process::Command::new("reg")
+        let output = std::process::Command::new("C:\\Windows\\System32\\reg.exe")
             .args([
                 "query",
                 &format!("HKCU\\{RUN_KEY}"),

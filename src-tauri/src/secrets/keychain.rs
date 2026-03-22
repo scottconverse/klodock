@@ -55,7 +55,7 @@ mod platform {
 
         // Write encrypted output directly to file via Out-File to avoid
         // stdout buffer issues with large values
-        let mut child = Command::new("powershell.exe")
+        let mut child = Command::new("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
             .args([
                 "-NoProfile",
                 "-Command",
@@ -104,7 +104,7 @@ mod platform {
         }
         let path_str = path.to_string_lossy().to_string();
 
-        let output = Command::new("powershell.exe")
+        let output = Command::new("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
             .args([
                 "-NoProfile",
                 "-Command",

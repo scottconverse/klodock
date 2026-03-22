@@ -474,7 +474,7 @@ async fn extract_zip(
     // Clean up any previous extract attempt
     let _ = tokio::fs::remove_dir_all(&extract_tmp).await;
 
-    let output = tokio::process::Command::new("powershell.exe")
+    let output = tokio::process::Command::new("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
         .args([
             "-NoProfile",
             "-Command",
