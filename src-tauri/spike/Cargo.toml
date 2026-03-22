@@ -60,3 +60,7 @@ path = "test_auth_flow.rs"
 [[bin]]
 name = "test_anthropic"
 path = "test_anthropic.rs"
+
+[[bin]]
+name = "test_ollama_auth"
+path = "test_ollama_auth.rs"
