@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, AlertTriangle, Check } from "lucide-react";
+import { Loader2, AlertTriangle, Check, CheckCircle2 } from "lucide-react";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import {
   getRecommendedSkills,
@@ -19,6 +19,7 @@ export function Skills() {
   const [installProgress, setInstallProgress] = useState<{
     done: number;
     total: number;
+    currentSkill: string;
   } | null>(null);
   const mountedRef = useRef(true);
 
@@ -33,7 +34,8 @@ export function Skills() {
         setSelected(new Set(list.map((s) => s.slug)));
         setLoadError(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to load skills:", err);
         if (!mountedRef.current) return;
         setSkills([]);
         setLoadError(true);
@@ -74,10 +76,15 @@ export function Skills() {
     }
 
     setInstalling(true);
-    setInstallProgress({ done: 0, total: slugs.length });
+    setInstallProgress({ done: 0, total: slugs.length, currentSkill: "" });
 
     let completed = 0;
     for (const slug of slugs) {
+      // Show which skill is being installed
+      const skillName = skills.find((s) => s.slug === slug)?.name ?? slug;
+      if (mountedRef.current) {
+        setInstallProgress({ done: completed, total: slugs.length, currentSkill: skillName });
+      }
       try {
         await installSkill(slug);
       } catch {
@@ -85,7 +92,7 @@ export function Skills() {
       }
       completed++;
       if (mountedRef.current) {
-        setInstallProgress({ done: completed, total: slugs.length });
+        setInstallProgress({ done: completed, total: slugs.length, currentSkill: "" });
       }
     }
 
@@ -94,6 +101,11 @@ export function Skills() {
     } catch {
       // Non-critical
     }
+
+    // Show success confirmation before advancing
+    setInstalling(false);
+    setInstallProgress({ done: completed, total: slugs.length, currentSkill: "done" });
+    await new Promise((r) => setTimeout(r, 2000));
     navigate("/wizard/done");
   }
 
@@ -184,8 +196,8 @@ export function Skills() {
         Add Starter Skills
       </h2>
       <p className="mt-2 text-neutral-600">
-        Skills give your agent new abilities. Here are some recommendations
-        based on your setup. You can add or remove skills later.
+        Skills give your agent new abilities. These are bundled with OpenClaw
+        and ready to use. Browse thousands more at clawhub.ai.
       </p>
 
       {skills.length === 0 ? (
@@ -213,11 +225,11 @@ export function Skills() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-base font-semibold text-neutral-900">
+                    <h3 className="text-sm font-semibold text-neutral-900">
                       {skill.name}
                     </h3>
                     <p className="mt-0.5 text-xs text-neutral-500">
-                      by {skill.author}
+                      {skill.author}
                     </p>
                   </div>
                   <SafetyBadge rating={skill.safety_rating} />
@@ -228,8 +240,14 @@ export function Skills() {
                 </p>
 
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs text-neutral-600">
-                    {skill.install_count.toLocaleString()} installs
+                  <span className={`text-xs font-medium ${
+                    skill.install_count === 0
+                      ? "text-neutral-500"
+                      : "text-neutral-500"
+                  }`}>
+                    {skill.install_count > 0
+                      ? `${skill.install_count.toLocaleString()} installs`
+                      : "Bundled with OpenClaw"}
                   </span>
 
                   {/* Toggle switch */}
@@ -269,6 +287,23 @@ export function Skills() {
         </div>
       )}
 
+      {/* Success confirmation */}
+      {!installing && installProgress && installProgress.currentSkill === "done" && (
+        <div
+          className="mt-6 flex flex-col items-center gap-3"
+          role="status"
+          aria-label="Skills enabled successfully"
+        >
+          <CheckCircle2
+            className="h-10 w-10 text-success-500"
+            aria-hidden="true"
+          />
+          <p className="text-sm font-medium text-success-700">
+            {installProgress.total} skill{installProgress.total !== 1 ? "s" : ""} enabled!
+          </p>
+        </div>
+      )}
+
       {/* Install progress */}
       {installing && installProgress && (
         <div
@@ -282,8 +317,9 @@ export function Skills() {
               aria-hidden="true"
             />
             <p className="text-sm text-neutral-600">
-              Installing skills... {installProgress.done} /{" "}
-              {installProgress.total}
+              {installProgress.currentSkill
+                ? `Installing ${installProgress.currentSkill}... (${installProgress.done + 1} of ${installProgress.total})`
+                : `Installed ${installProgress.done} of ${installProgress.total}`}
             </p>
           </div>
           <div

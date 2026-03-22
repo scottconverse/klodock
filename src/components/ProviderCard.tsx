@@ -11,6 +11,21 @@ import { storeSecret, testApiKey, checkOllama, listOllamaModels } from "@/lib/ta
 import type { ReactNode } from "react";
 import type { OllamaModel } from "@/lib/types";
 
+/** Minimum key-format rules per provider — prevents accidental "Test" clicks. */
+const KEY_PATTERNS: Record<string, { prefix: string; minLen: number }> = {
+  anthropic: { prefix: "sk-ant-", minLen: 40 },
+  openai:    { prefix: "sk-",     minLen: 30 },
+  gemini:    { prefix: "AIzaSy",  minLen: 35 },
+  groq:      { prefix: "gsk_",    minLen: 30 },
+  openrouter:{ prefix: "sk-or-",  minLen: 30 },
+};
+
+function isKeyFormatValid(providerId: string, key: string): boolean {
+  const rule = KEY_PATTERNS[providerId];
+  if (!rule) return key.trim().length > 10; // fallback: any 10+ char key
+  return key.startsWith(rule.prefix) && key.length >= rule.minLen;
+}
+
 export interface ProviderCardProps {
   id: string;
   name: string;
@@ -90,7 +105,7 @@ export function ProviderCard({
   }
 
   async function handleTest() {
-    if (!apiKey.trim() || !envVar) return;
+    if (!isKeyFormatValid(id, apiKey) || !envVar) return;
     setTesting(true);
     setError(null);
 
@@ -380,14 +395,14 @@ export function ProviderCard({
               <button
                 type="button"
                 onClick={handleTest}
-                disabled={!apiKey.trim() || testing}
+                disabled={!isKeyFormatValid(id, apiKey) || testing}
                 className={`
                   inline-flex flex-1 items-center justify-center gap-1.5
                   rounded-lg px-3 py-1.5 text-sm font-medium
                   text-white transition-colors
                   focus-visible:outline-2 focus-visible:outline-offset-2
                   focus-visible:outline-primary-500
-                  ${apiKey.trim()
+                  ${isKeyFormatValid(id, apiKey)
                     ? "bg-primary-600 hover:bg-primary-700 cursor-pointer"
                     : "bg-neutral-300 cursor-not-allowed"
                   }

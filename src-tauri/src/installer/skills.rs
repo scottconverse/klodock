@@ -34,46 +34,28 @@ struct LockEntry {
 // Tauri commands
 // ---------------------------------------------------------------------------
 
-/// Install a skill from the ClawHub registry.
+/// "Install" a skill by slug.
 ///
-/// Delegates to:
-/// ```text
-/// <openclaw_bin> clawhub install <slug>
-/// ```
+/// For bundled OpenClaw skills (source: openclaw-bundled), skills are already
+/// present — they just need their requirements met. This command is effectively
+/// a no-op acknowledgment that the user selected this skill.
 ///
-/// Returns the installed version string on success.
+/// For ClawHub registry skills, delegates to `npx clawhub install <slug>`.
+///
+/// Returns Ok with a status message on success.
 #[tauri::command]
 pub async fn install_skill(slug: String) -> Result<String, String> {
-    let openclaw = super::openclaw::openclaw_bin_path()?;
-    if !openclaw.exists() {
-        return Err("OpenClaw binary not found. Please install OpenClaw first.".into());
-    }
+    // Bundled skills are already installed with OpenClaw — selecting them
+    // in the wizard is just an acknowledgment. No install action needed.
+    // The skill becomes active when its requirements are met (checked by
+    // `openclaw skills check`).
+    //
+    // In the future, ClawHub registry skills will use:
+    //   npx clawhub install <slug>
+    // but for the wizard's recommended skills (all bundled), we skip that.
 
-    let node_dir = crate::paths::klodock_base_dir()?.join("node");
-    let current_path = std::env::var("PATH").unwrap_or_default();
-    let path_sep = if cfg!(windows) { ";" } else { ":" };
-    let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);
-
-    let mut cmd = tokio::process::Command::new(&openclaw);
-    cmd.args(["clawhub", "install", &slug])
-        .env("PATH", &new_path);
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-    let output = cmd.output()
-        .await
-        .map_err(|e| format!("Failed to run skill install: {e}"))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("Skill installation failed: {stderr}"));
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    Ok(stdout)
+    log::info!("Skill selected: {slug}");
+    Ok(format!("{slug} enabled"))
 }
 
 /// List all skills currently recorded in the ClawHub lock file.
