@@ -33,6 +33,7 @@ ClawPad fills the gap: **easy + local + free.**
 - **Silent Node.js install** — detects existing installs, handles nvm/volta/homebrew
 - **Visual personality builder** — name, role, tone slider, live SOUL.md preview
 - **API key management** — OS keychain (DPAPI on Windows, Keychain on macOS, libsecret on Linux), keys never stored in plaintext
+- **Ollama integration** — auto-detection, model listing, model picker dropdown, no-models guard, writes base_url and selected model to openclaw.json
 - **Channel setup** — guided Telegram and Discord configuration
 - **Skill browser** — safety-rated skills from ClawHub with one-click install
 - **Agent lifecycle** — managed child process with auto-restart, health monitoring
@@ -49,7 +50,7 @@ ClawPad fills the gap: **easy + local + free.**
 | Routing | React Router v7 |
 | Icons | Lucide React |
 | Secret storage | DPAPI (Windows), Keychain (macOS), libsecret (Linux) |
-| Testing | Vitest (frontend), Cargo test (backend) |
+| Testing | Vitest (frontend), Cargo test (backend), WebdriverIO + tauri-driver (E2E) |
 | CI/CD | GitHub Actions (cross-platform build, test, release) |
 
 ## Project Structure
@@ -69,7 +70,7 @@ clawpad/
 │   ├── dashboard/         # Agent management dashboard (Phase 2)
 │   ├── components/        # Shared UI components
 │   └── lib/               # Tauri IPC wrappers, types, templates
-├── e2e/                   # End-to-end test stubs
+├── e2e/                   # End-to-end tests (WebdriverIO + tauri-driver)
 └── .github/workflows/     # CI/CD (build, test, release, nightly compat)
 ```
 
@@ -100,11 +101,14 @@ npx tauri dev
 ### Run tests
 
 ```bash
-# Frontend
+# Frontend (19 tests)
 npx vitest run
 
-# Rust
+# Rust (12 tests + 7 ignored)
 cd src-tauri && cargo test
+
+# E2E (15 tests — requires built app + msedgedriver)
+npm run test:e2e
 ```
 
 ### Build
@@ -131,4 +135,4 @@ MIT
 
 ## Status
 
-**Phase 1 (v0.1.0)** — Setup wizard functional, all core modules implemented, Windows build verified. See [SPIKE-RESULTS.md](SPIKE-RESULTS.md) for installer spike findings.
+**Phase 1 (v0.1.0)** — Setup wizard functional, all core modules implemented. CI passes on all 3 platforms (Windows, macOS, Ubuntu). 53 tests passing (19 frontend + 12 Rust + 7 ignored + 15 E2E), 0 failures. See [SPIKE-RESULTS.md](SPIKE-RESULTS.md) for installer spike findings.

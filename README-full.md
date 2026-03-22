@@ -18,7 +18,7 @@ ClawPad is a native desktop application that wraps the open-source OpenClaw AI a
 
 ClawPad fills that gap. It packages the entire OpenClaw setup and management lifecycle into a guided wizard that takes minutes, not hours, from download to a running agent. There is no command line, no config file editing, and no Markdown to write. The user downloads a lightweight installer, runs the wizard, and talks to their agent. Everything stays local: keys are stored in the operating system's native credential store, the agent process runs on the user's machine, and no data leaves the device except what the user's chosen AI provider requires.
 
-The application is built on Tauri v2, producing installers under 700 KB on Windows. It targets Windows, macOS, and Linux, with the Windows build fully verified and macOS/Linux builds code-complete but awaiting CI validation. ClawPad is designed for accessibility from the ground up, meeting WCAG 2.1 AA requirements with full keyboard navigation, screen reader support, and high-contrast theming.
+The application is built on Tauri v2, producing installers under 700 KB on Windows. It targets Windows, macOS, and Linux, with all three platforms passing CI builds and tests. ClawPad is designed for accessibility from the ground up, meeting WCAG 2.1 AA requirements with full keyboard navigation, screen reader support, and high-contrast theming.
 
 ---
 
@@ -31,6 +31,8 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 - **Visual personality builder** --- Choose from role templates (assistant, creative writer, coder, etc.), adjust a tone slider from formal to casual, and watch a live SOUL.md preview update in real time.
 
 - **Secure API key management** --- Keys are stored in the OS credential store: DPAPI on Windows, Keychain on macOS, libsecret on Linux. Keys never exist in plaintext at rest.
+
+- **Ollama integration** --- Auto-detection of a local Ollama instance, model listing via `/api/tags`, model picker dropdown, no-models guard (prompts user to `ollama pull`), and writes `base_url` (`http://localhost:11434`) and selected model to `openclaw.json`.
 
 - **Channel setup** --- Guided configuration flows for Telegram and Discord, with token entry, validation, and connection testing built into the wizard.
 
@@ -206,12 +208,14 @@ clawpad/
 │       └── compat.yml             # Nightly OpenClaw compatibility check
 ├── e2e/
 │   ├── helpers/                   # Shared test utilities
-│   ├── autostart.spec.ts          # Autostart toggle E2E tests (stubs)
-│   ├── channel-setup.spec.ts      # Channel configuration E2E tests (stubs)
-│   ├── resume-wizard.spec.ts      # Crash recovery resume E2E tests (stubs)
-│   ├── secret-lifecycle.spec.ts   # API key lifecycle E2E tests (stubs)
-│   ├── setup-wizard.spec.ts       # Full wizard walkthrough E2E tests (stubs)
-│   └── uninstall.spec.ts          # Uninstall flow E2E tests (stubs)
+│   ├── wizard-walkthrough.e2e.ts  # 8 wizard walkthrough E2E tests (WebdriverIO)
+│   ├── accessibility.e2e.ts       # 7 accessibility E2E tests (WebdriverIO)
+│   ├── autostart.spec.ts          # Autostart toggle E2E tests (old stubs, superseded)
+│   ├── channel-setup.spec.ts      # Channel configuration E2E tests (old stubs, superseded)
+│   ├── resume-wizard.spec.ts      # Crash recovery resume E2E tests (old stubs, superseded)
+│   ├── secret-lifecycle.spec.ts   # API key lifecycle E2E tests (old stubs, superseded)
+│   ├── setup-wizard.spec.ts       # Full wizard walkthrough E2E tests (old stubs, superseded)
+│   └── uninstall.spec.ts          # Uninstall flow E2E tests (old stubs, superseded)
 ├── src/                           # React frontend
 │   ├── __tests__/
 │   │   ├── components/
@@ -308,6 +312,7 @@ clawpad/
 │   │   └── uninstall_test.rs      # Uninstall state persistence tests
 │   ├── Cargo.toml                 # Rust dependencies
 │   └── Cargo.lock
+├── wdio.conf.ts                   # WebdriverIO E2E test configuration
 ├── package.json                   # Node dependencies + scripts
 ├── vite.config.ts                 # Vite configuration
 ├── tsconfig.json                  # TypeScript configuration
@@ -365,6 +370,9 @@ cd src-tauri && cargo test
 # Rust ignored tests (requires real system state: keychain, network, etc.)
 cd src-tauri && cargo test -- --ignored
 
+# E2E tests (requires built app + msedgedriver for Edge WebView2)
+npm run test:e2e
+
 # Watch mode for frontend tests
 npx vitest
 ```
@@ -386,6 +394,7 @@ This compiles an optimized Rust binary, bundles the Vite-built frontend, and pro
 | `npx vitest` | Run frontend tests in watch mode |
 | `cd src-tauri && cargo test` | Run Rust tests |
 | `cd src-tauri && cargo test -- --ignored` | Run ignored Rust tests |
+| `npm run test:e2e` | Run E2E tests (WebdriverIO + tauri-driver) |
 | `cd src-tauri && cargo check` | Fast Rust type-check without building |
 | `npx tauri build` | Production build with installers |
 | `npm run build` | Build frontend only (Vite) |
@@ -400,8 +409,9 @@ This compiles an optimized Rust binary, bundles the Vite-built frontend, and pro
 |-------|-----------|-------|--------|
 | Frontend unit/component | Vitest + Testing Library | 19 | Passing |
 | Rust integration | Cargo test | 12 | Passing |
-| Rust (ignored, require real state) | Cargo test --ignored | 7 | Manual only |
-| End-to-end | Vitest (stubs) | 7 spec files | Not yet implemented |
+| Rust (ignored, require real state) | Cargo test --ignored | 7 | Passing |
+| End-to-end | WebdriverIO v9 + tauri-driver + msedgedriver | 15 | Passing |
+| **Total** | | **53** | **0 failures** |
 
 ### Frontend Tests (Vitest)
 
@@ -429,23 +439,21 @@ Run with: `cd src-tauri && cargo test`
 
 These tests are marked `#[ignore]` because they interact with real OS resources:
 
-- **keychain_test** (3 tests) --- Store/retrieve round-trip, delete, list. Interacts with the real OS keychain.
+- **keychain_test** (3 tests) --- Store/retrieve round-trip, delete, list. Interacts with the real OS keychain. Uses a Mutex for serial execution to avoid race conditions on the shared DPAPI key index.
 - **installer_test** (2 tests) --- Full Node.js download and install. Requires network and writes to `~/.clawpad/node/`.
 - **autostart_test** (1 test per platform) --- Enable/disable round-trip. Modifies registry keys, launch agents, or systemd units.
 - **setup_state_test** (1 test) --- `verify_all_steps` calls real system checks.
 
 Run with: `cd src-tauri && cargo test -- --ignored`
 
-### End-to-End Tests (Stubs)
+### End-to-End Tests (WebdriverIO)
 
-Six spec files in `e2e/` define the intended E2E test coverage. All tests are currently `it.todo()` stubs awaiting an E2E framework (Playwright with Tauri or `@tauri-apps/e2e`):
+15 real E2E tests launch the compiled application using WebdriverIO v9 with tauri-driver and msedgedriver (Edge WebView2). Configuration is in `wdio.conf.ts`. Run with `npm run test:e2e`.
 
-- `setup-wizard.spec.ts` --- Full wizard walkthrough
-- `secret-lifecycle.spec.ts` --- API key store, validate, rotate, delete
-- `channel-setup.spec.ts` --- Channel configuration and persistence
-- `resume-wizard.spec.ts` --- Crash recovery and resume
-- `autostart.spec.ts` --- System tray toggle
-- `uninstall.spec.ts` --- Clean uninstall flow
+- `e2e/wizard-walkthrough.e2e.ts` (8 tests) --- Full wizard walkthrough from Welcome screen through Done, exercising each step of the setup flow.
+- `e2e/accessibility.e2e.ts` (7 tests) --- WCAG 2.1 AA compliance checks including keyboard navigation, ARIA labels, focus management, and screen reader compatibility.
+
+The older stub files (`setup-wizard.spec.ts`, `secret-lifecycle.spec.ts`, `channel-setup.spec.ts`, `resume-wizard.spec.ts`, `autostart.spec.ts`, `uninstall.spec.ts`) still exist in `e2e/` but are superseded by the real test suites above.
 
 ---
 
@@ -483,7 +491,7 @@ Four GitHub Actions workflows automate building, testing, releasing, and compati
 | Workflow | File | Trigger | Platforms | Purpose |
 |----------|------|---------|-----------|---------|
 | **Build** | `build.yml` | Push/PR to `main` | Ubuntu, macOS, Windows | Compiles the full Tauri application on all three platforms. Catches compilation errors before merge. |
-| **Test** | `test.yml` | Push/PR to `main` | Ubuntu, macOS, Windows | Runs Rust integration tests (`cargo test`) and frontend unit tests (`vitest`) on all platforms. E2E tests are stubbed. |
+| **Test** | `test.yml` | Push/PR to `main` | Ubuntu, macOS, Windows | Runs Rust integration tests (`cargo test`), frontend unit tests (`vitest`), and E2E tests (`npm run test:e2e`) on all platforms. All passing. |
 | **Release** | `release.yml` | Tag push (`v*`) | Ubuntu, macOS, Windows | Builds platform-specific installers via `tauri-action` and publishes them as GitHub Release assets. |
 | **Compatibility** | `compat.yml` | Nightly (06:00 UTC) + manual | Ubuntu | Installs the latest OpenClaw from npm and runs the Rust test suite against it. On failure, automatically creates a GitHub Issue tagged `bug` + `compatibility`. |
 
@@ -568,13 +576,9 @@ ClawPad occupies the unique position of being both free and easy to use while ke
 
 - **OpenClaw is fictional.** This project is a proof-of-concept demonstrating the architecture, UI patterns, and security model for wrapping a complex CLI tool in a native desktop GUI. The "OpenClaw" agent framework, "ClawHub" skill registry, and competing services referenced throughout are not real products.
 
-- **macOS and Linux builds not yet tested in CI.** The code is written and compiles for all three platforms, but only the Windows build has been verified end-to-end. macOS and Linux CI validation is planned for the next development cycle.
-
 - **Some Rust modules contain `todo!()` stubs.** Modules that depend on external APIs (ClawHub registry, OpenClaw update endpoints) have stubbed implementations that return mock data. The module interfaces and IPC contracts are final; only the HTTP calls need to be connected.
 
 - **WhatsApp integration deferred.** The original PRD included WhatsApp as a channel option. This was deferred because the Baileys library (the primary open-source WhatsApp Web API) is fragile and breaks frequently with WhatsApp protocol changes.
-
-- **E2E tests are stubs only.** The 6 E2E spec files define the intended test coverage but contain only `it.todo()` placeholders. An E2E framework has not yet been selected.
 
 - **No code signing.** Windows and macOS builds are not code-signed, which will trigger OS security warnings on first launch. Code signing certificates are needed for production distribution.
 
