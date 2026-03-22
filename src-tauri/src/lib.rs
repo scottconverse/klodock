@@ -76,6 +76,7 @@ pub fn run() {
             clawhub::registry::search_skills,
             clawhub::registry::get_skill_details,
             clawhub::registry::get_recommended_skills,
+            clawhub::registry::list_all_skills,
             clawhub::safety::get_safety_rating,
             // Update commands
             update::openclaw_update::check_openclaw_update,

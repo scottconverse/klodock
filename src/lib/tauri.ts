@@ -60,6 +60,10 @@ export async function getRecommendedSkills(
   return invoke<SkillMetadata[]>("get_recommended_skills", { goals });
 }
 
+export async function listAllSkills(): Promise<SkillMetadata[]> {
+  return invoke<SkillMetadata[]>("list_all_skills");
+}
+
 export async function getSafetyRating(slug: string): Promise<SafetyReport> {
   return invoke<SafetyReport>("get_safety_rating", { slug });
 }
