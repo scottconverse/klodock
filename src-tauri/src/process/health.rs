@@ -64,7 +64,7 @@ async fn check_api_key_health(issues: &mut Vec<String>) -> Option<bool> {
         let provider = match key_name.as_str() {
             "OPENAI_API_KEY" => "openai",
             "ANTHROPIC_API_KEY" => "anthropic",
-            "GEMINI_API_KEY" => "gemini",
+            "GOOGLE_API_KEY" => "gemini",
             "GROQ_API_KEY" => "groq",
             "OPENROUTER_API_KEY" => "openrouter",
             _ => continue,
