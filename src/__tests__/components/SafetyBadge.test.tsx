@@ -2,64 +2,36 @@
  * Tests for the SafetyBadge component.
  *
  * SafetyBadge displays a visual rating (icon + text) for ClawHub skill
- * safety scores.  It must be accessible and not rely solely on color
- * to convey information.
+ * safety scores using role="status" and SafetyRating values:
+ * "Verified", "Community", "Unreviewed".
  */
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import React from "react";
+import { SafetyBadge } from "@/components/SafetyBadge";
+import type { SafetyRating } from "@/lib/types";
 
-// TODO: Update this import path once the SafetyBadge component is created.
-// import SafetyBadge from "../../components/SafetyBadge";
-
-type Rating = "safe" | "caution" | "danger" | "unknown";
-
-// Placeholder component until the real one is built.
-function SafetyBadge({ rating }: { rating: Rating }) {
-  const icons: Record<Rating, string> = {
-    safe: "\u2705",       // checkmark
-    caution: "\u26A0\uFE0F", // warning
-    danger: "\u274C",      // X
-    unknown: "\u2753",     // question mark
-  };
-  const labels: Record<Rating, string> = {
-    safe: "Safe",
-    caution: "Use with caution",
-    danger: "Potentially dangerous",
-    unknown: "Not yet reviewed",
-  };
-
-  return (
-    <span
-      role="img"
-      aria-label={labels[rating]}
-      data-testid={`safety-badge-${rating}`}
-    >
-      {icons[rating]} {labels[rating]}
-    </span>
-  );
-}
+const ratings: SafetyRating[] = ["Verified", "Community", "Unreviewed"];
 
 describe("SafetyBadge", () => {
-  const ratings: Rating[] = ["safe", "caution", "danger", "unknown"];
-
-  it.each(ratings)("renders correct icon for rating: %s", (rating) => {
+  it.each(ratings)("renders visible label text for rating: %s", (rating) => {
     render(<SafetyBadge rating={rating} />);
-
-    const badge = screen.getByTestId(`safety-badge-${rating}`);
-    expect(badge).toBeInTheDocument();
+    expect(screen.getByText(rating)).toBeInTheDocument();
   });
 
-  it.each(ratings)("has accessible text (not color-only) for: %s", (rating) => {
+  it.each(ratings)("uses role='status' with an aria-label for: %s", (rating) => {
     render(<SafetyBadge rating={rating} />);
+    const badge = screen.getByRole("status");
+    expect(badge).toHaveAttribute("aria-label", `Safety rating: ${rating}`);
+  });
 
-    const badge = screen.getByTestId(`safety-badge-${rating}`);
-    // The badge must have an aria-label so screen readers can convey
-    // the rating without relying on color or icon alone.
-    expect(badge).toHaveAttribute("aria-label");
-    expect(badge.getAttribute("aria-label")).toBeTruthy();
+  it("renders different styling classes per rating", () => {
+    const { rerender } = render(<SafetyBadge rating="Verified" />);
+    const verified = screen.getByRole("status");
+    expect(verified.className).toContain("success");
 
-    // The visible text should also be present (not hidden).
-    expect(badge.textContent).toBeTruthy();
+    rerender(<SafetyBadge rating="Unreviewed" />);
+    const unreviewed = screen.getByRole("status");
+    expect(unreviewed.className).toContain("neutral");
   });
 });

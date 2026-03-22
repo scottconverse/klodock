@@ -32,12 +32,12 @@ const NAV_ITEMS = [
 ];
 
 export function DashboardLayout() {
-  const [status, setStatus] = useState<DaemonStatus>("Stopped");
+  const [status, setStatus] = useState<DaemonStatus>({ status: "stopped" });
 
   useEffect(() => {
     getDaemonStatus()
-      .then((h) => setStatus(h.daemon))
-      .catch(() => setStatus("Error"));
+      .then((s) => setStatus(s))
+      .catch(() => setStatus({ status: "error", message: "Failed to get status" }));
   }, []);
 
   return (
@@ -49,7 +49,7 @@ export function DashboardLayout() {
             className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-600 text-xs font-bold text-white"
             aria-hidden="true"
           >
-            C
+            K
           </div>
           <span className="text-sm font-bold text-neutral-900">KloDock</span>
         </div>

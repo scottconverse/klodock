@@ -5,20 +5,25 @@ interface StatusIndicatorProps {
 }
 
 const statusConfig: Record<
-  DaemonStatus,
+  string,
   { color: string; pulse: string; label: string }
 > = {
-  Running: {
+  running: {
     color: "bg-success-500",
     pulse: "animate-pulse bg-success-400",
     label: "Running",
   },
-  Stopped: {
+  starting: {
+    color: "bg-warning-500",
+    pulse: "animate-pulse bg-warning-400",
+    label: "Starting",
+  },
+  stopped: {
     color: "bg-neutral-400",
     pulse: "",
     label: "Stopped",
   },
-  Error: {
+  error: {
     color: "bg-error-500",
     pulse: "",
     label: "Error",
@@ -26,7 +31,7 @@ const statusConfig: Record<
 };
 
 export function StatusIndicator({ status }: StatusIndicatorProps) {
-  const cfg = statusConfig[status];
+  const cfg = statusConfig[status.status] ?? statusConfig.stopped;
 
   return (
     <span

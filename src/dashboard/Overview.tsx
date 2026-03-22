@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Clock, Puzzle, Radio, AlertCircle } from "lucide-react";
-import { getDaemonStatus } from "@/lib/tauri";
+import { Clock, Radio, Puzzle, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { runHealthCheck } from "@/lib/tauri";
 import type { HealthStatus } from "@/lib/types";
 
 export function Overview() {
@@ -8,18 +8,10 @@ export function Overview() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    getDaemonStatus()
+    runHealthCheck()
       .then(setHealth)
       .catch(() => setError(true));
   }, []);
-
-  function formatUptime(seconds: number | null): string {
-    if (seconds === null) return "N/A";
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
-  }
 
   return (
     <div className="space-y-8">
@@ -38,43 +30,88 @@ export function Overview() {
           </p>
         </div>
       ) : health ? (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <>
+          {/* Health checks */}
           <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 text-neutral-500">
-              <Clock className="h-4 w-4" aria-hidden="true" />
-              <span className="text-xs font-medium uppercase tracking-wider">
-                Uptime
-              </span>
-            </div>
-            <p className="mt-2 text-2xl font-bold text-neutral-900">
-              {formatUptime(health.uptime_seconds)}
-            </p>
+            <h3 className="text-sm font-semibold text-neutral-700 mb-3">Health Checks</h3>
+            <ul className="space-y-2">
+              <li className="flex items-center gap-2 text-sm">
+                {health.daemon_alive ? (
+                  <CheckCircle className="h-4 w-4 text-success-500" aria-hidden="true" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-error-500" aria-hidden="true" />
+                )}
+                <span>Agent daemon {health.daemon_alive ? "running" : "stopped"}</span>
+              </li>
+              {health.api_key_valid !== null && (
+                <li className="flex items-center gap-2 text-sm">
+                  {health.api_key_valid ? (
+                    <CheckCircle className="h-4 w-4 text-success-500" aria-hidden="true" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-error-500" aria-hidden="true" />
+                  )}
+                  <span>API key {health.api_key_valid ? "valid" : "invalid or expired"}</span>
+                </li>
+              )}
+              {Object.entries(health.channels).map(([name, connected]) => (
+                <li key={name} className="flex items-center gap-2 text-sm">
+                  {connected ? (
+                    <CheckCircle className="h-4 w-4 text-success-500" aria-hidden="true" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-warning-500" aria-hidden="true" />
+                  )}
+                  <span className="capitalize">{name} {connected ? "connected" : "disconnected"}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 text-neutral-500">
-              <Radio className="h-4 w-4" aria-hidden="true" />
-              <span className="text-xs font-medium uppercase tracking-wider">
-                Channels
-              </span>
+          {/* Issues */}
+          {health.issues.length > 0 && (
+            <div className="rounded-xl border border-warning-200 bg-warning-50 p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-warning-700 mb-2">Issues</h3>
+              <ul className="space-y-1">
+                {health.issues.map((issue, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-warning-700">
+                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    {issue}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <p className="mt-2 text-2xl font-bold text-neutral-900">
-              {health.connected_channels.length}
-            </p>
-          </div>
+          )}
 
-          <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 text-neutral-500">
-              <Puzzle className="h-4 w-4" aria-hidden="true" />
-              <span className="text-xs font-medium uppercase tracking-wider">
-                Active Skills
-              </span>
+          {/* Quick stats */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-neutral-500">
+                <Clock className="h-4 w-4" aria-hidden="true" />
+                <span className="text-xs font-medium uppercase tracking-wider">Status</span>
+              </div>
+              <p className="mt-2 text-2xl font-bold text-neutral-900">
+                {health.daemon_alive ? "Online" : "Offline"}
+              </p>
             </div>
-            <p className="mt-2 text-2xl font-bold text-neutral-900">
-              {health.active_skills}
-            </p>
+            <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-neutral-500">
+                <Radio className="h-4 w-4" aria-hidden="true" />
+                <span className="text-xs font-medium uppercase tracking-wider">Channels</span>
+              </div>
+              <p className="mt-2 text-2xl font-bold text-neutral-900">
+                {Object.values(health.channels).filter(Boolean).length}
+              </p>
+            </div>
+            <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-neutral-500">
+                <Puzzle className="h-4 w-4" aria-hidden="true" />
+                <span className="text-xs font-medium uppercase tracking-wider">Issues</span>
+              </div>
+              <p className="mt-2 text-2xl font-bold text-neutral-900">
+                {health.issues.length}
+              </p>
+            </div>
           </div>
-        </div>
+        </>
       ) : (
         <div className="flex justify-center py-12" role="status" aria-label="Loading dashboard data">
           <div className="h-6 w-6 animate-spin motion-reduce:animate-none rounded-full border-2 border-neutral-200 border-t-primary-600" />

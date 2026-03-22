@@ -35,10 +35,23 @@ pub fn set_file_permissions(path: &std::path::Path, mode: u32) -> Result<(), Str
         let path_str = path.to_string_lossy().to_string();
         let username = std::env::var("USERNAME").unwrap_or_else(|_| "".to_string());
         if !username.is_empty() {
-            // Remove inheritance and grant only current user full control
-            let _ = std::process::Command::new("icacls")
+            let output = std::process::Command::new("icacls")
                 .args([&path_str, "/inheritance:r", "/grant:r", &format!("{username}:(R,W)")])
                 .output();
+            match output {
+                Ok(o) if !o.status.success() => {
+                    let stderr = String::from_utf8_lossy(&o.stderr);
+                    log::warn!("icacls failed to set permissions on {}: {}", path.display(), stderr);
+                    return Err(format!("Failed to restrict file permissions on {}: {}", path.display(), stderr));
+                }
+                Err(e) => {
+                    log::warn!("icacls could not be executed for {}: {}", path.display(), e);
+                    return Err(format!("Failed to restrict file permissions on {}: {}", path.display(), e));
+                }
+                _ => {} // success
+            }
+        } else {
+            return Err("Cannot determine Windows username for file permission restriction".to_string());
         }
     }
 
@@ -65,12 +78,16 @@ pub async fn write_env(entries: HashMap<String, String>) -> Result<(), String> {
             .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
     }
 
-    // Build the .env content: KEY=VALUE per line, no quoting needed for simple
-    // values.  If a value contains whitespace or special chars the caller
-    // should pre-validate.
+    // Build the .env content: KEY=VALUE per line.
+    // Sanitize: strip newlines/carriage returns from both keys and values
+    // to prevent environment variable injection attacks.
     let content: String = entries
         .iter()
-        .map(|(k, v)| format!("{}={}", k, v))
+        .map(|(k, v)| {
+            let clean_key = k.replace(['\n', '\r'], "");
+            let clean_val = v.replace(['\n', '\r'], "");
+            format!("{}={}", clean_key, clean_val)
+        })
         .collect::<Vec<_>>()
         .join("\n");
 

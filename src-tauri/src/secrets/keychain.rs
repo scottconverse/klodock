@@ -16,23 +16,50 @@ const KEY_INDEX: &str = "_klodock_key_index";
 #[cfg(windows)]
 mod platform {
     use std::process::Command;
+    use sha2::{Digest, Sha256};
+
+    /// Hash a key name to a safe filename that doesn't leak the key identity.
+    fn hashed_filename(key: &str) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(key.as_bytes());
+        let hash = hasher.finalize();
+        format!("{:x}.enc", hash)
+    }
 
     /// Encrypt and store a secret using DPAPI.
+    ///
+    /// Passes the plaintext value via stdin to avoid PowerShell interpretation
+    /// of special characters ($, backticks, etc.) in the value.
     pub fn store(key: &str, value: &str) -> Result<(), String> {
+        use std::io::Write;
+
         let dir = super::secrets_dir()?;
         std::fs::create_dir_all(&dir)
             .map_err(|e| format!("Failed to create secrets dir: {e}"))?;
 
-        let output = Command::new("powershell.exe")
+        // Use stdin to pass the value safely — no shell interpretation possible
+        let mut child = Command::new("powershell.exe")
             .args([
                 "-NoProfile",
                 "-Command",
-                &format!(
-                    "$ss = ConvertTo-SecureString '{}' -AsPlainText -Force; ConvertFrom-SecureString $ss",
-                    value.replace('\'', "''")
-                ),
+                "$val = [Console]::In.ReadToEnd().TrimEnd(); \
+                 $ss = ConvertTo-SecureString $val -AsPlainText -Force; \
+                 ConvertFrom-SecureString $ss",
             ])
-            .output()
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("DPAPI encrypt failed: {e}"))?;
+
+        if let Some(ref mut stdin) = child.stdin {
+            stdin.write_all(value.as_bytes())
+                .map_err(|e| format!("Failed to write to PowerShell stdin: {e}"))?;
+        }
+        // Drop stdin to close it so PowerShell reads EOF
+        drop(child.stdin.take());
+
+        let output = child.wait_with_output()
             .map_err(|e| format!("DPAPI encrypt failed: {e}"))?;
 
         if !output.status.success() {
@@ -40,14 +67,14 @@ mod platform {
             return Err(format!("DPAPI encrypt failed: {stderr}"));
         }
 
-        let path = dir.join(format!("{key}.enc"));
+        let path = dir.join(hashed_filename(key));
         std::fs::write(&path, &output.stdout)
             .map_err(|e| format!("Failed to write encrypted secret: {e}"))
     }
 
     /// Retrieve and decrypt a secret using DPAPI.
     pub fn retrieve(key: &str) -> Result<String, String> {
-        let path = super::secrets_dir()?.join(format!("{key}.enc"));
+        let path = super::secrets_dir()?.join(hashed_filename(key));
         if !path.exists() {
             return Err(format!("No secret found for key '{key}'"));
         }
@@ -78,7 +105,7 @@ mod platform {
 
     /// Delete an encrypted secret file.
     pub fn delete(key: &str) -> Result<(), String> {
-        let path = super::secrets_dir()?.join(format!("{key}.enc"));
+        let path = super::secrets_dir()?.join(hashed_filename(key));
         if path.exists() {
             std::fs::remove_file(&path)
                 .map_err(|e| format!("Failed to delete secret file: {e}"))?;
@@ -204,9 +231,9 @@ pub async fn test_api_key(provider: String, key: String) -> Result<bool, String>
                 .send().await
         }
         "gemini" => {
-            client.get(format!(
-                "https://generativelanguage.googleapis.com/v1beta/models?key={}", key
-            )).send().await
+            client.get("https://generativelanguage.googleapis.com/v1beta/models")
+                .header("x-goog-api-key", &key)
+                .send().await
         }
         "groq" => {
             client.get("https://api.groq.com/openai/v1/models")

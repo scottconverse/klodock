@@ -1,60 +1,63 @@
 /**
  * Tests for the ModelProvider wizard screen.
  *
- * The ModelProvider screen displays provider cards (OpenAI, Anthropic, Gemini,
- * Groq, OpenRouter, Ollama) and a "Next" button that is disabled until the
- * user has entered and validated an API key.
+ * The ModelProvider screen displays 6 provider cards in a CSS grid
+ * (OpenAI, Anthropic, Google Gemini, Groq, OpenRouter, Ollama) and a
+ * "Next" button disabled until a provider is validated.
  */
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import React from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { ModelProvider } from "@/wizard/ModelProvider";
 
-// TODO: Update this import path once the ModelProvider component is created.
-// import ModelProvider from "../../wizard/ModelProvider";
-
-const PROVIDERS = [
-  "OpenAI",
-  "Anthropic",
-  "Gemini",
-  "Groq",
-  "OpenRouter",
-  "Ollama",
-] as const;
-
-// Placeholder component until the real one is built.
-function ModelProvider() {
-  return (
-    <div>
-      <h2>Choose a Model Provider</h2>
-      <div role="list" aria-label="Provider selection">
-        {PROVIDERS.map((name) => (
-          <div key={name} role="listitem" data-testid={`provider-${name.toLowerCase()}`}>
-            {name}
-          </div>
-        ))}
-      </div>
-      <button disabled>Next</button>
-    </div>
+function renderWithRouter() {
+  return render(
+    <MemoryRouter>
+      <ModelProvider />
+    </MemoryRouter>
   );
 }
 
 describe("ModelProvider wizard screen", () => {
-  it("renders all 6 provider cards", () => {
-    render(<ModelProvider />);
+  it("renders all 6 provider names", () => {
+    // Mock checkOllama (auto-called by ProviderCard for local provider)
+    vi.mocked(invoke).mockResolvedValue(false);
 
-    for (const provider of PROVIDERS) {
-      expect(screen.getByText(provider)).toBeInTheDocument();
-    }
+    renderWithRouter();
+
+    expect(screen.getByText("OpenAI")).toBeInTheDocument();
+    expect(screen.getByText("Anthropic")).toBeInTheDocument();
+    expect(screen.getByText("Google Gemini")).toBeInTheDocument();
+    expect(screen.getByText("Groq")).toBeInTheDocument();
+    expect(screen.getByText("OpenRouter")).toBeInTheDocument();
+    expect(screen.getByText("Ollama (Local)")).toBeInTheDocument();
   });
 
-  it("next button disabled until key validated", () => {
-    render(<ModelProvider />);
+  it("renders the heading", () => {
+    vi.mocked(invoke).mockResolvedValue(false);
+    renderWithRouter();
 
-    const nextButton = screen.getByRole("button", { name: /next/i });
+    expect(
+      screen.getByRole("heading", { name: /connect an ai provider/i })
+    ).toBeInTheDocument();
+  });
+
+  it("Next button is disabled when no provider is validated", () => {
+    vi.mocked(invoke).mockResolvedValue(false);
+    renderWithRouter();
+
+    const nextButton = screen.getByRole("button", { name: /continue to personality/i });
     expect(nextButton).toBeDisabled();
+  });
 
-    // TODO: Once the real component is wired up, simulate entering a valid
-    // API key and mock the test_api_key invoke call to return true, then
-    // assert that the button becomes enabled.
+  it("shows helper text prompting user to connect a provider", () => {
+    vi.mocked(invoke).mockResolvedValue(false);
+    renderWithRouter();
+
+    expect(
+      screen.getByText(/connect at least one provider to continue/i)
+    ).toBeInTheDocument();
   });
 });

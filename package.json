@@ -1,6 +1,6 @@
 {
   "name": "klodock",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,10 +10,10 @@
     "test:e2e": "wdio run ./wdio.conf.ts",
     "tauri": "tauri"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": ["openclaw", "ai-agent", "desktop", "tauri", "gui"],
+  "author": "Scott Converse",
+  "license": "MIT",
+  "description": "Desktop GUI for OpenClaw -- zero terminal, zero complexity",
   "dependencies": {
     "@tauri-apps/plugin-shell": "^2.3.5",
     "lucide-react": "^0.577.0",

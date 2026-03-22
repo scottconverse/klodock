@@ -11,6 +11,7 @@ import { Skills } from "./wizard/Skills";
 import { Done } from "./wizard/Done";
 import { DashboardLayout } from "./dashboard/DashboardLayout";
 import { Overview } from "./dashboard/Overview";
+import { ComingSoon } from "./dashboard/ComingSoon";
 import { getSetupState, resumeUninstall } from "./lib/tauri";
 
 export function App() {
@@ -88,6 +89,11 @@ export function App() {
       </Route>
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<Overview />} />
+        <Route path="skills" element={<ComingSoon title="Skill Browser" description="Browse, install, and manage ClawHub skills with safety ratings and one-click install." />} />
+        <Route path="personality" element={<ComingSoon title="Personality Editor" description="Edit your agent's name, role, tone, and custom instructions with a live preview." />} />
+        <Route path="channels" element={<ComingSoon title="Channel Manager" description="Manage your Telegram, Discord, and other channel connections." />} />
+        <Route path="settings" element={<ComingSoon title="Settings" description="Configure autostart, API key management, update preferences, and more." />} />
+        <Route path="updates" element={<ComingSoon title="Updates" description="Check for and install updates to OpenClaw and your installed skills." />} />
       </Route>
     </Routes>
   );

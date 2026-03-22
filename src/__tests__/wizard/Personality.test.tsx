@@ -1,79 +1,78 @@
 /**
  * Tests for the Personality wizard screen.
  *
- * The Personality screen lets the user pick a "role" for their assistant and
- * adjust a tone slider.  These tests verify rendering, interaction, and
- * accessibility.
+ * The Personality screen lets the user pick a role (GeneralAssistant,
+ * ResearchHelper, WritingPartner, ProductivityBot, Custom), adjust a
+ * ToneSlider (float 0-1), enter a name, and calls generateSoul /
+ * completeStep / writeSoul via Tauri IPC.
  */
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import React from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { Personality } from "@/wizard/Personality";
 
-// TODO: Update this import path once the Personality component is created.
-// import Personality from "../../wizard/Personality";
-
-// Placeholder component until the real one is built.
-function Personality() {
-  return (
-    <div>
-      <h2>Choose a Personality</h2>
-      <div role="radiogroup" aria-label="Role selection">
-        <label>
-          <input type="radio" name="role" value="coder" />
-          Coder
-        </label>
-        <label>
-          <input type="radio" name="role" value="writer" />
-          Writer
-        </label>
-        <label>
-          <input type="radio" name="role" value="analyst" />
-          Analyst
-        </label>
-      </div>
-      <div data-testid="preview">Preview: default</div>
-      <label>
-        Tone
-        <input
-          type="range"
-          min="0"
-          max="100"
-          defaultValue="50"
-          aria-label="Tone adjustment"
-          aria-valuetext="Neutral"
-        />
-      </label>
-    </div>
+function renderWithRouter() {
+  return render(
+    <MemoryRouter>
+      <Personality />
+    </MemoryRouter>
   );
 }
 
+beforeEach(() => {
+  vi.mocked(invoke).mockReset();
+  // Default: generateSoul returns a preview string
+  vi.mocked(invoke).mockResolvedValue("# SOUL.md preview");
+});
+
 describe("Personality wizard screen", () => {
-  it("renders role cards", () => {
-    render(<Personality />);
+  it("renders all 5 role options", () => {
+    renderWithRouter();
 
-    expect(screen.getByText("Coder")).toBeInTheDocument();
-    expect(screen.getByText("Writer")).toBeInTheDocument();
-    expect(screen.getByText("Analyst")).toBeInTheDocument();
+    expect(screen.getByText("General Assistant")).toBeInTheDocument();
+    expect(screen.getByText("Research Helper")).toBeInTheDocument();
+    expect(screen.getByText("Writing Partner")).toBeInTheDocument();
+    expect(screen.getByText("Productivity Bot")).toBeInTheDocument();
+    expect(screen.getByText("Custom")).toBeInTheDocument();
   });
 
-  it("selecting a role updates preview", () => {
-    render(<Personality />);
+  it("Next button is disabled when name is empty", () => {
+    renderWithRouter();
 
-    const coderRadio = screen.getByDisplayValue("coder");
-    fireEvent.click(coderRadio);
-
-    // After selecting a role, the preview area should reflect the choice.
-    // With the placeholder component this is static, but the real component
-    // should update the preview text or visual.
-    expect(coderRadio).toBeChecked();
+    const nextButton = screen.getByRole("button", { name: /next/i });
+    expect(nextButton).toBeDisabled();
   });
 
-  it("tone slider is accessible (has aria labels)", () => {
-    render(<Personality />);
+  it("Next button is enabled after entering a name", async () => {
+    renderWithRouter();
+
+    const nameInput = screen.getByLabelText(/what should your assistant be called/i);
+    fireEvent.change(nameInput, { target: { value: "Atlas" } });
+
+    const nextButton = screen.getByRole("button", { name: /next/i });
+    expect(nextButton).toBeEnabled();
+  });
+
+  it("shows the tone slider with a role='slider'", () => {
+    renderWithRouter();
 
     const slider = screen.getByRole("slider", { name: /tone/i });
     expect(slider).toBeInTheDocument();
-    expect(slider).toHaveAttribute("aria-label", "Tone adjustment");
-    expect(slider).toHaveAttribute("aria-valuetext");
+  });
+
+  it("shows custom role input when Custom is selected", async () => {
+    renderWithRouter();
+
+    // Click the Custom radio
+    const customRadio = screen.getByRole("radio", { name: "Custom" });
+    fireEvent.click(customRadio);
+
+    await waitFor(() => {
+      expect(
+        screen.getByLabelText(/custom role description/i)
+      ).toBeInTheDocument();
+    });
   });
 });

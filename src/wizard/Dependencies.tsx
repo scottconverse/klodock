@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   RefreshCw,
 } from "lucide-react";
+import { friendlyError } from "@/lib/friendly-error";
 import {
   checkNode,
   installNode,
@@ -211,19 +212,4 @@ export function Dependencies() {
 }
 
 /** Convert raw errors into plain-English messages. */
-function friendlyError(err: unknown): string {
-  const raw =
-    err instanceof Error ? err.message : typeof err === "string" ? err : "";
-
-  if (raw.includes("network") || raw.includes("fetch") || raw.includes("DNS")) {
-    return "Could not download the required files. Please check your internet connection and try again.";
-  }
-  if (raw.includes("permission") || raw.includes("EACCES")) {
-    return "The installer did not have the right permissions. Please close other programs and try again, or contact support.";
-  }
-  if (raw.includes("disk") || raw.includes("ENOSPC")) {
-    return "There is not enough disk space to complete the installation. Please free up some space and try again.";
-  }
-
-  return "Something went wrong while setting up prerequisites. Please try again, and if the problem continues, contact support.";
-}
+// Error conversion is shared across wizard steps — see lib/friendly-error.ts

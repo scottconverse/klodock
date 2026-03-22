@@ -229,14 +229,43 @@
       .nav-links { display: none; }
     }
 
+    /* ---- Skip Link ---- */
+    .skip-link {
+      position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;
+      z-index: 200; background: var(--blue-600); color: #fff; padding: 12px 24px;
+      font-size: 14px; font-weight: 600; border-radius: 0 0 8px 0; text-decoration: none;
+    }
+    .skip-link:focus {
+      position: fixed; left: 0; top: 0; width: auto; height: auto; overflow: visible;
+    }
+
+    /* ---- Hamburger ---- */
+    .nav-hamburger {
+      display: none; background: none; border: none; cursor: pointer;
+      padding: 8px; color: var(--slate-700); line-height: 0;
+    }
+    .nav-hamburger svg { width: 24px; height: 24px; }
+    @media (max-width: 768px) {
+      .nav-hamburger { display: block; }
+      .nav-links.open {
+        display: flex; flex-direction: column; position: absolute;
+        top: 64px; left: 0; right: 0; background: rgba(255,255,255,0.98);
+        backdrop-filter: blur(12px); padding: 16px 24px; gap: 16px;
+        border-bottom: 1px solid var(--slate-200); box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      }
+    }
+
     /* ---- Animations ---- */
     @media (prefers-reduced-motion: no-preference) {
       .fade-in { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
       .fade-in.visible { opacity: 1; transform: translateY(0); }
     }
   </style>
+  <noscript><style>.fade-in { opacity: 1 !important; transform: none !important; }</style></noscript>
 </head>
 <body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- Nav -->
 <nav>
@@ -245,7 +274,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
       KloDock
     </a>
-    <div class="nav-links">
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="nav-links" id="nav-links">
       <a href="#features">Features</a>
       <a href="#wizard">How It Works</a>
       <a href="#security">Security</a>
@@ -256,6 +288,7 @@
 </nav>
 
 <!-- Hero -->
+<main id="main-content">
 <section class="hero" id="top">
   <div class="container">
     <div class="hero-badge">
@@ -304,29 +337,29 @@
         <p>250,000+ GitHub stars. 13,700 community skills. The most powerful open-source AI agent framework in history. But getting it running means:</p>
         <ul class="pain-points">
           <li>
-            <span class="pain-icon pain-icon-red">&times;</span>
+            <span class="pain-icon pain-icon-red" aria-hidden="true">&times;</span>
             <span>Installing Node.js 22+ from the terminal</span>
           </li>
           <li>
-            <span class="pain-icon pain-icon-red">&times;</span>
+            <span class="pain-icon pain-icon-red" aria-hidden="true">&times;</span>
             <span>Running <code>npm install -g</code> and debugging PATH issues</span>
           </li>
           <li>
-            <span class="pain-icon pain-icon-red">&times;</span>
+            <span class="pain-icon pain-icon-red" aria-hidden="true">&times;</span>
             <span>Hand-editing JSON config files and SOUL.md</span>
           </li>
           <li>
-            <span class="pain-icon pain-icon-red">&times;</span>
+            <span class="pain-icon pain-icon-red" aria-hidden="true">&times;</span>
             <span>Managing API keys in plaintext .env files</span>
           </li>
           <li>
-            <span class="pain-icon pain-icon-red">&times;</span>
+            <span class="pain-icon pain-icon-red" aria-hidden="true">&times;</span>
             <span>Or paying $10&ndash;$40/mo for a hosted wrapper that holds your keys</span>
           </li>
         </ul>
       </div>
       <div>
-        <div class="comparison-card" role="img" aria-label="Competitive positioning chart">                More Control / Local
+        <div class="comparison-card" role="figure" aria-label="Competitive positioning chart comparing KloDock (free, local, GUI) against paid hosted alternatives and the OpenClaw CLI">                More Control / Local
 
                     <span style="color:#60a5fa;font-weight:bold">&#9733; KloDock</span>
                  (free, local, GUI)
@@ -457,14 +490,14 @@
         <h2>Your keys. Your data. Your machine.</h2>
         <p>KloDock never phones home. There are no accounts, no cloud services, and no telemetry. API keys are encrypted by your operating system and only exist in memory while the agent is running.</p>
         <ul class="security-list">
-          <li><span class="security-check">&#10003;</span> Keys stored in OS credential store (DPAPI / Keychain / libsecret)</li>
-          <li><span class="security-check">&#10003;</span> .env file scrubbed from disk when agent stops</li>
-          <li><span class="security-check">&#10003;</span> Stale .env cleaned on every app launch (crash recovery)</li>
-          <li><span class="security-check">&#10003;</span> SHA256 checksum verification on all downloads</li>
-          <li><span class="security-check">&#10003;</span> File permissions restricted to current user (icacls / chmod 600)</li>
-          <li><span class="security-check">&#10003;</span> No telemetry, no accounts, no cloud dependency</li>
-          <li><span class="security-check">&#10003;</span> Ollama support &mdash; free local AI, zero API keys, zero data sent anywhere</li>
-          <li><span class="security-check">&#10003;</span> MIT licensed &mdash; audit every line yourself</li>
+          <li><span class="security-check" aria-hidden="true">&#10003;</span> Keys stored in OS credential store (DPAPI / Keychain / libsecret)</li>
+          <li><span class="security-check" aria-hidden="true">&#10003;</span> .env file scrubbed from disk when agent stops</li>
+          <li><span class="security-check" aria-hidden="true">&#10003;</span> Stale .env cleaned on every app launch (crash recovery)</li>
+          <li><span class="security-check" aria-hidden="true">&#10003;</span> SHA256 checksum verification on all downloads</li>
+          <li><span class="security-check" aria-hidden="true">&#10003;</span> File permissions restricted to current user (icacls / chmod 600)</li>
+          <li><span class="security-check" aria-hidden="true">&#10003;</span> No telemetry, no accounts, no cloud dependency</li>
+          <li><span class="security-check" aria-hidden="true">&#10003;</span> Ollama support &mdash; free local AI, zero API keys, zero data sent anywhere</li>
+          <li><span class="security-check" aria-hidden="true">&#10003;</span> MIT licensed &mdash; audit every line yourself</li>
         </ul>
       </div>
       <div>
@@ -538,6 +571,8 @@
   </div>
 </section>
 
+</main>
+
 <!-- Footer -->
 <footer>
   <div class="container">
@@ -562,6 +597,23 @@
     });
   }, { threshold: 0.1 });
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // Hamburger menu toggle
+  const hamburger = document.querySelector('.nav-hamburger');
+  const navLinks = document.getElementById('nav-links');
+  hamburger.addEventListener('click', () => {
+    const isOpen = navLinks.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', isOpen);
+    hamburger.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+  });
+  // Close menu when a nav link is clicked
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      navLinks.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      hamburger.setAttribute('aria-label', 'Open menu');
+    });
+  });
 </script>
 
 </body>

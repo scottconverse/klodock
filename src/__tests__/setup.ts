@@ -34,3 +34,10 @@ vi.mock("@tauri-apps/api/event", () => ({
   }),
   emit: vi.fn(async () => {}),
 }));
+
+// ---------------------------------------------------------------------------
+// Mock @tauri-apps/plugin-shell — used by ProviderCard to open URLs.
+// ---------------------------------------------------------------------------
+vi.mock("@tauri-apps/plugin-shell", () => ({
+  open: vi.fn(async () => {}),
+}));
