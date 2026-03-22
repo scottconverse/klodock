@@ -77,7 +77,7 @@ fn test_detect_version_manager_none() {
 
 #[test]
 fn test_klodock_node_path_exists() {
-    let path = node::klodock_node_path();
+    let path = node::klodock_node_path().expect("should resolve path");
 
     // The path should be under ~/.klodock/node/ regardless of platform.
     let path_str = path.to_string_lossy();

@@ -55,8 +55,7 @@ impl SetupState {
 
 /// Path to `~/.klodock/setup-state.json`.
 fn state_file_path() -> Result<PathBuf, String> {
-    let home = dirs::home_dir().ok_or_else(|| "Cannot determine home directory".to_string())?;
-    Ok(home.join(".klodock").join("setup-state.json"))
+    Ok(crate::paths::klodock_base_dir()?.join("setup-state.json"))
 }
 
 /// Reads persisted setup state from disk.
@@ -141,7 +140,10 @@ async fn verify_step(step: SetupStep) -> StepStatus {
 /// Checks if `node >= 22` is on PATH or at `~/.klodock/node/`.
 async fn verify_node_install() -> StepStatus {
     // Check KloDock-managed node first
-    let klodock_node = crate::installer::node::klodock_node_path();
+    let klodock_node = match crate::installer::node::klodock_node_path() {
+        Ok(p) => p,
+        Err(_) => return StepStatus::Failed("Cannot determine home directory".into()),
+    };
     if klodock_node.exists() {
         return StepStatus::Completed;
     }
@@ -166,7 +168,10 @@ async fn verify_node_install() -> StepStatus {
 
 /// Checks if the openclaw binary exists on disk.
 async fn verify_openclaw_install() -> StepStatus {
-    let managed = crate::installer::openclaw::openclaw_bin_path();
+    let managed = match crate::installer::openclaw::openclaw_bin_path() {
+        Ok(p) => p,
+        Err(_) => return StepStatus::Failed("Cannot determine home directory".into()),
+    };
     if managed.exists() {
         return StepStatus::Completed;
     }
@@ -188,11 +193,10 @@ async fn verify_api_key_setup() -> StepStatus {
 
 /// Checks if `~/.openclaw/workspace/SOUL.md` exists.
 async fn verify_personality_setup() -> StepStatus {
-    let home = match dirs::home_dir() {
-        Some(h) => h,
-        None => return StepStatus::Failed("Cannot determine home directory".into()),
+    let soul_path = match crate::paths::openclaw_base_dir() {
+        Ok(p) => p.join("workspace").join("SOUL.md"),
+        Err(_) => return StepStatus::Failed("Cannot determine home directory".into()),
     };
-    let soul_path = home.join(".openclaw").join("workspace").join("SOUL.md");
     if soul_path.exists() {
         StepStatus::Completed
     } else {
@@ -216,11 +220,10 @@ async fn verify_channel_setup() -> StepStatus {
 
 /// Checks if `lock.json` has any skill entries.
 async fn verify_skill_install() -> StepStatus {
-    let home = match dirs::home_dir() {
-        Some(h) => h,
-        None => return StepStatus::NotStarted,
+    let lock_path = match crate::paths::openclaw_base_dir() {
+        Ok(p) => p.join(".clawhub").join("lock.json"),
+        Err(_) => return StepStatus::NotStarted,
     };
-    let lock_path = home.join(".openclaw").join(".clawhub").join("lock.json");
     if !lock_path.exists() {
         return StepStatus::NotStarted;
     }

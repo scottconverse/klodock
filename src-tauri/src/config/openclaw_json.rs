@@ -36,11 +36,8 @@ fn default_agent_name() -> String {
 // ---------------------------------------------------------------------------
 
 /// Returns `~/.openclaw/openclaw.json`.
-pub fn config_path() -> PathBuf {
-    dirs::home_dir()
-        .expect("could not resolve home directory")
-        .join(".openclaw")
-        .join("openclaw.json")
+pub fn config_path() -> Result<PathBuf, String> {
+    Ok(crate::paths::openclaw_base_dir()?.join("openclaw.json"))
 }
 
 // ---------------------------------------------------------------------------
@@ -50,7 +47,7 @@ pub fn config_path() -> PathBuf {
 /// Read and deserialize `openclaw.json` from disk.
 #[tauri::command]
 pub async fn read_config() -> Result<OpenClawConfig, String> {
-    let path = config_path();
+    let path = config_path()?;
     let bytes = tokio::fs::read(&path)
         .await
         .map_err(|e| format!("Failed to read config at {}: {}", path.display(), e))?;
@@ -62,7 +59,7 @@ pub async fn read_config() -> Result<OpenClawConfig, String> {
 /// Serialize and write the config to `openclaw.json`.
 #[tauri::command]
 pub async fn write_config(config: OpenClawConfig) -> Result<(), String> {
-    let path = config_path();
+    let path = config_path()?;
 
     // Ensure parent directory exists
     if let Some(parent) = path.parent() {

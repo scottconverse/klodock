@@ -1,3 +1,4 @@
+pub mod paths;
 pub mod installer;
 pub mod config;
 pub mod secrets;

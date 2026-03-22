@@ -30,7 +30,10 @@ pub enum DaemonStatus {
 /// Tracks the "Keep API keys accessible for manual OpenClaw use" setting.
 /// Defaults to false (always scrub .env on stop).
 fn keep_keys_setting() -> bool {
-    let path = klodock_base_dir().join("settings.json");
+    let path = match crate::paths::klodock_base_dir() {
+        Ok(p) => p.join("settings.json"),
+        Err(_) => return false,
+    };
     if let Ok(content) = std::fs::read_to_string(&path) {
         if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
             return val
@@ -88,7 +91,7 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     }
 
     // Step 4: Spawn the openclaw daemon
-    let openclaw_path = openclaw::openclaw_bin_path();
+    let openclaw_path = openclaw::openclaw_bin_path()?;
     if !openclaw_path.exists() {
         // Clean up the .env we just wrote since we can't start the daemon
         let _ = env::delete_env().await;
@@ -98,14 +101,13 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     }
 
     // Set up environment for the daemon
-    let node_dir = crate::installer::node::klodock_base_dir().join("node");
+    let node_dir = crate::paths::klodock_base_dir()?.join("node");
     let current_path = std::env::var("PATH").unwrap_or_default();
     let path_sep = if cfg!(windows) { ";" } else { ":" };
     let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);
 
     // The openclaw config directory
-    let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
-    let openclaw_dir = home.join(".openclaw");
+    let openclaw_dir = crate::paths::openclaw_base_dir()?;
 
     let child = tokio::process::Command::new(&openclaw_path)
         .args(["start", "--daemon"])
@@ -217,7 +219,7 @@ pub async fn get_daemon_status() -> Result<DaemonStatus, String> {
 /// Delete any orphaned `.env` file left over from a crash.
 /// Called on app startup (see `lib.rs` setup hook) and before each daemon start.
 pub async fn scrub_stale_env() -> Result<(), String> {
-    let env_path = env::env_path();
+    let env_path = env::env_path()?;
     if env_path.exists() {
         tokio::fs::remove_file(&env_path)
             .await
@@ -233,14 +235,9 @@ pub async fn scrub_stale_env() -> Result<(), String> {
 
 /// Path to `~/.klodock/daemon.pid`.
 fn pid_file_path() -> Result<PathBuf, String> {
-    Ok(klodock_base_dir().join("daemon.pid"))
+    Ok(crate::paths::klodock_base_dir()?.join("daemon.pid"))
 }
 
-fn klodock_base_dir() -> PathBuf {
-    dirs::home_dir()
-        .expect("Cannot determine home directory")
-        .join(".klodock")
-}
 
 /// Monitor a running daemon child process. When it exits, clean up state.
 async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
@@ -276,8 +273,34 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
                     tokio::time::sleep(delay).await;
 
                     // Note: .env is preserved across retries (keys haven't changed)
-                    let openclaw_path = openclaw::openclaw_bin_path();
-                    let node_dir = crate::installer::node::klodock_base_dir().join("node");
+                    let openclaw_path = match openclaw::openclaw_bin_path() {
+                        Ok(p) => p,
+                        Err(e) => {
+                            log::error!("Cannot determine openclaw path for restart: {e}");
+                            cleanup_after_stop().await;
+                            let _ = app.emit(
+                                STATUS_EVENT,
+                                &DaemonStatus::Error(format!(
+                                    "Daemon couldn't be restarted: {e}"
+                                )),
+                            );
+                            return;
+                        }
+                    };
+                    let node_dir = match crate::paths::klodock_base_dir() {
+                        Ok(p) => p.join("node"),
+                        Err(e) => {
+                            log::error!("Cannot determine base dir for restart: {e}");
+                            cleanup_after_stop().await;
+                            let _ = app.emit(
+                                STATUS_EVENT,
+                                &DaemonStatus::Error(format!(
+                                    "Daemon couldn't be restarted: {e}"
+                                )),
+                            );
+                            return;
+                        }
+                    };
                     let current_path = std::env::var("PATH").unwrap_or_default();
                     let path_sep = if cfg!(windows) { ";" } else { ":" };
                     let new_path =

@@ -99,7 +99,7 @@ pub async fn uninstall_klodock(
 /// Returns `Ok(true)` after successfully completing the remaining steps.
 #[tauri::command]
 pub async fn resume_uninstall(app: tauri::AppHandle) -> Result<bool, String> {
-    let state_path = uninstall_state_path();
+    let state_path = uninstall_state_path()?;
     if !state_path.exists() {
         return Ok(false);
     }
@@ -154,7 +154,7 @@ async fn run_remaining_steps(
     }
 
     // All steps done — remove the state file itself.
-    tokio::fs::remove_file(uninstall_state_path()).await.ok();
+    tokio::fs::remove_file(uninstall_state_path()?).await.ok();
     Ok(())
 }
 
@@ -186,7 +186,7 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
             Ok(())
         }
         UninstallStep::RemoveNode => {
-            let node_dir = klodock_base_dir().join("node");
+            let node_dir = crate::paths::klodock_base_dir()?.join("node");
             if node_dir.exists() {
                 tokio::fs::remove_dir_all(&node_dir)
                     .await
@@ -196,7 +196,7 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
         }
         UninstallStep::RemoveOpenClaw => {
             // Try to run `npm uninstall -g openclaw` via KloDock's managed npm.
-            let npm_path = crate::installer::node::klodock_npm_path();
+            let npm_path = crate::installer::node::klodock_npm_path()?;
             if npm_path.exists() {
                 let _ = tokio::process::Command::new(&npm_path)
                     .args(["uninstall", "-g", "openclaw"])
@@ -205,7 +205,7 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
             } else {
                 // npm already removed (e.g. RemoveNode ran first) — try to
                 // delete the openclaw binary directly.
-                let bin_path = crate::installer::openclaw::openclaw_bin_path();
+                let bin_path = crate::installer::openclaw::openclaw_bin_path()?;
                 if bin_path.exists() {
                     let _ = tokio::fs::remove_file(&bin_path).await;
                 }
@@ -215,7 +215,7 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
         UninstallStep::RemoveKlodockConfig => {
             // Remove ~/.klodock/ (but leave uninstall-state.json until the
             // very end, which is handled by the caller).
-            let base = klodock_base_dir();
+            let base = crate::paths::klodock_base_dir()?;
             if base.exists() {
                 tokio::fs::remove_dir_all(&base)
                     .await
@@ -224,9 +224,7 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
 
             // Optionally nuke user data.
             if remove_user_data {
-                let openclaw_dir = dirs::home_dir()
-                    .expect("home dir")
-                    .join(".openclaw");
+                let openclaw_dir = crate::paths::openclaw_base_dir()?;
                 if openclaw_dir.exists() {
                     tokio::fs::remove_dir_all(&openclaw_dir)
                         .await
@@ -243,19 +241,13 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn klodock_base_dir() -> PathBuf {
-    dirs::home_dir()
-        .expect("Could not determine home directory")
-        .join(".klodock")
-}
-
-fn uninstall_state_path() -> PathBuf {
-    klodock_base_dir().join("uninstall-state.json")
+fn uninstall_state_path() -> Result<PathBuf, String> {
+    Ok(crate::paths::klodock_base_dir()?.join("uninstall-state.json"))
 }
 
 /// Write the current [`UninstallState`] to disk so it survives crashes.
 async fn persist_state(state: &UninstallState) -> Result<(), String> {
-    let path = uninstall_state_path();
+    let path = uninstall_state_path()?;
 
     // Ensure parent directory exists (it might have been deleted in an earlier
     // step if we're retrying).

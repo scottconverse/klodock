@@ -105,6 +105,10 @@ export async function deleteSecret(key: string): Promise<void> {
   return invoke("delete_secret", { key });
 }
 
+export async function listSecrets(): Promise<string[]> {
+  return invoke("list_secrets");
+}
+
 export async function testApiKey(
   provider: string,
   key: string
@@ -173,7 +177,7 @@ export async function isAutostartEnabled(): Promise<boolean> {
 /* ── Uninstall ──────────────────────────────────────── */
 
 export async function uninstallKlodock(removeUserData: boolean): Promise<void> {
-  return invoke("uninstall_klodock", { removeUserData });
+  return invoke("uninstall_klodock", { remove_user_data: removeUserData });
 }
 
 export async function resumeUninstall(): Promise<boolean> {

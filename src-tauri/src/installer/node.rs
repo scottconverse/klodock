@@ -51,7 +51,7 @@ pub struct InstallProgress {
 #[tauri::command]
 pub async fn check_node() -> Result<NodeStatus, String> {
     // 1. Look for KloDock-managed node first (highest priority).
-    let klodock_node = klodock_node_path();
+    let klodock_node = klodock_node_path()?;
     if klodock_node.exists() {
         match run_node_version(&klodock_node) {
             Ok(version) => {
@@ -110,11 +110,11 @@ pub async fn check_node() -> Result<NodeStatus, String> {
 /// Returns the installed version string on success.
 #[tauri::command]
 pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
-    let install_dir = klodock_base_dir().join("node");
+    let install_dir = crate::paths::klodock_base_dir()?.join("node");
 
     // If already installed and meets requirements, skip
-    if klodock_node_path().exists() {
-        if let Ok(version) = run_node_version(&klodock_node_path()) {
+    if klodock_node_path()?.exists() {
+        if let Ok(version) = run_node_version(&klodock_node_path()?) {
             if meets_node_requirement(&version) {
                 return Ok(version);
             }
@@ -131,7 +131,7 @@ pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
     emit_progress(&app, "download", 0.0, "Preparing to download Node.js...");
 
     // Create temp directory for download
-    let tmp_dir = klodock_base_dir().join("tmp");
+    let tmp_dir = crate::paths::klodock_base_dir()?.join("tmp");
     tokio::fs::create_dir_all(&tmp_dir)
         .await
         .map_err(|e| format!("Failed to create temp directory: {e}"))?;
@@ -162,7 +162,7 @@ pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
     let _ = tokio::fs::remove_dir_all(&tmp_dir).await;
 
     // Verify installation
-    let node_path = klodock_node_path();
+    let node_path = klodock_node_path()?;
     if !node_path.exists() {
         return Err(format!(
             "Installation completed but node binary not found at {}. \
@@ -213,30 +213,23 @@ pub fn detect_version_manager(node_path: &std::path::Path) -> String {
 }
 
 /// Returns the absolute path to the KloDock-managed `node` binary.
-pub fn klodock_node_path() -> PathBuf {
-    let base = klodock_base_dir().join("node");
+pub fn klodock_node_path() -> Result<PathBuf, String> {
+    let base = crate::paths::klodock_base_dir()?.join("node");
     if cfg!(windows) {
-        base.join("node.exe")
+        Ok(base.join("node.exe"))
     } else {
-        base.join("bin").join("node")
+        Ok(base.join("bin").join("node"))
     }
 }
 
 /// Returns the absolute path to the KloDock-managed `npm` binary.
-pub fn klodock_npm_path() -> PathBuf {
-    let base = klodock_base_dir().join("node");
+pub fn klodock_npm_path() -> Result<PathBuf, String> {
+    let base = crate::paths::klodock_base_dir()?.join("node");
     if cfg!(windows) {
-        base.join("npm.cmd")
+        Ok(base.join("npm.cmd"))
     } else {
-        base.join("bin").join("npm")
+        Ok(base.join("bin").join("npm"))
     }
-}
-
-/// `~/.klodock/` — root directory for all KloDock-managed state.
-pub fn klodock_base_dir() -> PathBuf {
-    dirs::home_dir()
-        .expect("Could not determine home directory")
-        .join(".klodock")
 }
 
 // ---------------------------------------------------------------------------

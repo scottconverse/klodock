@@ -176,8 +176,7 @@ mod platform {
 
 /// `~/.klodock/secrets/` — encrypted secret storage directory.
 fn secrets_dir() -> Result<std::path::PathBuf, String> {
-    let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
-    Ok(home.join(".klodock").join("secrets"))
+    Ok(crate::paths::klodock_base_dir()?.join("secrets"))
 }
 
 /// Read the index of stored key names.

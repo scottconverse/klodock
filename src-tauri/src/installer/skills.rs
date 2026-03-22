@@ -44,12 +44,12 @@ struct LockEntry {
 /// Returns the installed version string on success.
 #[tauri::command]
 pub async fn install_skill(slug: String) -> Result<String, String> {
-    let openclaw = super::openclaw::openclaw_bin_path();
+    let openclaw = super::openclaw::openclaw_bin_path()?;
     if !openclaw.exists() {
         return Err("OpenClaw binary not found. Please install OpenClaw first.".into());
     }
 
-    let node_dir = super::node::klodock_base_dir().join("node");
+    let node_dir = crate::paths::klodock_base_dir()?.join("node");
     let current_path = std::env::var("PATH").unwrap_or_default();
     let path_sep = if cfg!(windows) { ";" } else { ":" };
     let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);
@@ -76,7 +76,7 @@ pub async fn install_skill(slug: String) -> Result<String, String> {
 /// [`InstalledSkill`] entries.
 #[tauri::command]
 pub async fn list_installed_skills() -> Result<Vec<InstalledSkill>, String> {
-    let lock_path = clawhub_lock_path();
+    let lock_path = clawhub_lock_path()?;
 
     if !lock_path.exists() {
         return Ok(Vec::new());
@@ -105,10 +105,8 @@ pub async fn list_installed_skills() -> Result<Vec<InstalledSkill>, String> {
 // ---------------------------------------------------------------------------
 
 /// Path to the ClawHub lock file: `~/.openclaw/.clawhub/lock.json`.
-fn clawhub_lock_path() -> PathBuf {
-    dirs::home_dir()
-        .expect("Could not determine home directory")
-        .join(".openclaw")
+fn clawhub_lock_path() -> Result<PathBuf, String> {
+    Ok(crate::paths::openclaw_base_dir()?
         .join(".clawhub")
-        .join("lock.json")
+        .join("lock.json"))
 }

@@ -45,8 +45,7 @@ pub struct SkillMetadata {
 
 /// Return `~/.klodock/cache/`, creating the directory if it does not exist.
 fn cache_path() -> Result<PathBuf, String> {
-    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let path = home.join(".klodock").join(CACHE_DIR_NAME);
+    let path = crate::paths::klodock_base_dir()?.join(CACHE_DIR_NAME);
     std::fs::create_dir_all(&path)
         .map_err(|e| format!("Failed to create cache directory: {e}"))?;
     Ok(path)

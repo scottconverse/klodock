@@ -63,12 +63,10 @@ impl Role {
 // ---------------------------------------------------------------------------
 
 /// Returns `~/.openclaw/workspace/SOUL.md`.
-pub fn soul_path() -> PathBuf {
-    dirs::home_dir()
-        .expect("could not resolve home directory")
-        .join(".openclaw")
+pub fn soul_path() -> Result<PathBuf, String> {
+    Ok(crate::paths::openclaw_base_dir()?
         .join("workspace")
-        .join("SOUL.md")
+        .join("SOUL.md"))
 }
 
 // ---------------------------------------------------------------------------
@@ -78,7 +76,7 @@ pub fn soul_path() -> PathBuf {
 /// Read the raw SOUL.md file from disk and return its contents.
 #[tauri::command]
 pub async fn read_soul() -> Result<String, String> {
-    let path = soul_path();
+    let path = soul_path()?;
     tokio::fs::read_to_string(&path)
         .await
         .map_err(|e| format!("Failed to read SOUL.md at {}: {}", path.display(), e))
@@ -87,7 +85,7 @@ pub async fn read_soul() -> Result<String, String> {
 /// Overwrite SOUL.md with the provided raw markdown content.
 #[tauri::command]
 pub async fn write_soul(content: String) -> Result<(), String> {
-    let path = soul_path();
+    let path = soul_path()?;
 
     // Ensure parent directory (~/.openclaw/workspace/) exists
     if let Some(parent) = path.parent() {

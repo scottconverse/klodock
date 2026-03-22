@@ -6,11 +6,8 @@ use std::path::PathBuf;
 // ---------------------------------------------------------------------------
 
 /// Returns `~/.openclaw/.env`.
-pub fn env_path() -> PathBuf {
-    dirs::home_dir()
-        .expect("could not resolve home directory")
-        .join(".openclaw")
-        .join(".env")
+pub fn env_path() -> Result<PathBuf, String> {
+    Ok(crate::paths::openclaw_base_dir()?.join(".env"))
 }
 
 /// Set file permissions to 600 (owner read/write only).
@@ -69,7 +66,7 @@ pub fn set_file_permissions(path: &std::path::Path, mode: u32) -> Result<(), Str
 /// secrets flow through here versus `secrets::keychain`.
 #[tauri::command]
 pub async fn write_env(entries: HashMap<String, String>) -> Result<(), String> {
-    let path = env_path();
+    let path = env_path()?;
 
     // Ensure parent directory exists
     if let Some(parent) = path.parent() {
@@ -105,7 +102,7 @@ pub async fn write_env(entries: HashMap<String, String>) -> Result<(), String> {
 /// exist.
 #[tauri::command]
 pub async fn delete_env() -> Result<(), String> {
-    let path = env_path();
+    let path = env_path()?;
     match tokio::fs::remove_file(&path).await {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
@@ -119,7 +116,7 @@ pub async fn delete_env() -> Result<(), String> {
 /// this to retrieve secrets at runtime.
 #[tauri::command]
 pub async fn read_env() -> Result<HashMap<String, String>, String> {
-    let path = env_path();
+    let path = env_path()?;
     let content = tokio::fs::read_to_string(&path)
         .await
         .map_err(|e| format!("Failed to read .env at {}: {}", path.display(), e))?;

@@ -42,7 +42,7 @@ pub struct InstallProgress {
 /// live status indicator.
 #[tauri::command]
 pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
-    let npm = super::node::klodock_npm_path();
+    let npm = super::node::klodock_npm_path()?;
     if !npm.exists() {
         return Err(
             "KloDock-managed npm not found. Please install Node.js first \
@@ -131,7 +131,7 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
     emit(&app, "Verifying installation...", Some(0.9));
 
     // Verify the binary exists
-    let bin_path = openclaw_bin_path();
+    let bin_path = openclaw_bin_path()?;
     if bin_path.exists() {
         let version = run_openclaw_version(&bin_path)?;
         emit(
@@ -171,7 +171,7 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
 #[tauri::command]
 pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
     // 1. Check KloDock-managed location.
-    let managed_path = openclaw_bin_path();
+    let managed_path = openclaw_bin_path()?;
     if managed_path.exists() {
         match run_openclaw_version(&managed_path) {
             Ok(version) => {
@@ -219,12 +219,12 @@ pub async fn check_openclaw() -> Result<OpenClawStatus, String> {
 ///
 /// Global npm packages land in the `node/` prefix on Windows or
 /// `node/bin/` on Unix.
-pub(crate) fn openclaw_bin_path() -> PathBuf {
-    let base = super::node::klodock_base_dir().join("node");
+pub(crate) fn openclaw_bin_path() -> Result<PathBuf, String> {
+    let base = crate::paths::klodock_base_dir()?.join("node");
     if cfg!(windows) {
-        base.join("openclaw.cmd")
+        Ok(base.join("openclaw.cmd"))
     } else {
-        base.join("bin").join("openclaw")
+        Ok(base.join("bin").join("openclaw"))
     }
 }
 

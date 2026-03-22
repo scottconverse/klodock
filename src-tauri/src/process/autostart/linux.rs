@@ -6,15 +6,15 @@ pub struct LinuxAutostart;
 
 const DESKTOP_FILENAME: &str = "klodock.desktop";
 
-fn autostart_dir() -> PathBuf {
-    dirs::home_dir()
-        .expect("Cannot determine home directory")
+fn autostart_dir() -> Result<PathBuf, String> {
+    Ok(dirs::home_dir()
+        .ok_or_else(|| "Cannot determine home directory".to_string())?
         .join(".config")
-        .join("autostart")
+        .join("autostart"))
 }
 
-fn desktop_file_path() -> PathBuf {
-    autostart_dir().join(DESKTOP_FILENAME)
+fn desktop_file_path() -> Result<PathBuf, String> {
+    Ok(autostart_dir()?.join(DESKTOP_FILENAME))
 }
 
 impl Autostart for LinuxAutostart {
@@ -22,7 +22,7 @@ impl Autostart for LinuxAutostart {
         let exe_path = std::env::current_exe()
             .map_err(|e| format!("Failed to determine KloDock executable path: {e}"))?;
 
-        let dir = autostart_dir();
+        let dir = autostart_dir()?;
         std::fs::create_dir_all(&dir)
             .map_err(|e| format!("Failed to create autostart directory: {e}"))?;
 
@@ -39,14 +39,14 @@ impl Autostart for LinuxAutostart {
             exe_path.display()
         );
 
-        std::fs::write(desktop_file_path(), content)
+        std::fs::write(desktop_file_path()?, content)
             .map_err(|e| format!("Failed to write desktop file: {e}"))?;
 
         Ok(())
     }
 
     fn disable() -> Result<(), String> {
-        let path = desktop_file_path();
+        let path = desktop_file_path()?;
         if path.exists() {
             std::fs::remove_file(&path)
                 .map_err(|e| format!("Failed to remove desktop file: {e}"))?;
@@ -55,6 +55,6 @@ impl Autostart for LinuxAutostart {
     }
 
     fn is_enabled() -> Result<bool, String> {
-        Ok(desktop_file_path().exists())
+        Ok(desktop_file_path()?.exists())
     }
 }
