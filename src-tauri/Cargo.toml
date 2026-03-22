@@ -69,3 +69,8 @@ required-features = ["spike"]
 name = "spike_daemon"
 path = "src/bin/spike_daemon.rs"
 required-features = ["spike"]
+
+[[bin]]
+name = "e2e_verify"
+path = "src/bin/e2e_verify.rs"
+required-features = ["spike"]
