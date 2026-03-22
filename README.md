@@ -29,17 +29,23 @@ KloDock fills the gap: **easy + local + free.**
 
 ## Features
 
-- **Quick setup wizard** — from download to a working agent in minutes, not hours
+- **7-step setup wizard** — from download to a working agent in minutes, not hours
+- **Full dashboard with 6 pages** — Overview, Skills, Personality, Channels, Settings, Updates
+- **52 bundled skills** — categorized into Communication, Productivity, Developer Tools, Media & Audio, Smart Home, AI Services, Images & Video, System & Security — with search, category filtering, and actionable requirements (download buttons, navigation to Settings/Channels)
+- **Dashboard Settings** — full AI provider card grid (same as wizard), provider switching with "Set as Primary", gateway config, uninstall from Settings
+- **Dashboard Channels** — full token setup flow (same as wizard), disconnect capability
+- **Dashboard Personality** — inline edit with name, role, tone, live preview
+- **Dashboard Updates** — real version checking via npm registry, "Update now" button
+- **Toast notification system** — global error/success/warning/info toasts
+- **Auto-updater** — checks npm registry for latest OpenClaw version, updates via npm
 - **Silent Node.js install** — detects existing installs, handles nvm/volta/homebrew
-- **Visual personality builder** — name, role, tone slider, live SOUL.md preview
 - **API key management** — OS keychain (DPAPI on Windows, Keychain on macOS, libsecret on Linux), keys never stored in plaintext
 - **Ollama integration** — auto-detection, model listing, model picker dropdown, no-models guard, writes base_url and selected model to openclaw.json. **Important:** Ollama requires a model that supports **tool calling** (function calling). Not all Ollama models support this. Recommended tool-capable models:
   - `qwen2.5:7b` — 4.7 GB, good balance of speed and capability
   - `llama3.1:8b` — 4.7 GB, Meta's flagship small model with tool support
   - `mistral:7b` — 4.1 GB, fast inference, solid tool calling
 - **Channel setup** — guided Telegram and Discord configuration
-- **Skill browser** — safety-rated skills from ClawHub with one-click install
-- **Agent lifecycle** — managed child process with auto-restart, health monitoring
+- **Daemon auto-restart** — managed child process with backoff (up to 3 attempts), health monitoring
 - **Start on login** — optional system tray launcher (no system service required)
 - **Clean uninstall** — resumable, leaves user data intact by default
 - **Accessible** — WCAG 2.1 AA, keyboard navigation, screen reader tested
@@ -69,9 +75,16 @@ klodock/
 │   ├── clawhub/           # Skill registry client + safety ratings
 │   └── update/            # Version checking + updates
 ├── src/                   # React frontend
-│   ├── wizard/            # 8-screen setup wizard
-│   ├── dashboard/         # Agent management dashboard (Phase 2)
-│   ├── components/        # Shared UI components
+│   ├── wizard/            # 7-step setup wizard
+│   ├── dashboard/         # Agent management dashboard
+│   │   ├── DashboardLayout.tsx
+│   │   ├── Overview.tsx
+│   │   ├── DashboardSkills.tsx
+│   │   ├── DashboardPersonality.tsx
+│   │   ├── DashboardChannels.tsx
+│   │   ├── DashboardSettings.tsx
+│   │   └── DashboardUpdates.tsx
+│   ├── components/        # Shared UI components (incl. Toast.tsx)
 │   └── lib/               # Tauri IPC wrappers, types, templates
 ├── e2e/                   # End-to-end tests (WebdriverIO + tauri-driver)
 └── .github/workflows/     # CI/CD (build, test, release, nightly compat)
@@ -138,4 +151,4 @@ MIT
 
 ## Status
 
-**Phase 1 (v0.1.0)** — Setup wizard functional, all core modules implemented. CI passes on all 3 platforms (Windows, macOS, Ubuntu). 51 tests passing (26 frontend + 12 Rust + 13 E2E), 0 failures. See [SPIKE-RESULTS.md](SPIKE-RESULTS.md) for installer spike findings.
+**v1.1.0** — Full dashboard, auto-updater, 52 categorized skills, toast notifications, uninstall from UI. All wizard QA fixes from v0.1.0.

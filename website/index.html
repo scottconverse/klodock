@@ -280,6 +280,7 @@
     <div class="nav-links" id="nav-links">
       <a href="#features">Features</a>
       <a href="#wizard">How It Works</a>
+      <a href="#screenshots">Screenshots</a>
       <a href="#security">Security</a>
       <a href="https://github.com/scottconverse/klodock" target="_blank" rel="noopener">GitHub</a>
       <a href="#download" class="nav-cta">Download</a>
@@ -293,7 +294,7 @@
   <div class="container">
     <div class="hero-badge">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Setup in minutes &middot; Zero terminal &middot; 100% local
+      v1.1 &middot; Setup in minutes &middot; Zero terminal &middot; 100% local
     </div>
     <h1>Your AI agent,<br><span>without the command line.</span></h1>
     <p>KloDock™ wraps OpenClaw in a visual desktop app. Install it like any other program, run the wizard, and talk to your agent. Your keys and data never leave your machine. Use Ollama for completely free, local AI &mdash; no API key needed.</p>
@@ -428,6 +429,20 @@
         <h3>Health Monitoring</h3>
         <p>See at a glance: is your agent running? Is your API key valid? Are channels connected? Plain-English fixes for every issue.</p>
       </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        <h3>Full Dashboard</h3>
+        <p>Manage everything from one place. Six pages: Overview, Skills, Personality, Channels, Settings, Updates. No config files, ever.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-amber">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"/><path d="M14 7h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V8a1 1 0 011-1z"/><path d="M4 16h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3a1 1 0 011-1z"/><path d="M14 16h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-3a1 1 0 011-1z"/><path d="M9 9h2"/><path d="M9 18h2"/><path d="M19 9h2"/><path d="M19 18h2"/></svg>
+        </div>
+        <h3>52 Skills</h3>
+        <p>Search, filter, and activate skills across 8 categories. See what's ready, what needs setup, and exactly how to fix it.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -435,48 +450,79 @@
 <!-- Wizard -->
 <section class="section section-alt wizard-section" id="wizard">
   <div class="container">
-    <h2>From download to &ldquo;Hello!&rdquo; in 8 steps.</h2>
+    <h2>From download to &ldquo;Hello!&rdquo; in 7 steps.</h2>
     <p>The setup wizard handles everything. You just click Next.</p>
     <div class="wizard-steps">
       <div class="wizard-step fade-in">
         <div class="wizard-step-num">1</div>
-        <h4>Welcome</h4>
+        <h4>Welcome &amp; System Check</h4>
         <p>One button. Let's go.</p>
       </div>
       <div class="wizard-step fade-in">
         <div class="wizard-step-num">2</div>
-        <h4>Dependencies</h4>
-        <p>Node.js installed silently</p>
+        <h4>Install Node.js &amp; OpenClaw</h4>
+        <p>Dependencies handled silently</p>
       </div>
       <div class="wizard-step fade-in">
         <div class="wizard-step-num">3</div>
-        <h4>Install</h4>
-        <p>OpenClaw set up for you</p>
+        <h4>Connect AI Provider</h4>
+        <p>API key or local Ollama</p>
       </div>
       <div class="wizard-step fade-in">
         <div class="wizard-step-num">4</div>
-        <h4>AI Provider</h4>
-        <p>API key or local Ollama (requires a tool-capable model like qwen2.5 or llama3.1)</p>
-      </div>
-      <div class="wizard-step fade-in">
-        <div class="wizard-step-num">5</div>
-        <h4>Personality</h4>
+        <h4>Build Personality</h4>
         <p>Name, role, tone slider</p>
       </div>
       <div class="wizard-step fade-in">
-        <div class="wizard-step-num">6</div>
-        <h4>Channels</h4>
+        <div class="wizard-step-num">5</div>
+        <h4>Connect Channels</h4>
         <p>Telegram or Discord</p>
       </div>
       <div class="wizard-step fade-in">
-        <div class="wizard-step-num">7</div>
-        <h4>Skills</h4>
-        <p>Recommended for you</p>
+        <div class="wizard-step-num">6</div>
+        <h4>Browse &amp; Enable Skills</h4>
+        <p>Pick what your agent can do</p>
       </div>
       <div class="wizard-step fade-in">
-        <div class="wizard-step-num">8</div>
-        <h4>Done!</h4>
+        <div class="wizard-step-num">7</div>
+        <h4>Launch!</h4>
         <p>Say hi to your agent</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Screenshots -->
+<section class="section" id="screenshots">
+  <div class="container">
+    <div class="features-header">
+      <h2>See it in action.</h2>
+      <p>Every screen designed for clarity. No hidden settings, no config files.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px;">
+      <div style="text-align:center;">
+        <img src="dashboard-overview.png" alt="Dashboard Overview" style="border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.08);width:100%;">
+        <p style="margin-top:12px;font-size:13px;color:#64748b;font-weight:500;">Dashboard Overview</p>
+      </div>
+      <div style="text-align:center;">
+        <img src="dashboard-skills.png" alt="Skills Browser" style="border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.08);width:100%;">
+        <p style="margin-top:12px;font-size:13px;color:#64748b;font-weight:500;">52 Skills with Categories</p>
+      </div>
+      <div style="text-align:center;">
+        <img src="dashboard-personality.png" alt="Personality Editor" style="border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.08);width:100%;">
+        <p style="margin-top:12px;font-size:13px;color:#64748b;font-weight:500;">Personality Editor</p>
+      </div>
+      <div style="text-align:center;">
+        <img src="dashboard-channels.png" alt="Channel Setup" style="border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.08);width:100%;">
+        <p style="margin-top:12px;font-size:13px;color:#64748b;font-weight:500;">Channel Setup</p>
+      </div>
+      <div style="text-align:center;">
+        <img src="dashboard-settings.png" alt="AI Provider Settings" style="border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.08);width:100%;">
+        <p style="margin-top:12px;font-size:13px;color:#64748b;font-weight:500;">AI Provider Settings</p>
+      </div>
+      <div style="text-align:center;">
+        <img src="dashboard-updates.png" alt="Update Manager" style="border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.08);width:100%;">
+        <p style="margin-top:12px;font-size:13px;color:#64748b;font-weight:500;">Update Manager</p>
       </div>
     </div>
   </div>
@@ -559,9 +605,9 @@
     <h2>Ready to try it?</h2>
     <p>Download KloDock, run the wizard, and have your AI agent running in minutes. Free forever.</p>
     <div class="cta-actions">
-      <a href="https://github.com/scottconverse/klodock/releases/tag/v0.1.0-beta.4" class="btn btn-primary">
+      <a href="https://github.com/scottconverse/klodock/releases/tag/v1.1.0" class="btn btn-primary">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download v0.1.0
+        Download v1.1.0
       </a>
       <a href="https://github.com/scottconverse/klodock" class="btn btn-secondary" target="_blank" rel="noopener">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>

@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.1.0 (Phase 1 Beta) |
+| **Version** | 1.1.0 |
 | **Author** | Scott Converse |
 | **License** | MIT |
 | **Date** | March 2026 |
@@ -24,7 +24,7 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 
 ## 2. Key Features
 
-- **Quick setup wizard** --- An 8-screen guided flow that takes a new user from first launch to a running AI agent in minutes, not hours. No terminal, no manual steps.
+- **Quick setup wizard** --- A 7-step guided flow that takes a new user from first launch to a running AI agent in minutes, not hours. No terminal, no manual steps.
 
 - **Silent Node.js installation** --- Automatically detects existing Node.js installs, nvm, Volta, and Homebrew-managed versions. If Node.js is missing or below v22, KloDock silently downloads v24.14.0 LTS and extracts it to `~/.klodock/node/` with no elevation prompt and no visible console window on any platform.
 
@@ -56,6 +56,16 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 
 - **Lightweight** --- Windows MSI installer: 672 KB. NSIS setup executable: 415 KB. The entire application leverages the system webview rather than bundling a browser engine.
 
+- **Full management dashboard** --- Six dedicated pages (Overview, Skills, Personality, Channels, Settings, Updates) replace the earlier "coming soon" placeholders. Every setting configurable in the wizard is also editable from the dashboard.
+
+- **52 categorized skills** --- Skills are grouped into 8 categories (Communication, Productivity, Developer Tools, Media & Audio, Smart Home, AI Services, Images & Video, System & Security) with search, filtering, and actionable setup buttons. Active skills show a green badge; unavailable skills show exactly what's needed with a download link or navigation button.
+
+- **Auto-updater** --- Checks the npm registry for the latest OpenClaw version and offers a one-click "Update now" button. Stops the daemon, updates via npm, restarts automatically.
+
+- **Toast notification system** --- Global success, error, warning, and info notifications across all dashboard pages. Auto-dismiss with manual close.
+
+- **Uninstall from UI** --- Danger Zone section in Settings with full 7-step resumable uninstall. Two confirmation dialogs (uninstall + optional data removal).
+
 ---
 
 ## 3. Architecture
@@ -69,8 +79,8 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 |  +-------------------------+   +------------------------+ |
 |  |    React Frontend       |   |    Rust Backend        | |
 |  |                         |   |                        | |
-|  |  Wizard (8 screens)     |   |  installer/            | |
-|  |  Dashboard (Phase 2)    |<->|    node.rs             | |
+|  |  Wizard (7 steps)       |   |  installer/            | |
+|  |  Dashboard (6 pages)    |<->|    node.rs             | |
 |  |  Components             |IPC|    openclaw.rs          | |
 |  |  Lib (types, state)     |   |    skills.rs           | |
 |  |                         |   |    uninstall.rs         | |
@@ -244,11 +254,16 @@ klodock/
 │   │   ├── ProviderCard.tsx        # AI provider selection card
 │   │   ├── SafetyBadge.tsx         # Skill safety rating badge
 │   │   ├── StatusIndicator.tsx     # Agent status light
+│   │   ├── Toast.tsx               # Global toast notification component
 │   │   └── ToneSlider.tsx          # Personality tone range slider
 │   ├── dashboard/
-│   │   ├── ComingSoon.tsx          # Coming soon placeholder (Phase 2)
-│   │   ├── DashboardLayout.tsx     # Dashboard shell (Phase 2)
-│   │   └── Overview.tsx            # Agent overview panel (Phase 2)
+│   │   ├── DashboardLayout.tsx     # Dashboard shell with sidebar navigation
+│   │   ├── Overview.tsx            # Agent overview panel (status, health, quick actions)
+│   │   ├── DashboardSkills.tsx     # 52 skills across 8 categories with search/filter
+│   │   ├── DashboardPersonality.tsx # Role, tone, and SOUL.md editing
+│   │   ├── DashboardChannels.tsx   # Telegram/Discord channel management
+│   │   ├── DashboardSettings.tsx   # App settings + Danger Zone uninstall
+│   │   └── DashboardUpdates.tsx    # OpenClaw version check + one-click update
 │   ├── lib/
 │   │   ├── friendly-error.ts      # User-friendly error messages
 │   │   ├── tauri.ts               # Tauri IPC wrappers
@@ -485,8 +500,8 @@ The older stub files (`setup-wizard.spec.ts`, `secret-lifecycle.spec.ts`, `chann
 
 | Artifact | Size |
 |----------|------|
-| `KloDock_0.1.0_x64_en-US.msi` | 672 KB |
-| `KloDock_0.1.0_x64-setup.exe` | 415 KB |
+| `KloDock_1.1.0_x64_en-US.msi` | 672 KB |
+| `KloDock_1.1.0_x64-setup.exe` | 415 KB |
 
 These sizes reflect the Tauri advantage: no bundled browser engine. The application uses the system's Edge WebView2 (Windows), WebKitGTK (Linux), or WKWebView (macOS).
 
@@ -520,7 +535,7 @@ Cache keys are based on `Cargo.lock` hash for Rust and npm lockfile for Node.
 
 ## 10. Roadmap
 
-### Phase 1: Setup Wizard (Current --- Shipped)
+### Phase 1: Setup Wizard (Shipped)
 
 - 8-screen setup wizard from download to running agent
 - Silent Node.js detection and installation
@@ -535,17 +550,17 @@ Cache keys are based on `Cargo.lock` hash for Rust and npm lockfile for Node.
 - Accessibility (WCAG 2.1 AA)
 - Cross-platform CI/CD with nightly compatibility checks
 
-### Phase 2: Dashboard and Ecosystem
+### Phase 2: Dashboard and Ecosystem (Shipped in v1.1.0)
 
-- **Agent dashboard** --- Real-time status, log viewer, conversation history
+- ~~**Agent dashboard** --- Real-time status, log viewer, conversation history~~ **SHIPPED**
+- ~~**Skill marketplace** --- Full ClawHub integration with install, update, and review flows~~ **SHIPPED**
+- ~~**Settings panel** --- Advanced configuration without editing JSON~~ **SHIPPED**
 - **WhatsApp integration** --- Deferred from Phase 1 due to Baileys library fragility; evaluating alternatives
-- **Skill marketplace** --- Full ClawHub integration with install, update, and review flows
 - **Multi-agent support** --- Run and manage multiple OpenClaw instances
-- **Settings panel** --- Advanced configuration without editing JSON
 
 ### Phase 3: Future Considerations
 
-- **Auto-update** --- Silent background updates for KloDock itself via Tauri's updater
+- ~~**Auto-update** --- Silent background updates for KloDock itself via Tauri's updater~~ **SHIPPED in v1.1.0** (OpenClaw auto-update from npm with one-click UI)
 - **Plugin system** --- Community-developed UI extensions
 - **Team management** --- Shared configurations for organizations
 - **Analytics dashboard** --- Usage metrics and conversation insights (local only)
@@ -587,8 +602,6 @@ KloDock occupies the unique position of being both free and easy to use while ke
 ## 12. Known Limitations
 
 - **OpenClaw is fictional.** This project is a proof-of-concept demonstrating the architecture, UI patterns, and security model for wrapping a complex CLI tool in a native desktop GUI. The "OpenClaw" agent framework, "ClawHub" skill registry, and competing services referenced throughout are not real products.
-
-- **Some Rust modules contain `todo!()` stubs.** Modules that depend on external APIs (ClawHub registry, OpenClaw update endpoints) have stubbed implementations that return mock data. The module interfaces and IPC contracts are final; only the HTTP calls need to be connected.
 
 - **WhatsApp integration deferred.** The original PRD included WhatsApp as a channel option. This was deferred because the Baileys library (the primary open-source WhatsApp Web API) is fragile and breaks frequently with WhatsApp protocol changes.
 
