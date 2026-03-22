@@ -3,9 +3,17 @@
   "configurations": [
     {
       "name": "website",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "website", "-l", "3000", "--no-clipboard"],
-      "port": 3000
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\npx.cmd",
+      "runtimeArgs": ["serve", "website", "--no-clipboard"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "dev",
+      "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
+      "runtimeArgs": ["run", "dev"],
+      "port": 1420,
+      "autoPort": true
     }
   ]
 }

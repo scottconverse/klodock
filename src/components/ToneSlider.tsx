@@ -34,6 +34,7 @@ export function ToneSlider({ value, onChange }: ToneSliderProps) {
         className="
           h-2 w-full cursor-pointer appearance-none rounded-lg
           bg-neutral-200 accent-primary-600
+          focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2
         "
         aria-valuemin={0}
         aria-valuemax={100}

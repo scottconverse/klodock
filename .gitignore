@@ -3,7 +3,7 @@ dist/
 target/
 *.log
 .env
-.clawpad/
+.klodock/
 .DS_Store
 *.msi
 *.dmg

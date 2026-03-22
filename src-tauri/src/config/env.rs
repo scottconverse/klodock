@@ -56,7 +56,7 @@ pub fn set_file_permissions(path: &std::path::Path, mode: u32) -> Result<(), Str
 }
 
 // ---------------------------------------------------------------------------
-// Tauri commands
+// Internal helpers
 // ---------------------------------------------------------------------------
 
 /// Write a set of key=value pairs to `~/.openclaw/.env` with 600 permissions.
@@ -64,7 +64,6 @@ pub fn set_file_permissions(path: &std::path::Path, mode: u32) -> Result<(), Str
 /// This is a pure file writer — it has NO knowledge of the OS keychain.
 /// The frontend / orchestration layer is responsible for deciding which
 /// secrets flow through here versus `secrets::keychain`.
-#[tauri::command]
 pub async fn write_env(entries: HashMap<String, String>) -> Result<(), String> {
     let path = env_path()?;
 
@@ -100,7 +99,6 @@ pub async fn write_env(entries: HashMap<String, String>) -> Result<(), String> {
 
 /// Delete the `.env` file from disk.  Silently succeeds if the file does not
 /// exist.
-#[tauri::command]
 pub async fn delete_env() -> Result<(), String> {
     let path = env_path()?;
     match tokio::fs::remove_file(&path).await {
@@ -114,7 +112,6 @@ pub async fn delete_env() -> Result<(), String> {
 ///
 /// Intended for verification / debug only — the frontend should not rely on
 /// this to retrieve secrets at runtime.
-#[tauri::command]
 pub async fn read_env() -> Result<HashMap<String, String>, String> {
     let path = env_path()?;
     let content = tokio::fs::read_to_string(&path)

@@ -171,6 +171,7 @@ export function Personality() {
                     className={`
                       flex cursor-pointer items-start gap-3 rounded-xl border
                       p-3.5 transition-all
+                      focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2
                       ${
                         isSelected
                           ? "border-primary-400 bg-primary-50 ring-2 ring-primary-100"

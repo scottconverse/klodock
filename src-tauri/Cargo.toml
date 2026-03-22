@@ -33,6 +33,7 @@ sha2 = "0.10"
 thiserror = "2"
 dirs = "6"
 which = "7"
+tauri-plugin-single-instance = "2"
 semver = "1"
 
 [target.'cfg(unix)'.dependencies]
