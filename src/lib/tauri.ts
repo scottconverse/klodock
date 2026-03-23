@@ -248,6 +248,22 @@ export async function resumeUninstall(): Promise<boolean> {
   return invoke<boolean>("resume_uninstall");
 }
 
+/* ── Activity ────────────────────────────────────────── */
+
+export interface ActivityEntry {
+  timestamp: string;
+  level: string;
+  message: string;
+}
+
+export async function getActivityLog(count?: number): Promise<ActivityEntry[]> {
+  return invoke<ActivityEntry[]>("get_activity_log", { count: count ?? 20 });
+}
+
+export async function clearActivityLog(): Promise<void> {
+  return invoke("clear_activity_log");
+}
+
 /* ── Updates ─────────────────────────────────────────── */
 
 export async function checkOpenclawUpdate(): Promise<UpdateInfo> {

@@ -154,6 +154,7 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
         })?;
 
     log::info!("OpenClaw daemon started with PID {pid}");
+    crate::process::activity::record("success", "Agent started");
     let _ = app.emit(STATUS_EVENT, &DaemonStatus::Running);
 
     // Spawn a background task to monitor the child process
@@ -199,6 +200,7 @@ pub async fn stop_daemon() -> Result<DaemonStatus, String> {
         log::info!("Preserved .env on stop (keep_api_keys_on_disk = true)");
     }
 
+    crate::process::activity::record("info", "Agent stopped");
     Ok(DaemonStatus::Stopped)
 }
 

@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
-import { Clock, Radio, Puzzle, AlertCircle, CheckCircle, XCircle, ExternalLink, MessageSquare } from "lucide-react";
+import { Clock, Radio, Puzzle, AlertCircle, CheckCircle, XCircle, ExternalLink, MessageSquare, Activity, RefreshCw } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
-import { runHealthCheck } from "@/lib/tauri";
+import { runHealthCheck, getActivityLog } from "@/lib/tauri";
 import type { HealthStatus } from "@/lib/types";
+import type { ActivityEntry } from "@/lib/tauri";
 
 export function Overview() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [error, setError] = useState(false);
+  const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
 
   useEffect(() => {
     runHealthCheck()
       .then(setHealth)
       .catch(() => setError(true));
+    getActivityLog(20)
+      .then(setActivityLog)
+      .catch(() => {});
   }, []);
+
+  function refreshActivity() {
+    getActivityLog(20).then(setActivityLog).catch(() => {});
+  }
 
   async function openWebChat() {
     try {
@@ -119,6 +128,52 @@ export function Overview() {
                 {health.issues.length}
               </p>
             </div>
+          </div>
+
+          {/* Activity feed */}
+          <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-neutral-500" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-neutral-700">Recent Activity</h3>
+              </div>
+              <button
+                type="button"
+                onClick={refreshActivity}
+                className="p-1 rounded hover:bg-neutral-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                aria-label="Refresh activity log"
+              >
+                <RefreshCw className="h-3.5 w-3.5 text-neutral-400" aria-hidden="true" />
+              </button>
+            </div>
+            {activityLog.length === 0 ? (
+              <p className="text-sm text-neutral-500 py-4 text-center">
+                No activity yet. Start your agent to see events here.
+              </p>
+            ) : (
+              <ul className="space-y-1.5 max-h-48 overflow-y-auto" role="log" aria-label="Agent activity log">
+                {[...activityLog].reverse().map((entry, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs">
+                    <span className="shrink-0 font-mono text-neutral-400 mt-0.5 w-14">
+                      {entry.timestamp.split(" ")[1] ?? entry.timestamp}
+                    </span>
+                    <span className={`shrink-0 mt-0.5 h-1.5 w-1.5 rounded-full ${
+                      entry.level === "error" ? "bg-error-500" :
+                      entry.level === "warn" ? "bg-warning-500" :
+                      entry.level === "success" ? "bg-success-500" :
+                      "bg-neutral-400"
+                    }`} aria-hidden="true" />
+                    <span className={`${
+                      entry.level === "error" ? "text-error-700" :
+                      entry.level === "warn" ? "text-warning-700" :
+                      "text-neutral-700"
+                    }`}>
+                      {entry.message}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* WebChat quick access */}

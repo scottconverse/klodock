@@ -102,6 +102,8 @@ pub fn run() {
             process::autostart::enable_autostart,
             process::autostart::disable_autostart,
             process::autostart::is_autostart_enabled,
+            process::activity::get_activity_log,
+            process::activity::clear_activity_log,
             // ClawHub commands
             clawhub::registry::search_skills,
             clawhub::registry::get_skill_details,
