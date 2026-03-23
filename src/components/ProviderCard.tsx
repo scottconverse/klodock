@@ -7,7 +7,11 @@ import {
   Download,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
-import { storeSecret, testApiKey, checkOllama, listOllamaModels } from "@/lib/tauri";
+import {
+  storeSecret, testApiKey, checkOllama, listOllamaModels,
+  checkOllamaInstalled, downloadOllama, installOllamaApp,
+  pullOllamaModel, onOllamaInstallProgress, onOllamaModelProgress,
+} from "@/lib/tauri";
 import type { ReactNode } from "react";
 import type { OllamaModel } from "@/lib/types";
 
@@ -59,6 +63,12 @@ export function ProviderCard({
   const [ollamaChecking, setOllamaChecking] = useState(false);
   const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
+  const [ollamaInstalling, setOllamaInstalling] = useState(false);
+  const [ollamaInstallMsg, setOllamaInstallMsg] = useState("");
+  const [ollamaInstallPct, setOllamaInstallPct] = useState(0);
+  const [modelPulling, setModelPulling] = useState(false);
+  const [modelPullMsg, setModelPullMsg] = useState("");
+  const [modelPullPct, setModelPullPct] = useState(0);
 
   // Auto-detect Ollama on mount if this is the local provider
   useEffect(() => {
@@ -88,6 +98,52 @@ export function ProviderCard({
       setOllamaDetected(false);
     } finally {
       setOllamaChecking(false);
+    }
+  }
+
+  async function handleInstallOllama() {
+    setOllamaInstalling(true);
+    setOllamaInstallMsg("Preparing...");
+    setOllamaInstallPct(0);
+    setError(null);
+
+    const unlisten = await onOllamaInstallProgress((p) => {
+      setOllamaInstallMsg(p.message);
+      setOllamaInstallPct(p.percent);
+    });
+
+    try {
+      const installerPath = await downloadOllama();
+      await installOllamaApp(installerPath);
+      // Ollama should be running now — detect it
+      await detectOllama();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setOllamaInstalling(false);
+      unlisten();
+    }
+  }
+
+  async function handlePullModel(model: string) {
+    setModelPulling(true);
+    setModelPullMsg(`Pulling ${model}...`);
+    setModelPullPct(0);
+
+    const unlisten = await onOllamaModelProgress((p) => {
+      setModelPullMsg(p.message);
+      setModelPullPct(p.percent);
+    });
+
+    try {
+      await pullOllamaModel(model);
+      // Re-detect to refresh model list
+      await detectOllama();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setModelPulling(false);
+      unlisten();
     }
   }
 
@@ -218,41 +274,63 @@ export function ProviderCard({
             <div className="space-y-3">
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 space-y-2">
                 <p className="text-sm font-medium text-amber-800">
-                  Ollama is running but has no models downloaded.
+                  Ollama is running but has no models yet.
                 </p>
                 <p className="text-xs text-amber-700">
-                  Open a terminal and run: <code className="bg-amber-100 px-1 rounded">ollama pull qwen2.5:7b</code> (tool-capable, 4.7 GB)
-                </p>
-                <p className="text-xs text-amber-700">
-                  Then click "Check Again" below.
+                  Click below to download a recommended model (qwen2.5:7b — 4.7 GB, supports tool calling).
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={detectOllama}
-                disabled={ollamaChecking}
-                className="
-                  inline-flex w-full items-center justify-center gap-1.5
-                  rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium
-                  text-white transition-colors hover:bg-primary-700
-                  focus-visible:outline-2 focus-visible:outline-offset-2
-                  focus-visible:outline-primary-500
-                  disabled:cursor-not-allowed disabled:opacity-50
-                "
-                aria-label="Check for Ollama models again"
-              >
-                {ollamaChecking ? (
-                  <>
-                    <Loader2
-                      className="h-4 w-4 animate-spin motion-reduce:animate-none"
-                      aria-hidden="true"
+
+              {modelPulling ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-neutral-700">
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    {modelPullMsg}
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-200">
+                    <div
+                      className="h-full rounded-full bg-primary-500 transition-all duration-300"
+                      style={{ width: `${Math.min(modelPullPct, 100)}%` }}
                     />
-                    Checking...
-                  </>
-                ) : (
-                  "Check Again"
-                )}
-              </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handlePullModel("qwen2.5:7b")}
+                    className="
+                      inline-flex flex-1 items-center justify-center gap-1.5
+                      rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium
+                      text-white transition-colors hover:bg-primary-700
+                      focus-visible:outline-2 focus-visible:outline-offset-2
+                      focus-visible:outline-primary-500
+                    "
+                    aria-label="Download qwen2.5 model"
+                  >
+                    <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                    Pull qwen2.5:7b (4.7 GB)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={detectOllama}
+                    disabled={ollamaChecking}
+                    className="
+                      inline-flex items-center gap-1.5 rounded-lg border
+                      border-neutral-200 px-3 py-1.5 text-sm font-medium
+                      text-neutral-700 transition-colors hover:bg-neutral-50
+                      disabled:cursor-not-allowed disabled:opacity-50
+                    "
+                    aria-label="Check for Ollama models again"
+                  >
+                    {ollamaChecking ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      "Check Again"
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -260,63 +338,78 @@ export function ProviderCard({
                 Free — runs AI models on your computer. No API key, no cost, no data sent anywhere.
               </p>
 
-              {ollamaDetected === false && (
-                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 space-y-2">
-                  <p className="text-sm text-amber-800">
-                    Ollama isn't running. To use it:
-                  </p>
-                  <ol className="text-xs text-amber-700 list-decimal list-inside space-y-1">
-                    <li>Download and install Ollama from the link below</li>
-                    <li>Open Ollama (it runs in the background)</li>
-                    <li>Click "Check Again" to detect it</li>
-                  </ol>
+              {ollamaInstalling ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-neutral-700">
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    {ollamaInstallMsg}
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-200">
+                    <div
+                      className="h-full rounded-full bg-primary-500 transition-all duration-300"
+                      style={{ width: `${Math.min(ollamaInstallPct, 100)}%` }}
+                    />
+                  </div>
                 </div>
-              )}
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleOpenUrl}
-                  className="
-                    inline-flex items-center gap-1.5 rounded-lg border
-                    border-neutral-200 px-3 py-1.5 text-sm font-medium
-                    text-neutral-700 transition-colors hover:bg-neutral-50
-                    focus-visible:outline-2 focus-visible:outline-offset-2
-                    focus-visible:outline-primary-500
-                  "
-                  aria-label="Download Ollama"
-                >
-                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                  Download Ollama
-                </button>
-
-                <button
-                  type="button"
-                  onClick={detectOllama}
-                  disabled={ollamaChecking}
-                  className="
-                    inline-flex flex-1 items-center justify-center gap-1.5
-                    rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium
-                    text-white transition-colors hover:bg-primary-700
-                    focus-visible:outline-2 focus-visible:outline-offset-2
-                    focus-visible:outline-primary-500
-                    disabled:cursor-not-allowed disabled:opacity-50
-                  "
-                  aria-label="Check if Ollama is running"
-                >
-                  {ollamaChecking ? (
-                    <>
-                      <Loader2
-                        className="h-4 w-4 animate-spin motion-reduce:animate-none"
-                        aria-hidden="true"
-                      />
-                      Checking...
-                    </>
-                  ) : (
-                    "Check Again"
+              ) : (
+                <>
+                  {ollamaDetected === false && (
+                    <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                      <p className="text-sm text-amber-800">
+                        Ollama isn't installed. Click below to install it automatically.
+                      </p>
+                    </div>
                   )}
-                </button>
-              </div>
+
+                  {error && (
+                    <p className="flex items-center gap-1.5 text-sm text-error-600" role="alert">
+                      <XCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      {error}
+                    </p>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleInstallOllama}
+                      disabled={ollamaInstalling}
+                      className="
+                        inline-flex flex-1 items-center justify-center gap-1.5
+                        rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium
+                        text-white transition-colors hover:bg-primary-700
+                        focus-visible:outline-2 focus-visible:outline-offset-2
+                        focus-visible:outline-primary-500
+                        disabled:cursor-not-allowed disabled:opacity-50
+                      "
+                      aria-label="Install Ollama"
+                    >
+                      <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                      Install Ollama
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={detectOllama}
+                      disabled={ollamaChecking}
+                      className="
+                        inline-flex items-center gap-1.5 rounded-lg border
+                        border-neutral-200 px-3 py-1.5 text-sm font-medium
+                        text-neutral-700 transition-colors hover:bg-neutral-50
+                        focus-visible:outline-2 focus-visible:outline-offset-2
+                        focus-visible:outline-primary-500
+                        disabled:cursor-not-allowed disabled:opacity-50
+                      "
+                      aria-label="Check if Ollama is already installed"
+                    >
+                      {ollamaChecking ? (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        "Check Again"
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

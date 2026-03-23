@@ -1,5 +1,5 @@
 #!/bin/bash
-# KloDock v1.1 — Full Clean Install E2E Test
+# KloDock v1.2 — Full Clean Install E2E Test
 # Runs completely automated: wipe, install, configure, verify
 
 set -e
@@ -16,7 +16,7 @@ ok()   { echo "  ✓ $1"; PASS=$((PASS + 1)); }
 fail() { echo "  ✗ $1"; FAIL=$((FAIL + 1)); }
 
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║   KloDock v1.1 — Full Clean Install E2E Test        ║"
+echo "║   KloDock v1.2 — Full Clean Install E2E Test        ║"
 echo "╚══════════════════════════════════════════════════════╝"
 
 # ── PHASE 1: WIPE ──────────────────────────────────────

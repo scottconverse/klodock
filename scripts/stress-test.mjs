@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * KloDock v1.1 End-to-End Stress Test
+ * KloDock v1.2 End-to-End Stress Test
  *
  * Tests the full system through real filesystem and process checks.
  * Run: node scripts/stress-test.mjs
@@ -34,7 +34,7 @@ function run(cmd, opts = {}) {
 }
 
 console.log('╔══════════════════════════════════════════════════════╗');
-console.log('║     KloDock v1.1 — Full End-to-End Stress Test      ║');
+console.log('║     KloDock v1.2 — Full End-to-End Stress Test      ║');
 console.log('╚══════════════════════════════════════════════════════╝');
 
 // ═══════════════════════════════════════════════════════
@@ -241,9 +241,9 @@ if (pkgJson.version === tauriConf.version && tauriConf.version === cargoVer) {
   fail(`Version mismatch: package.json=${pkgJson.version}, tauri.conf.json=${tauriConf.version}, Cargo.toml=${cargoVer}`);
 }
 
-// 6.2 Version is 1.1.0
-if (pkgJson.version === '1.1.0') pass('Version is 1.1.0');
-else fail(`Expected 1.1.0, got ${pkgJson.version}`);
+// 6.2 Version is 1.2.0
+if (pkgJson.version === '1.2.0') pass('Version is 1.2.0');
+else fail(`Expected 1.2.0, got ${pkgJson.version}`);
 
 // 6.3 package.json metadata
 if (pkgJson.author) pass(`Author: ${pkgJson.author}`);
@@ -284,15 +284,15 @@ if (testOutput && testOutput.includes('passed')) {
 // ═══════════════════════════════════════════════════════
 section('8. Docs & Landing Page');
 
-// 8.1 README.md references v1.1
+// 8.1 README.md references v1.2
 const readme = readFileSync(join(projRoot, 'README.md'), 'utf8');
-if (readme.includes('1.1.0') || readme.includes('v1.1')) pass('README.md references v1.1');
-else fail('README.md missing v1.1 reference');
+if (readme.includes('1.2.0') || readme.includes('v1.2')) pass('README.md references v1.2');
+else fail('README.md missing v1.2 reference');
 
-// 8.2 Landing page references v1.1
+// 8.2 Landing page references v1.2
 const landing = readFileSync(join(projRoot, 'website', 'index.html'), 'utf8');
-if (landing.includes('v1.1') || landing.includes('1.1.0')) pass('Landing page references v1.1');
-else fail('Landing page missing v1.1');
+if (landing.includes('v1.2') || landing.includes('1.2.0')) pass('Landing page references v1.2');
+else fail('Landing page missing v1.2');
 
 // 8.3 Landing page has screenshots
 if (landing.includes('dashboard-overview.png')) pass('Landing page has screenshot references');
@@ -325,8 +325,8 @@ if (existsSync(nsisPath)) {
   if (installers.length > 0) {
     const latest = installers[installers.length - 1];
     pass(`NSIS installer: ${latest}`);
-    if (latest.includes('1.1.0')) pass('Installer filename includes v1.1.0');
-    else fail(`Installer filename doesn't include 1.1.0: ${latest}`);
+    if (latest.includes('1.2.0')) pass('Installer filename includes v1.2.0');
+    else fail(`Installer filename doesn't include 1.2.0: ${latest}`);
   } else fail('No .exe installer in bundle/nsis/');
 } else skip('NSIS bundle dir not found');
 

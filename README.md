@@ -151,4 +151,4 @@ MIT
 
 ## Status
 
-**v1.1.0** — Full dashboard, auto-updater, 52 categorized skills, toast notifications, uninstall from UI. All wizard QA fixes from v0.1.0.
+**v1.2.0** — In-app Ollama download and model pull, full dashboard, auto-updater, 52 categorized skills, toast notifications, uninstall from UI.

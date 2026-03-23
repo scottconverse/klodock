@@ -128,6 +128,59 @@ export async function listOllamaModels(): Promise<import("./types").OllamaModel[
   return invoke<import("./types").OllamaModel[]>("list_ollama_models");
 }
 
+/* ── Ollama Installer ────────────────────────────────── */
+
+export interface OllamaStatus {
+  installed: boolean;
+  running: boolean;
+  path: string | null;
+  version: string | null;
+}
+
+export interface OllamaInstallProgress {
+  phase: string;
+  percent: number;
+  message: string;
+}
+
+export interface ModelPullProgress {
+  model: string;
+  percent: number;
+  message: string;
+}
+
+export async function checkOllamaInstalled(): Promise<OllamaStatus> {
+  return invoke<OllamaStatus>("check_ollama_installed");
+}
+
+export async function downloadOllama(): Promise<string> {
+  return invoke<string>("download_ollama");
+}
+
+export async function installOllamaApp(installerPath: string): Promise<void> {
+  return invoke("install_ollama", { installerPath });
+}
+
+export async function pullOllamaModel(model: string): Promise<void> {
+  return invoke("pull_ollama_model", { model });
+}
+
+export function onOllamaInstallProgress(
+  callback: (progress: OllamaInstallProgress) => void
+): Promise<UnlistenFn> {
+  return listen<OllamaInstallProgress>("ollama-install-progress", (event) => {
+    callback(event.payload);
+  });
+}
+
+export function onOllamaModelProgress(
+  callback: (progress: ModelPullProgress) => void
+): Promise<UnlistenFn> {
+  return listen<ModelPullProgress>("ollama-model-progress", (event) => {
+    callback(event.payload);
+  });
+}
+
 /* ── Setup State ─────────────────────────────────────── */
 
 export async function getSetupState(): Promise<SetupState> {

@@ -10,7 +10,7 @@ const doc = new PDFDocument({
   size: 'letter',
   margins: { top: 72, bottom: 72, left: 72, right: 72 },
   info: {
-    Title: 'KloDock v1.1.0 — Desktop GUI for OpenClaw',
+    Title: 'KloDock v1.2.0 — Desktop GUI for OpenClaw',
     Author: 'Scott Converse',
     Subject: 'Product Documentation',
   },
@@ -109,7 +109,7 @@ doc.fontSize(11).fillColor(LIGHT_GRAY).text('Zero terminal. Zero complexity.', {
 doc.moveDown(3);
 
 doc.fontSize(11).fillColor(DARK).font('Helvetica');
-doc.text('Version 1.1.0', { align: 'center' });
+doc.text('Version 1.2.0', { align: 'center' });
 doc.text('March 2026', { align: 'center' });
 doc.moveDown(0.5);
 doc.text('Scott Converse', { align: 'center' });

@@ -45,6 +45,11 @@ pub fn run() {
             installer::skills::list_installed_skills,
             installer::uninstall::uninstall_klodock,
             installer::uninstall::resume_uninstall,
+            // Ollama commands
+            installer::ollama::check_ollama_installed,
+            installer::ollama::download_ollama,
+            installer::ollama::install_ollama,
+            installer::ollama::pull_ollama_model,
             // Config commands
             config::soul::read_soul,
             config::soul::write_soul,

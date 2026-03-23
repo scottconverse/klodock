@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Version** | 1.1.0 |
+| **Version** | 1.2.0 |
 | **Author** | Scott Converse |
 | **License** | MIT |
 | **Date** | March 2026 |
@@ -500,8 +500,8 @@ The older stub files (`setup-wizard.spec.ts`, `secret-lifecycle.spec.ts`, `chann
 
 | Artifact | Size |
 |----------|------|
-| `KloDock_1.1.0_x64_en-US.msi` | 672 KB |
-| `KloDock_1.1.0_x64-setup.exe` | 415 KB |
+| `KloDock_1.2.0_x64_en-US.msi` | 672 KB |
+| `KloDock_1.2.0_x64-setup.exe` | 415 KB |
 
 These sizes reflect the Tauri advantage: no bundled browser engine. The application uses the system's Edge WebView2 (Windows), WebKitGTK (Linux), or WKWebView (macOS).
 
@@ -550,7 +550,7 @@ Cache keys are based on `Cargo.lock` hash for Rust and npm lockfile for Node.
 - Accessibility (WCAG 2.1 AA)
 - Cross-platform CI/CD with nightly compatibility checks
 
-### Phase 2: Dashboard and Ecosystem (Shipped in v1.1.0)
+### Phase 2: Dashboard and Ecosystem (Shipped in v1.2.0)
 
 - ~~**Agent dashboard** --- Real-time status, log viewer, conversation history~~ **SHIPPED**
 - ~~**Skill marketplace** --- Full ClawHub integration with install, update, and review flows~~ **SHIPPED**
@@ -560,7 +560,7 @@ Cache keys are based on `Cargo.lock` hash for Rust and npm lockfile for Node.
 
 ### Phase 3: Future Considerations
 
-- ~~**Auto-update** --- Silent background updates for KloDock itself via Tauri's updater~~ **SHIPPED in v1.1.0** (OpenClaw auto-update from npm with one-click UI)
+- ~~**Auto-update** --- Silent background updates for KloDock itself via Tauri's updater~~ **SHIPPED in v1.2.0** (OpenClaw auto-update from npm with one-click UI)
 - **Plugin system** --- Community-developed UI extensions
 - **Team management** --- Shared configurations for organizations
 - **Analytics dashboard** --- Usage metrics and conversation insights (local only)
