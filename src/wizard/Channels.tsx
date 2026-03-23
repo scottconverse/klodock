@@ -110,6 +110,8 @@ interface CardState {
   token: string;
   testing: boolean;
   success: boolean;
+  /** Human-readable message from API verification, e.g. "Connected! Bot name: MyBot" */
+  successMessage: string | null;
   error: string | null;
 }
 
@@ -349,7 +351,7 @@ function ChannelSection({
               role="status"
             >
               <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-              {(state as any).successMessage || "Token saved successfully!"}
+              {state.successMessage || "Token saved successfully!"}
             </p>
           )}
 
@@ -415,7 +417,7 @@ export function Channels() {
     () => {
       const init: Record<string, CardState> = {};
       for (const ch of CHANNELS) {
-        init[ch.id] = { token: "", testing: false, success: false, error: null };
+        init[ch.id] = { token: "", testing: false, success: false, successMessage: null, error: null };
       }
       return init;
     }

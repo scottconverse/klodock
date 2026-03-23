@@ -31,7 +31,8 @@ const config: Record<
 };
 
 export function SafetyBadge({ rating }: SafetyBadgeProps) {
-  const { icon: Icon, label, classes } = config[rating];
+  const entry = config[rating] ?? config.Unreviewed;
+  const { icon: Icon, label, classes } = entry;
 
   return (
     <span

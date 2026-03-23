@@ -152,7 +152,7 @@ export interface SetupState {
 export type DaemonStatus =
   | { status: "running" }
   | { status: "stopped" }
-  | { status: "starting" }
+  | { status: "starting"; message?: string }
   | { status: "error"; message: string };
 
 export interface HealthStatus {

@@ -308,7 +308,14 @@ fn find_ollama_binary() -> (bool, Option<String>, Option<String>) {
     // Check common Windows locations
     #[cfg(target_os = "windows")]
     {
+        // Use LOCALAPPDATA env var directly — more reliable than dirs::home_dir()
+        // in the Tauri process context.
+        let local_app_data = std::env::var("LOCALAPPDATA")
+            .map(|d| PathBuf::from(d).join("Programs").join("Ollama").join("ollama.exe"))
+            .ok();
+
         let common_paths = [
+            local_app_data,
             dirs::home_dir().map(|h| h.join("AppData").join("Local").join("Programs").join("Ollama").join("ollama.exe")),
             Some(PathBuf::from(r"C:\Program Files\Ollama\ollama.exe")),
             Some(PathBuf::from(r"C:\Program Files (x86)\Ollama\ollama.exe")),
@@ -316,12 +323,15 @@ fn find_ollama_binary() -> (bool, Option<String>, Option<String>) {
 
         for path_opt in &common_paths {
             if let Some(path) = path_opt {
+                log::info!("Checking Ollama at: {}", path.display());
                 if path.exists() {
+                    log::info!("Found Ollama at: {}", path.display());
                     let version = get_ollama_version(path);
                     return (true, Some(path.to_string_lossy().to_string()), version);
                 }
             }
         }
+        log::warn!("Ollama not found in any common location");
 
         // Check PATH
         if let Ok(path) = which::which("ollama") {

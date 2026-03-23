@@ -173,113 +173,74 @@ async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
     let parsed: SkillsListOutput = serde_json::from_str(&stdout)
         .map_err(|e| format!("Failed to parse skills JSON: {e}"))?;
 
-    Ok(parsed.skills.into_iter().map(|entry| {
-        let is_ready = entry.eligible;
-        let name = entry.name.clone();
-        let display_name = format!(
-            "{} {}",
-            entry.emoji,
-            name.split('-')
-                .map(|w| {
-                    let mut c = w.chars();
-                    match c.next() {
-                        None => String::new(),
-                        Some(f) => f.to_uppercase().to_string() + c.as_str(),
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(" ")
-        ).trim().to_string();
+    Ok(parsed.skills.into_iter().map(map_skill_entry).collect())
+}
 
-        // Build human-readable missing requirements list
-        let mut missing_reqs = Vec::new();
-        if let Some(ref m) = entry.missing {
-            for bin in &m.bins { missing_reqs.push(format!("Requires: {bin}")); }
-            if !m.any_bins.is_empty() {
-                missing_reqs.push(format!("Requires one of: {}", m.any_bins.join(", ")));
-            }
-            for env in &m.env { missing_reqs.push(format!("Needs env: {env}")); }
-            for cfg in &m.config { missing_reqs.push(format!("Needs config: {cfg}")); }
-            for os in &m.os { missing_reqs.push(format!("Requires: {os}")); }
+/// Convert a raw SkillEntry (from OpenClaw JSON) into a (is_ready, SkillMetadata) pair.
+/// Shared between live query and bundled fallback to avoid duplication.
+fn map_skill_entry(entry: SkillEntry) -> (bool, SkillMetadata) {
+    let is_ready = entry.eligible;
+    let name = entry.name.clone();
+    let display_name = format!(
+        "{} {}",
+        entry.emoji,
+        name.split('-')
+            .map(|w| {
+                let mut c = w.chars();
+                match c.next() {
+                    None => String::new(),
+                    Some(f) => f.to_uppercase().to_string() + c.as_str(),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    ).trim().to_string();
+
+    // Build human-readable missing requirements list
+    let mut missing_reqs = Vec::new();
+    if let Some(ref m) = entry.missing {
+        for bin in &m.bins { missing_reqs.push(format!("Requires: {bin}")); }
+        if !m.any_bins.is_empty() {
+            missing_reqs.push(format!("Requires one of: {}", m.any_bins.join(", ")));
         }
+        for env in &m.env { missing_reqs.push(format!("Needs env: {env}")); }
+        for cfg in &m.config { missing_reqs.push(format!("Needs config: {cfg}")); }
+        for os in &m.os { missing_reqs.push(format!("Requires: {os}")); }
+    }
 
-        let skill = SkillMetadata {
-            slug: name,
-            name: display_name,
-            description: entry.description,
-            author: entry.source,
-            version: String::new(),
-            install_count: 0,
-            safety_rating: if entry.bundled {
-                SafetyRating::Verified
-            } else {
-                SafetyRating::Community
-            },
-            required_permissions: Vec::new(),
-            updated_at: String::new(),
-            eligible: entry.eligible,
-            missing_requirements: missing_reqs,
-        };
-        (is_ready, skill)
-    }).collect())
+    let skill = SkillMetadata {
+        slug: name,
+        name: display_name,
+        description: entry.description,
+        author: entry.source,
+        version: String::new(),
+        install_count: 0,
+        safety_rating: if entry.bundled {
+            SafetyRating::Verified
+        } else {
+            SafetyRating::Community
+        },
+        required_permissions: Vec::new(),
+        updated_at: String::new(),
+        eligible: entry.eligible,
+        missing_requirements: missing_reqs,
+    };
+    (is_ready, skill)
 }
 
 /// Parse the bundled skills JSON as a fallback when the live query fails.
-/// Returns skills with eligible=false (we can't verify system state from
-/// static JSON) but at least shows the user what's available.
+///
+/// **Important:** The `eligible` field in bundled JSON reflects the build
+/// machine's state at compile time, not the user's machine. This means some
+/// skills may show as "active" when they aren't actually available. This is
+/// an acceptable tradeoff — showing an approximate skill list is better than
+/// showing nothing — and the live query will correct the state on next load.
 fn fallback_bundled_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
     log::warn!("Using bundled skills fallback (live query failed)");
     let parsed: SkillsListOutput = serde_json::from_str(BUNDLED_SKILLS_JSON)
         .map_err(|e| format!("Failed to parse bundled skills JSON: {e}"))?;
 
-    Ok(parsed.skills.into_iter().map(|entry| {
-        let is_ready = entry.eligible;
-        let name = entry.name.clone();
-        let display_name = format!(
-            "{} {}",
-            entry.emoji,
-            name.split('-')
-                .map(|w| {
-                    let mut c = w.chars();
-                    match c.next() {
-                        None => String::new(),
-                        Some(f) => f.to_uppercase().to_string() + c.as_str(),
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(" ")
-        ).trim().to_string();
-
-        let mut missing_reqs = Vec::new();
-        if let Some(ref m) = entry.missing {
-            for bin in &m.bins { missing_reqs.push(format!("Requires: {bin}")); }
-            if !m.any_bins.is_empty() {
-                missing_reqs.push(format!("Requires one of: {}", m.any_bins.join(", ")));
-            }
-            for env in &m.env { missing_reqs.push(format!("Needs env: {env}")); }
-            for cfg in &m.config { missing_reqs.push(format!("Needs config: {cfg}")); }
-            for os in &m.os { missing_reqs.push(format!("Requires: {os}")); }
-        }
-
-        let skill = SkillMetadata {
-            slug: name,
-            name: display_name,
-            description: entry.description,
-            author: entry.source,
-            version: String::new(),
-            install_count: 0,
-            safety_rating: if entry.bundled {
-                SafetyRating::Verified
-            } else {
-                SafetyRating::Community
-            },
-            required_permissions: Vec::new(),
-            updated_at: String::new(),
-            eligible: entry.eligible,
-            missing_requirements: missing_reqs,
-        };
-        (is_ready, skill)
-    }).collect())
+    Ok(parsed.skills.into_iter().map(map_skill_entry).collect())
 }
 
 // ---------------------------------------------------------------------------

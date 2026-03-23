@@ -78,6 +78,21 @@ grep -q "running:" src/components/StatusIndicator.tsx && ok "StatusIndicator low
 grep -q 'status: "stopped"' src/dashboard/DashboardLayout.tsx && ok "DashboardLayout init type" || fail "DashboardLayout wrong init"
 grep -q "daemon_alive" src/dashboard/Overview.tsx && ok "Overview correct fields" || fail "Overview wrong fields"
 
+# ── 7b. UI CONTENT CHECKS ────────────────────────────
+echo ""
+echo "━━━ 7b. UI Content ━━━"
+# No hardcoded version strings in dashboard components
+! grep -q '"1\.1\.0"\|"1\.0\.0"\|"0\.1\.0"' src/dashboard/DashboardUpdates.tsx && ok "No hardcoded version in Updates" || fail "Hardcoded version in DashboardUpdates.tsx"
+grep -q "getVersion" src/dashboard/DashboardUpdates.tsx && ok "Updates uses dynamic getVersion()" || fail "Updates missing getVersion() import"
+# Provider cards should handle overflow
+grep -q "overflow-hidden" src/components/ProviderCard.tsx && ok "ProviderCard has overflow-hidden" || fail "ProviderCard missing overflow-hidden"
+grep -q "flex-wrap" src/components/ProviderCard.tsx && ok "ProviderCard buttons flex-wrap" || fail "ProviderCard buttons may overflow"
+# No 'as any' type casts in wizard/dashboard
+CASTS=$(grep -rn "as any" src/wizard/ src/dashboard/ 2>/dev/null | wc -l)
+[ "$CASTS" -eq 0 ] && ok "No 'as any' casts in wizard/dashboard" || fail "$CASTS 'as any' casts found"
+# SafetyBadge has defensive fallback
+grep -q "??" src/components/SafetyBadge.tsx && ok "SafetyBadge has fallback" || fail "SafetyBadge missing defensive fallback"
+
 # ── 8. IPC ────────────────────────────────────────────
 echo ""
 echo "━━━ 8. IPC Boundary ━━━"

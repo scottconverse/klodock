@@ -4,6 +4,7 @@ import {
   AlertCircle, RefreshCw, ArrowUpCircle,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
+import { getVersion } from "@tauri-apps/api/app";
 import { checkOpenClaw, checkOpenclawUpdate, updateOpenclaw } from "@/lib/tauri";
 import { useToast } from "@/components/Toast";
 
@@ -28,20 +29,22 @@ export function DashboardUpdates() {
     setUpdateError(null);
 
     try {
-      const [oc, updateInfo] = await Promise.all([
+      const [oc, updateInfo, appVersion] = await Promise.all([
         checkOpenClaw().catch(() => ({ installed: false, version: null as string | null })),
         checkOpenclawUpdate().catch(() => null),
+        getVersion().catch(() => "unknown"),
       ]);
 
       setVersions({
-        klodock: "1.1.0",
+        klodock: appVersion,
         openclawCurrent: updateInfo?.current_version ?? oc.version ?? null,
         openclawLatest: updateInfo?.latest_version ?? null,
         updateAvailable: updateInfo?.update_available ?? false,
       });
     } catch {
+      const fallbackVersion = await getVersion().catch(() => "unknown");
       setVersions({
-        klodock: "1.1.0",
+        klodock: fallbackVersion,
         openclawCurrent: null,
         openclawLatest: null,
         updateAvailable: false,

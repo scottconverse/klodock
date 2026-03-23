@@ -91,6 +91,13 @@ export function Done() {
         } catch (err) {
           lastError = err instanceof Error ? err.message : "Failed to start agent";
           console.warn(`Daemon start attempt ${attempt + 1}/${maxRetries} failed: ${lastError}`);
+          // Show user-visible feedback during retries
+          if (attempt < maxRetries - 1 && mountedRef.current) {
+            setDaemonStatus({
+              status: "starting",
+              message: `Starting your agent (attempt ${attempt + 2} of ${maxRetries})...`,
+            });
+          }
         }
       }
       if (lastError && mountedRef.current) {
@@ -169,7 +176,9 @@ export function Done() {
               aria-hidden="true"
             />
             <p className="text-sm text-neutral-600">
-              Starting your agent...
+              {daemonStatus.status === "starting" && daemonStatus.message
+                ? daemonStatus.message
+                : "Starting your agent..."}
             </p>
           </>
         )}

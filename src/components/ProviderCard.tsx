@@ -60,6 +60,7 @@ export function ProviderCard({
 
   // Ollama-specific state
   const [ollamaDetected, setOllamaDetected] = useState<boolean | null>(null);
+  const [ollamaIsInstalled, setOllamaIsInstalled] = useState<boolean | null>(null);
   const [ollamaChecking, setOllamaChecking] = useState(false);
   const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
@@ -70,9 +71,11 @@ export function ProviderCard({
   const [modelPullMsg, setModelPullMsg] = useState("");
   const [modelPullPct, setModelPullPct] = useState(0);
 
-  // Auto-detect Ollama on mount if this is the local provider
+  // Auto-detect Ollama on mount if this is the local provider.
+  // Always run detection — even when previously validated — because
+  // Ollama may have been stopped since last check.
   useEffect(() => {
-    if (isLocal && !success) {
+    if (isLocal) {
       detectOllama();
     }
   }, [isLocal]);
@@ -80,6 +83,11 @@ export function ProviderCard({
   async function detectOllama() {
     setOllamaChecking(true);
     try {
+      // Check if Ollama binary is installed (separate from running)
+      const status = await checkOllamaInstalled().catch(() => null);
+      setOllamaIsInstalled(status?.installed ?? false);
+
+      // Check if Ollama is running
       const running = await checkOllama();
       setOllamaDetected(running);
       if (running) {
@@ -191,7 +199,7 @@ export function ProviderCard({
     <div
       className={`
         relative flex flex-col gap-4 rounded-xl border bg-white p-5
-        shadow-sm transition-all
+        shadow-sm transition-all overflow-hidden
         ${
           success
             ? "border-success-300 ring-2 ring-success-100"
@@ -353,7 +361,14 @@ export function ProviderCard({
                 </div>
               ) : (
                 <>
-                  {ollamaDetected === false && (
+                  {ollamaDetected === false && ollamaIsInstalled && (
+                    <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+                      <p className="text-sm text-blue-800">
+                        Ollama is installed but not running. Start Ollama, then click "Check Again."
+                      </p>
+                    </div>
+                  )}
+                  {ollamaDetected === false && ollamaIsInstalled === false && (
                     <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
                       <p className="text-sm text-amber-800">
                         Ollama isn't installed. Click below to install it automatically.
@@ -368,7 +383,8 @@ export function ProviderCard({
                     </p>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {!ollamaIsInstalled && (
                     <button
                       type="button"
                       onClick={handleInstallOllama}
@@ -386,6 +402,7 @@ export function ProviderCard({
                       <Download className="h-3.5 w-3.5" aria-hidden="true" />
                       Install Ollama
                     </button>
+                    )}
 
                     <button
                       type="button"
@@ -454,8 +471,8 @@ export function ProviderCard({
             </p>
           )}
 
-          {/* Action buttons */}
-          <div className="flex gap-2">
+          {/* Action buttons — flex-wrap prevents overflow on narrow cards */}
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={handleOpenUrl}

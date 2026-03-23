@@ -562,7 +562,7 @@ export function DashboardSkills() {
                                 {req.action?.type === "download" && (
                                   <button
                                     type="button"
-                                    onClick={() => openLink((req.action as any).url)}
+                                    onClick={() => { const a = req.action; if (a?.type === "download") openLink(a.url); }}
                                     className="
                                       w-full inline-flex items-center justify-center gap-1.5
                                       rounded-lg border border-primary-200 bg-primary-50
@@ -577,7 +577,7 @@ export function DashboardSkills() {
                                 {req.action?.type === "navigate" && (
                                   <button
                                     type="button"
-                                    onClick={() => navigate((req.action as any).to)}
+                                    onClick={() => { const a = req.action; if (a?.type === "navigate") navigate(a.to); }}
                                     className="
                                       w-full inline-flex items-center justify-center gap-1.5
                                       rounded-lg border border-primary-200 bg-primary-50

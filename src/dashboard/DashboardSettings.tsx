@@ -126,7 +126,7 @@ export function DashboardSettings() {
       }
 
       // Check if Ollama is active
-      const model = (cfg as any)?.agents?.defaults?.model?.primary ?? "";
+      const model = cfg?.agents?.defaults?.model?.primary ?? "";
       const active = detectActiveProvider(model);
       if (active) setActiveProvider(active);
       if (active === "ollama") validSet.add("ollama");
@@ -137,7 +137,7 @@ export function DashboardSettings() {
       setValidated(validSet);
 
       // Gateway
-      const gw = (cfg as any)?.gateway;
+      const gw = cfg?.gateway;
       if (gw?.port) setPort(gw.port);
       if (gw?.auth?.mode) setAuthMode(gw.auth.mode);
     }).finally(() => setLoading(false));
@@ -177,7 +177,7 @@ export function DashboardSettings() {
             password: gwPassword,
           },
         },
-      } as any);
+      });
 
       setActiveProvider(providerId);
       setSaved(true);
@@ -226,7 +226,7 @@ export function DashboardSettings() {
     );
   }
 
-  const currentModel = (config as any)?.agents?.defaults?.model?.primary ?? "Not configured";
+  const currentModel = config?.agents?.defaults?.model?.primary ?? "Not configured";
 
   return (
     <div className="space-y-6">
