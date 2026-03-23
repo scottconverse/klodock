@@ -290,17 +290,27 @@ export function ProviderCard({
               </div>
 
               {modelPulling ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-neutral-700">
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    {modelPullMsg}
+                <div className="space-y-2" role="progressbar" aria-valuenow={Math.round(modelPullPct)} aria-valuemin={0} aria-valuemax={100} aria-label="Model download progress">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-neutral-700">
+                      <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none text-primary-500" aria-hidden="true" />
+                      <span>{modelPullMsg}</span>
+                    </div>
+                    <span className="font-mono text-xs font-medium text-primary-600">
+                      {Math.round(modelPullPct)}%
+                    </span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-200">
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
                     <div
-                      className="h-full rounded-full bg-primary-500 transition-all duration-300"
+                      className="h-full rounded-full bg-primary-500 transition-all duration-500 ease-out"
                       style={{ width: `${Math.min(modelPullPct, 100)}%` }}
                     />
                   </div>
+                  {modelPullPct >= 100 && (
+                    <p className="text-xs font-medium text-success-600 flex items-center gap-1">
+                      <span aria-hidden="true">✓</span> Model downloaded — setting up...
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="flex gap-2">
@@ -347,14 +357,19 @@ export function ProviderCard({
               </p>
 
               {ollamaInstalling ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-neutral-700">
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    {ollamaInstallMsg}
+                <div className="space-y-2" role="progressbar" aria-valuenow={Math.round(ollamaInstallPct)} aria-valuemin={0} aria-valuemax={100} aria-label="Ollama installation progress">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-neutral-700">
+                      <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none text-primary-500" aria-hidden="true" />
+                      <span>{ollamaInstallMsg}</span>
+                    </div>
+                    <span className="font-mono text-xs font-medium text-primary-600">
+                      {Math.round(ollamaInstallPct)}%
+                    </span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-200">
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
                     <div
-                      className="h-full rounded-full bg-primary-500 transition-all duration-300"
+                      className="h-full rounded-full bg-primary-500 transition-all duration-500 ease-out"
                       style={{ width: `${Math.min(ollamaInstallPct, 100)}%` }}
                     />
                   </div>
