@@ -120,6 +120,13 @@ export async function testApiKey(
   return invoke<boolean>("test_api_key", { provider, key });
 }
 
+export async function testChannelToken(
+  channel: string,
+  token: string
+): Promise<string> {
+  return invoke<string>("test_channel_token", { channel, token });
+}
+
 export async function checkOllama(): Promise<boolean> {
   return invoke<boolean>("check_ollama");
 }

@@ -71,20 +71,30 @@ export function Done() {
       });
       unlistenFn = unlisten;
 
-      // Start the daemon
-      try {
-        const result = await startDaemon();
-        if (mountedRef.current) {
-          setDaemonStatus(result);
+      // Start the daemon with retries — on clean install, OpenClaw's first
+      // run can take 30-60s as Node loads 500+ modules for the first time.
+      const maxRetries = 3;
+      const retryDelays = [0, 5000, 10000]; // 0s, 5s, 10s
+      let lastError = "";
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        if (!mountedRef.current) break;
+        if (attempt > 0) {
+          await new Promise((r) => setTimeout(r, retryDelays[attempt]));
         }
-      } catch (err) {
-        if (mountedRef.current) {
-          setDaemonStatus({
-            status: "error",
-            message:
-              err instanceof Error ? err.message : "Failed to start agent",
-          });
+        try {
+          const result = await startDaemon();
+          if (mountedRef.current) {
+            setDaemonStatus(result);
+          }
+          lastError = "";
+          break;
+        } catch (err) {
+          lastError = err instanceof Error ? err.message : "Failed to start agent";
+          console.warn(`Daemon start attempt ${attempt + 1}/${maxRetries} failed: ${lastError}`);
         }
+      }
+      if (lastError && mountedRef.current) {
+        setDaemonStatus({ status: "error", message: lastError });
       }
     }
 

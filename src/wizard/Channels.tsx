@@ -12,7 +12,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
-import { storeSecret, completeStep } from "@/lib/tauri";
+import { storeSecret, completeStep, testChannelToken } from "@/lib/tauri";
 
 /* ── Channel definitions ─────────────────────────────────── */
 
@@ -156,14 +156,24 @@ function ChannelSection({
     }
 
     try {
+      // Test the token against the provider's API first
+      const result = await testChannelToken(channel.id, trimmed);
+      // Token is valid — save it
       await storeSecret(channel.secretKey, trimmed);
-      onStateChange({ ...state, testing: false, success: true, error: null });
-      onValidated();
-    } catch {
       onStateChange({
         ...state,
         testing: false,
-        error: "Failed to store the token. Please try again.",
+        success: true,
+        error: null,
+        successMessage: result, // e.g. "Connected! Bot name: MyBot"
+      });
+      onValidated();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      onStateChange({
+        ...state,
+        testing: false,
+        error: msg || "Failed to verify the token. Please check it and try again.",
       });
     }
   }
@@ -339,7 +349,7 @@ function ChannelSection({
               role="status"
             >
               <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-              Token saved successfully!
+              {(state as any).successMessage || "Token saved successfully!"}
             </p>
           )}
 
@@ -365,10 +375,10 @@ function ChannelSection({
                     className="h-4 w-4 animate-spin motion-reduce:animate-none"
                     aria-hidden="true"
                   />
-                  Saving...
+                  Testing...
                 </>
               ) : (
-                "Save Token"
+                "Test & Save"
               )}
             </button>
 

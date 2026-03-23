@@ -13,6 +13,10 @@ const CACHE_DIR_NAME: &str = "cache";
 /// Filename for the local skill search cache.
 const SKILLS_CACHE_FILE: &str = "skills.json";
 
+/// Bundled skills JSON shipped with the app as a fallback when the live
+/// query fails (e.g., first run timeout, OpenClaw not ready yet).
+const BUNDLED_SKILLS_JSON: &str = include_str!("../../bundled-skills.json");
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -149,9 +153,9 @@ async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
         cmd.output()
     });
 
-    // 60s timeout — first-ever run after fresh install can take 30-60s
-    // as Node loads 500+ modules for the first time.
-    let output = match tokio::time::timeout(std::time::Duration::from_secs(60), task).await {
+    // 180s timeout — first-ever run after fresh install can take 90-120s
+    // as Node loads 500+ modules for the first time on Windows.
+    let output = match tokio::time::timeout(std::time::Duration::from_secs(180), task).await {
         Ok(join_result) => join_result
             .map_err(|e| format!("Task join error: {e}"))?
             .map_err(|e| format!("Failed to run openclaw skills list: {e}"))?,
@@ -220,6 +224,64 @@ async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
     }).collect())
 }
 
+/// Parse the bundled skills JSON as a fallback when the live query fails.
+/// Returns skills with eligible=false (we can't verify system state from
+/// static JSON) but at least shows the user what's available.
+fn fallback_bundled_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
+    log::warn!("Using bundled skills fallback (live query failed)");
+    let parsed: SkillsListOutput = serde_json::from_str(BUNDLED_SKILLS_JSON)
+        .map_err(|e| format!("Failed to parse bundled skills JSON: {e}"))?;
+
+    Ok(parsed.skills.into_iter().map(|entry| {
+        let is_ready = entry.eligible;
+        let name = entry.name.clone();
+        let display_name = format!(
+            "{} {}",
+            entry.emoji,
+            name.split('-')
+                .map(|w| {
+                    let mut c = w.chars();
+                    match c.next() {
+                        None => String::new(),
+                        Some(f) => f.to_uppercase().to_string() + c.as_str(),
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(" ")
+        ).trim().to_string();
+
+        let mut missing_reqs = Vec::new();
+        if let Some(ref m) = entry.missing {
+            for bin in &m.bins { missing_reqs.push(format!("Requires: {bin}")); }
+            if !m.any_bins.is_empty() {
+                missing_reqs.push(format!("Requires one of: {}", m.any_bins.join(", ")));
+            }
+            for env in &m.env { missing_reqs.push(format!("Needs env: {env}")); }
+            for cfg in &m.config { missing_reqs.push(format!("Needs config: {cfg}")); }
+            for os in &m.os { missing_reqs.push(format!("Requires: {os}")); }
+        }
+
+        let skill = SkillMetadata {
+            slug: name,
+            name: display_name,
+            description: entry.description,
+            author: entry.source,
+            version: String::new(),
+            install_count: 0,
+            safety_rating: if entry.bundled {
+                SafetyRating::Verified
+            } else {
+                SafetyRating::Community
+            },
+            required_permissions: Vec::new(),
+            updated_at: String::new(),
+            eligible: entry.eligible,
+            missing_requirements: missing_reqs,
+        };
+        (is_ready, skill)
+    }).collect())
+}
+
 // ---------------------------------------------------------------------------
 // Tauri commands
 // ---------------------------------------------------------------------------
@@ -247,8 +309,8 @@ pub async fn get_recommended_skills(
     let all = match query_openclaw_skills().await {
         Ok(skills) => skills,
         Err(e) => {
-            log::error!("Failed to query OpenClaw skills: {e}");
-            return Err(format!("Could not load skills: {e}"));
+            log::warn!("Live skills query failed ({e}), falling back to bundled list");
+            fallback_bundled_skills()?
         }
     };
 
@@ -298,8 +360,8 @@ pub async fn list_all_skills() -> Result<Vec<SkillMetadata>, String> {
     let all = match query_openclaw_skills().await {
         Ok(skills) => skills,
         Err(e) => {
-            log::error!("Failed to query all OpenClaw skills: {e}");
-            return Err(format!("Could not load skills: {e}"));
+            log::warn!("Live skills query failed ({e}), falling back to bundled list");
+            fallback_bundled_skills()?
         }
     };
 

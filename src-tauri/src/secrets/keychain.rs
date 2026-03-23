@@ -379,6 +379,56 @@ pub async fn check_ollama() -> Result<bool, String> {
     }
 }
 
+/// Test a channel token (Telegram or Discord) by calling the provider's API.
+/// Returns the bot's display name on success.
+#[tauri::command]
+pub async fn test_channel_token(channel: String, token: String) -> Result<String, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| format!("HTTP client error: {e}"))?;
+
+    match channel.to_lowercase().as_str() {
+        "telegram" => {
+            let url = format!("https://api.telegram.org/bot{}/getMe", token);
+            let resp = client.get(&url).send().await
+                .map_err(|e| format!("Network error: {e}"))?;
+            if resp.status().is_success() {
+                // Parse the response to get the bot name
+                let body: serde_json::Value = resp.json().await
+                    .map_err(|e| format!("Failed to parse response: {e}"))?;
+                let bot_name = body["result"]["first_name"]
+                    .as_str()
+                    .unwrap_or("Your bot");
+                Ok(format!("Connected! Bot name: {}", bot_name))
+            } else if resp.status().as_u16() == 401 {
+                Err("Invalid token. Please check your BotFather token and try again.".into())
+            } else {
+                Err(format!("Telegram returned status {}", resp.status().as_u16()))
+            }
+        }
+        "discord" => {
+            let resp = client.get("https://discord.com/api/v10/users/@me")
+                .header("Authorization", format!("Bot {}", token))
+                .send().await
+                .map_err(|e| format!("Network error: {e}"))?;
+            if resp.status().is_success() {
+                let body: serde_json::Value = resp.json().await
+                    .map_err(|e| format!("Failed to parse response: {e}"))?;
+                let bot_name = body["username"]
+                    .as_str()
+                    .unwrap_or("Your bot");
+                Ok(format!("Connected! Bot name: {}", bot_name))
+            } else if resp.status().as_u16() == 401 {
+                Err("Invalid token. Please check your Discord bot token and try again.".into())
+            } else {
+                Err(format!("Discord returned status {}", resp.status().as_u16()))
+            }
+        }
+        other => Err(format!("Unsupported channel: '{}'", other)),
+    }
+}
+
 /// Ollama model info returned from the /api/tags endpoint.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct OllamaModel {

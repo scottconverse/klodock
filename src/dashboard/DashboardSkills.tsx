@@ -7,6 +7,7 @@ import {
   FileText, Image, Globe, ShieldCheck,
 } from "lucide-react";
 import { listAllSkills } from "@/lib/tauri";
+import { SafetyBadge } from "@/components/SafetyBadge";
 import { open } from "@tauri-apps/plugin-shell";
 import type { SkillMetadata } from "@/lib/types";
 
@@ -541,9 +542,14 @@ export function DashboardSkills() {
                         </div>
 
                         {/* Description */}
-                        <p className="text-xs leading-relaxed text-neutral-500 line-clamp-2 mb-2">
+                        <p className="text-xs leading-relaxed text-neutral-500 line-clamp-2 mb-1">
                           {skill.description}
                         </p>
+
+                        {/* Safety badge */}
+                        <div className="mb-2">
+                          <SafetyBadge rating={skill.safety_rating} />
+                        </div>
 
                         {/* Requirements (only for non-active, non-platform-locked) */}
                         {!skill.eligible && !isPlatformLocked && reqs.length > 0 && (

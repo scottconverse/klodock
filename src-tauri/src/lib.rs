@@ -62,6 +62,7 @@ pub fn run() {
             secrets::keychain::delete_secret,
             secrets::keychain::list_secrets,
             secrets::keychain::test_api_key,
+            secrets::keychain::test_channel_token,
             secrets::keychain::check_ollama,
             secrets::keychain::list_ollama_models,
             // Setup state commands
