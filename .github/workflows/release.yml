@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  release:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -29,7 +29,7 @@ jobs:
       - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache Cargo registry and target
+      - name: Cache Cargo
         uses: actions/cache@v4
         with:
           path: |
@@ -37,10 +37,9 @@ jobs:
             ~/.cargo/git
             src-tauri/target
           key: ${{ runner.os }}-cargo-release-${{ hashFiles('src-tauri/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-release-
+          restore-keys: ${{ runner.os }}-cargo-release-
 
-      - name: Install system dependencies (Ubuntu)
+      - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
@@ -53,13 +52,40 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Build and release with tauri-action
+      - name: Run Rust tests
+        working-directory: src-tauri
+        run: cargo test
+
+      - name: Run frontend tests
+        run: npx vitest run
+
+      - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: KloDock ${{ github.ref_name }}
-          releaseBody: 'See the assets below to download KloDock for your platform.'
+          releaseBody: |
+            ## KloDock ${{ github.ref_name }}
+
+            Desktop GUI for OpenClaw — zero terminal, full control.
+
+            ### Download
+
+            | Platform | File |
+            |----------|------|
+            | **Windows** | `.exe` installer (NSIS) |
+            | **macOS** | `.dmg` disk image |
+            | **Linux** | `.AppImage` or `.deb` |
+
+            ### What's new
+
+            See [CHANGELOG](https://github.com/scottconverse/klodock/blob/main/README.md#status) for details.
+
+            ### Notes
+
+            - **macOS**: Unsigned — you may need to right-click → Open on first launch.
+            - **Linux**: AppImage requires `--no-sandbox` flag if running without FUSE.
           releaseDraft: false
           prerelease: false
