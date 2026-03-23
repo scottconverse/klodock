@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Shield, Zap } from "lucide-react";
+import { SlidersHorizontal, Shield, Zap } from "lucide-react";
+import { KloDockLogo } from "@/components/KloDockLogo";
 
 export function Welcome() {
   const navigate = useNavigate();
@@ -10,12 +11,7 @@ export function Welcome() {
 
   return (
     <div className="flex flex-col items-center text-center">
-      <div
-        className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-100"
-        aria-hidden="true"
-      >
-        <Sparkles className="h-6 w-6 text-primary-600" />
-      </div>
+      <KloDockLogo size={48} className="mb-4" />
 
       <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
         Welcome to KloDock
@@ -59,7 +55,7 @@ export function Welcome() {
 
         <li className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2.5 shadow-sm">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-warning-50">
-            <Sparkles
+            <SlidersHorizontal
               className="h-4 w-4 text-warning-500"
               aria-hidden="true"
             />

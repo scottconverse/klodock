@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Loader2, Server, Key, Cpu, Brain, Sparkles, Globe, Zap, Router,
+  Loader2, Server, Key, Cpu, Brain, Bot, Globe, Zap, Router,
   CheckCircle2, AlertTriangle, RefreshCw,
 } from "lucide-react";
 import { ProviderCard } from "@/components/ProviderCard";
@@ -30,7 +30,7 @@ const PROVIDERS = [
     cost: "~$5-20/mo",
     envVar: "ANTHROPIC_API_KEY",
     keyUrl: "https://console.anthropic.com/settings/keys",
-    icon: <Sparkles className="h-5 w-5 text-primary-500" />,
+    icon: <Bot className="h-5 w-5 text-primary-500" />,
     isLocal: false,
   },
   {

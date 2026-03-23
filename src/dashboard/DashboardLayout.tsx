@@ -7,8 +7,8 @@ import {
   Radio,
   Settings,
   RefreshCw,
-  Sparkles,
 } from "lucide-react";
+import { KloDockLogo } from "@/components/KloDockLogo";
 import { StatusIndicator } from "@/components/StatusIndicator";
 import { getDaemonStatus } from "@/lib/tauri";
 import type { DaemonStatus } from "@/lib/types";
@@ -46,12 +46,7 @@ export function DashboardLayout() {
       {/* Sidebar */}
       <aside className="flex w-60 flex-col border-r border-neutral-200 bg-white">
         <div className="flex h-14 items-center gap-2 border-b border-neutral-200 px-5">
-          <div
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-600"
-            aria-hidden="true"
-          >
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
+          <KloDockLogo size={28} />
           <span className="text-sm font-bold text-neutral-900">KloDock</span>
         </div>
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Brain,
-  Sparkles,
+  Bot,
   Globe,
   Zap,
   Router,
@@ -27,7 +27,7 @@ const PROVIDERS = [
     cost: "~$5-20/mo",
     envVar: "ANTHROPIC_API_KEY",
     keyUrl: "https://console.anthropic.com/settings/keys",
-    icon: <Sparkles className="h-5 w-5 text-primary-500" />,
+    icon: <Bot className="h-5 w-5 text-primary-500" />,
     isLocal: false,
   },
   {
