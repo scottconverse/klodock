@@ -1,9 +1,9 @@
-KloDock™
+# KloDock™
 
-Desktop GUI for OpenClaw --- zero terminal, zero complexity.
+Desktop GUI for OpenClaw  zero terminal, zero complexity.
 
 | | |
-|---|---|
+|||
 | Version | 1.2.0 |
 | Author | Scott Converse |
 | License | MIT |
@@ -12,9 +12,10 @@ Desktop GUI for OpenClaw --- zero terminal, zero complexity.
 
 
 
+
 1. Overview
 
-KloDock is a native desktop application that wraps the open-source OpenClaw AI agent framework in a visual, point-and-click interface. OpenClaw has amassed over 250,000 stars on GitHub and is one of the most capable open-source agent platforms available, but it demands terminal fluency, manual JSON and Markdown configuration, and comfortable API key management --- skills that put it out of reach for most non-technical users. Meanwhile, hosted alternatives like Clawnify, OneClaw, and KiwiClaw charge between $10 and $40 per month for what is fundamentally free software, and they hold your API keys on their servers.
+KloDock is a native desktop application that wraps the open-source OpenClaw AI agent framework in a visual, point-and-click interface. OpenClaw has amassed over 250,000 stars on GitHub and is one of the most capable open-source agent platforms available, but it demands terminal fluency, manual JSON and Markdown configuration, and comfortable API key management  skills that put it out of reach for most non-technical users. Meanwhile, hosted alternatives like Clawnify, OneClaw, and KiwiClaw charge between $10 and $40 per month for what is fundamentally free software, and they hold your API keys on their servers.
 
 KloDock fills that gap. It packages the entire OpenClaw setup and management lifecycle into a guided wizard that takes minutes, not hours, from download to a running agent. There is no command line, no config file editing, and no Markdown to write. The user downloads a lightweight installer, runs the wizard, and talks to their agent. Everything stays local: keys are stored in the operating system's native credential store, the agent process runs on the user's machine, and no data leaves the device except what the user's chosen AI provider requires.
 
@@ -22,61 +23,63 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 
 
 
+
 2. Key Features
 
-  * Quick setup wizard --- A 7-step guided flow that takes a new user from first launch to a running AI agent in minutes, not hours. No terminal, no manual steps.
+  * Quick setup wizard  A 7-step guided flow that takes a new user from first launch to a running AI agent in minutes, not hours. No terminal, no manual steps.
 
-  * Silent Node.js installation --- Automatically detects existing Node.js installs, nvm, Volta, and Homebrew-managed versions. If Node.js is missing or below v22, KloDock silently downloads v24.14.0 LTS and extracts it to ~/.klodock/node/ with no elevation prompt and no visible console window on any platform.
+  * Silent Node.js installation  Automatically detects existing Node.js installs, nvm, Volta, and Homebrew-managed versions. If Node.js is missing or below v22, KloDock silently downloads v24.14.0 LTS and extracts it to `~/.klodock/node/` with no elevation prompt and no visible console window on any platform.
 
-  * Visual personality builder --- Choose from role templates (assistant, creative writer, coder, etc.), adjust a tone slider from formal to casual, and watch a live SOUL.md preview update in real time.
+  * Visual personality builder  Choose from role templates (assistant, creative writer, coder, etc.), adjust a tone slider from formal to casual, and watch a live SOUL.md preview update in real time.
 
-  * Secure API key management --- Keys are stored in the OS credential store: DPAPI on Windows, Keychain on macOS, libsecret on Linux. Keys never exist in plaintext at rest.
+  * Secure API key management  Keys are stored in the OS credential store: DPAPI on Windows, Keychain on macOS, libsecret on Linux. Keys never exist in plaintext at rest.
 
-  * Ollama integration --- Auto-detection of a local Ollama instance, model listing via /api/tags, model picker dropdown, no-models guard (prompts user to ollama pull), and writes base_url (http://localhost:11434) and selected model to openclaw.json. Ollama requires a model that supports tool calling (function calling). Models without tool support will fail at runtime with an error like "does not support tools". Recommended tool-capable models:
+  * Ollama integration  Auto-detection of a local Ollama instance, model listing via `/api/tags`, model picker dropdown, no-models guard (prompts user to `ollama pull`), and writes `base_url` (`http://localhost:11434`) and selected model to `openclaw.json`. Ollama requires a model that supports tool calling (function calling). Models without tool support will fail at runtime with an error like `"does not support tools"`. Recommended tool-capable models:
 
   | Model | Size | Notes |
-  |-------|------|-------|
-  | qwen2.5:7b | 4.7 GB | Good balance of speed and capability |
-  | llama3.1:8b | 4.7 GB | Meta's flagship small model with tool support |
-  | mistral:7b | 4.1 GB | Fast inference, solid tool calling |
+  |-||-|
+  | `qwen2.5:7b` | 4.7 GB | Good balance of speed and capability |
+  | `llama3.1:8b` | 4.7 GB | Meta's flagship small model with tool support |
+  | `mistral:7b` | 4.1 GB | Fast inference, solid tool calling |
 
-  Pull one with: ollama pull qwen2.5:7b
+  Pull one with: `ollama pull qwen2.5:7b`
 
-  * Channel setup --- Guided configuration flows for Telegram and Discord, with token entry, validation, and connection testing built into the wizard.
+  * Channel setup with API verification  Guided configuration flows for Telegram and Discord, with token entry, format validation, and live API verification (Telegram `getMe`, Discord `users/@me`) before saving. Shows bot name on successful connection.
 
-  * Skill marketplace with safety ratings --- Browse and install skills from ClawHub with one click. Every skill carries a safety rating: Verified, Community, or Unreviewed.
+  * Skill browser with safety badges  Browse 52 skills across 8 categories (Communication, Productivity, Developer Tools, etc.) with search, filtering, and three-tier safety ratings: Verified (bundled/audited), Community (established), Unreviewed (new/unknown). Each skill shows what it needs to work — with download buttons and navigation links to close the gap. Bundled JSON fallback ensures the skill list loads even on first run when the live query is slow.
 
-  * Agent lifecycle management --- The OpenClaw agent runs as a managed child process with automatic restart on crash, periodic health monitoring, and graceful shutdown.
+  * Agent lifecycle management  The OpenClaw agent runs as a managed child process with automatic restart on crash, periodic health monitoring, and graceful shutdown.
 
-  * Start on login --- Optional system tray launcher that starts the agent at login. Uses a registry key (Windows), launch agent (macOS), or XDG autostart entry (Linux) --- no system service required.
+  * Start on login  Optional system tray launcher that starts the agent at login. Uses a registry key (Windows), launch agent (macOS), or XDG autostart entry (Linux)  no system service required.
 
-  * Resumable setup and uninstall --- Both the setup wizard and the uninstall flow persist their progress to disk as JSON. If the app crashes mid-operation, it picks up where it left off on the next launch.
+  * Resumable setup and uninstall  Both the setup wizard and the uninstall flow persist their progress to disk as JSON. If the app crashes mid-operation, it picks up where it left off on the next launch.
 
-  * WCAG 2.1 AA accessible --- Full keyboard navigation, ARIA labels, screen reader testing, and high-contrast support throughout the interface.
+  * WCAG 2.1 AA accessible  Full keyboard navigation, ARIA labels, screen reader testing, and high-contrast support throughout the interface.
 
-  * Lightweight --- Windows MSI installer: 672 KB. NSIS setup executable: 415 KB. The entire application leverages the system webview rather than bundling a browser engine.
+  * Lightweight  Windows MSI installer: 672 KB. NSIS setup executable: 415 KB. The entire application leverages the system webview rather than bundling a browser engine.
 
-  * Full management dashboard --- Six dedicated pages (Overview, Skills, Personality, Channels, Settings, Updates) replace the earlier "coming soon" placeholders. Every setting configurable in the wizard is also editable from the dashboard.
+  * Full management dashboard  Six dedicated pages (Overview, Skills, Personality, Channels, Settings, Updates) replace the earlier "coming soon" placeholders. Every setting configurable in the wizard is also editable from the dashboard.
 
-  * 52 categorized skills --- Skills are grouped into 8 categories (Communication, Productivity, Developer Tools, Media & Audio, Smart Home, AI Services, Images & Video, System & Security) with search, filtering, and actionable setup buttons. Active skills show a green badge; unavailable skills show exactly what's needed with a download link or navigation button.
+  * 52 categorized skills  Skills are grouped into 8 categories (Communication, Productivity, Developer Tools, Media & Audio, Smart Home, AI Services, Images & Video, System & Security) with search, filtering, and actionable setup buttons. Active skills show a green badge; unavailable skills show exactly what's needed with a download link or navigation button.
 
-  * Auto-updater --- Checks the npm registry for the latest OpenClaw version and offers a one-click "Update now" button. Stops the daemon, updates via npm, restarts automatically.
+  * Auto-updater  Checks the npm registry for the latest OpenClaw version and offers a one-click "Update now" button. Stops the daemon, updates via npm, restarts automatically.
 
-  * Toast notification system --- Global success, error, warning, and info notifications across all dashboard pages. Auto-dismiss with manual close.
+  * Toast notification system  Global success, error, warning, and info notifications across all dashboard pages. Auto-dismiss with manual close.
 
-  * Uninstall from UI --- Danger Zone section in Settings with full 7-step resumable uninstall. Two confirmation dialogs (uninstall + optional data removal).
+  * Uninstall from UI  Danger Zone section in Settings with full 7-step resumable uninstall. Two confirmation dialogs (uninstall + optional data removal).
+
 
 
 
 3. Architecture
 
-System Architecture Diagram
+  System Architecture Diagram
 
-
-+-----------------------------------------------------------+
+```
++--+
 |                       KloDock (Tauri v2)                  |
 |                                                           |
-|  +-------------------------+   +------------------------+ |
+|  +-+   ++ |
 |  |    React Frontend       |   |    Rust Backend        | |
 |  |                         |   |                        | |
 |  |  Wizard (7 steps)       |   |  installer/            | |
@@ -84,7 +87,7 @@ System Architecture Diagram
 |  |  Components             |IPC|    openclaw.rs          | |
 |  |  Lib (types, state)     |   |    skills.rs           | |
 |  |                         |   |    uninstall.rs         | |
-|  +-------------------------+   |  config/                | |
+|  +-+   |  config/                | |
 |                                |    soul.rs              | |
 |                                |    openclaw_json.rs     | |
 |                                |    env.rs               | |
@@ -102,29 +105,29 @@ System Architecture Diagram
 |                                |  update/                | |
 |                                |    openclaw_update.rs   | |
 |                                |    skill_update.rs      | |
-|                                +------------------------+ |
-+-----------------------------------------------------------+
+|                                ++ |
++--+
          |                              |
          v                              v
-  +-------------+              +------------------+
+  +-+              ++
   | System      |              | ~/.klodock/      |
   | Webview     |              |   node/          |
   | (WRY/Edge/  |              |   secrets/       |
   |  WebKitGTK) |              |   setup-state.json|
-  +-------------+              +------------------+
+  +-+              ++
                                         |
                                         v
-                               +------------------+
+                               ++
                                | OpenClaw Agent   |
                                | (child process)  |
                                |   ~/.openclaw/   |
                                |     .env         |
                                |     SOUL.md      |
                                |     openclaw.json|
-                               +------------------+
+                               ++
+```
 
-
-Why Tauri v2
+  Why Tauri v2
 
 KloDock uses Tauri v2 rather than Electron for three reasons:
 
@@ -134,22 +137,22 @@ KloDock uses Tauri v2 rather than Electron for three reasons:
 
 3. Security. Tauri's capability-based permission model restricts the frontend to only the IPC commands explicitly registered in the Rust backend. There is no Node.js runtime in the main process, eliminating an entire class of supply-chain attacks.
 
-Rust Backend Modules
+  Rust Backend Modules
 
 | Module | Files | Purpose |
-|--------|-------|---------|
-| installer/ | node.rs, openclaw.rs, skills.rs, uninstall.rs | Downloads, extracts, and verifies Node.js; installs OpenClaw from npm; installs skills from ClawHub; manages uninstall lifecycle |
-| config/ | soul.rs, openclaw_json.rs, env.rs | Reads and writes SOUL.md personality files, openclaw.json configuration, and the ephemeral .env file |
-| secrets/ | keychain.rs | OS credential store integration --- DPAPI on Windows, keyring crate (Keychain/libsecret) on macOS/Linux |
-| setup/ | setup_state.rs | Wizard state persistence, step completion tracking, crash-safe resume |
-| process/ | daemon.rs, health.rs, autostart/ | Child process lifecycle (start/stop/restart), periodic health checks, platform-specific login-item registration |
-| clawhub/ | registry.rs, safety.rs | Skill registry client, search, recommendations, and safety rating lookup |
-| update/ | openclaw_update.rs, skill_update.rs | Version checking and update logic for OpenClaw and installed skills |
+|--|-||
+| `installer/` | `node.rs`, `openclaw.rs`, `skills.rs`, `uninstall.rs` | Downloads, extracts, and verifies Node.js; installs OpenClaw from npm; installs skills from ClawHub; manages uninstall lifecycle |
+| `config/` | `soul.rs`, `openclaw_json.rs`, `env.rs` | Reads and writes SOUL.md personality files, openclaw.json configuration, and the ephemeral .env file |
+| `secrets/` | `keychain.rs` | OS credential store integration  DPAPI on Windows, keyring crate (Keychain/libsecret) on macOS/Linux |
+| `setup/` | `setup_state.rs` | Wizard state persistence, step completion tracking, crash-safe resume |
+| `process/` | `daemon.rs`, `health.rs`, `autostart/` | Child process lifecycle (start/stop/restart), periodic health checks, platform-specific login-item registration |
+| `clawhub/` | `registry.rs`, `safety.rs` | Skill registry client, search, recommendations, and safety rating lookup |
+| `update/` | `openclaw_update.rs`, `skill_update.rs` | Version checking and update logic for OpenClaw and installed skills |
 
-Frontend Stack
+  Frontend Stack
 
 | Technology | Version | Role |
-|------------|---------|------|
+||||
 | React | 19 | UI framework |
 | TypeScript | 5.9 | Type safety |
 | Tailwind CSS | v4 | Utility-first styling |
@@ -160,15 +163,16 @@ Frontend Stack
 
 
 
+
 4. Security Model
 
 KloDock treats API keys as the most sensitive data in the system. The security model is designed around the principle that keys should never exist in plaintext at rest.
 
-Note: Users who choose Ollama (local AI) skip the entire key management flow. No API key is stored, no .env is materialized, and no credentials exist anywhere. The agent talks directly to Ollama at http://localhost:11434.
+Note: Users who choose Ollama (local AI) skip the entire key management flow. No API key is stored, no `.env` is materialized, and no credentials exist anywhere. The agent talks directly to Ollama at `http://localhost:11434`.
 
-Secret Materialization Flow (Cloud Providers)
+  Secret Materialization Flow (Cloud Providers)
 
-
+```
 1. User enters API key in the wizard UI
          |
          v
@@ -200,27 +204,28 @@ Secret Materialization Flow (Cloud Providers)
          |
          v
 8. .env file is scrubbed (deleted) immediately
+```
 
+  Additional Security Measures
 
-Additional Security Measures
+  * Crash recovery scrub. On every KloDock launch, the Rust backend checks for and removes any stale `.env` file left behind by a prior crash.
 
-  * Crash recovery scrub. On every KloDock launch, the Rust backend checks for and removes any stale .env file left behind by a prior crash.
+  * SHA256 checksum verification. The Node.js download is verified against the official `SHASUMS256.txt` from nodejs.org before extraction.
 
-  * SHA256 checksum verification. The Node.js download is verified against the official SHASUMS256.txt from nodejs.org before extraction.
+  * Windows file permissions. The `.env` file and secret storage directory are locked to the current user via `icacls` with inheritance removed.
 
-  * Windows file permissions. The .env file and secret storage directory are locked to the current user via icacls with inheritance removed.
+  * Tauri capability restrictions. The frontend can only invoke IPC commands that are explicitly registered in the `invoke_handler`. There is no shell access, no arbitrary filesystem access, and no network access from the webview context.
 
-  * Tauri capability restrictions. The frontend can only invoke IPC commands that are explicitly registered in the invoke_handler. There is no shell access, no arbitrary filesystem access, and no network access from the webview context.
-
-  * Ollama zero-key path. When the user selects Ollama as their provider, no API key is stored, no .env file is created, and no credentials leave the machine. The agent communicates directly with Ollama's local HTTP API. KloDock auto-detects Ollama, lists available models, and guards against the case where Ollama is running but has no models pulled. Note: the selected Ollama model must support tool calling (function calling). Models that lack tool support will produce a "does not support tools" error at runtime. Recommended models: qwen2.5:7b, llama3.1:8b, or mistral:7b.
+  * Ollama zero-key path. When the user selects Ollama as their provider, no API key is stored, no `.env` file is created, and no credentials leave the machine. The agent communicates directly with Ollama's local HTTP API. KloDock auto-detects Ollama, lists available models, and guards against the case where Ollama is running but has no models pulled. Note: the selected Ollama model must support tool calling (function calling). Models that lack tool support will produce a `"does not support tools"` error at runtime. Recommended models: `qwen2.5:7b`, `llama3.1:8b`, or `mistral:7b`.
 
   * No telemetry. KloDock collects and transmits no usage data by default.
 
 
 
+
 5. Project Structure
 
-
+```
 klodock/
 ├── .github/
 │   └── workflows/
@@ -345,167 +350,171 @@ klodock/
 ├── tsconfig.json                  # TypeScript configuration
 ├── SPIKE-RESULTS.md               # Node.js installer spike findings
 └── README.md                      # Project README (concise version)
+```
 
 
 
 
 6. Development Guide
 
-Prerequisites
+  Prerequisites
 
 | Requirement | Details |
-|-------------|---------|
+|-||
 | Node.js | >= 22 (v24.14.0 LTS pinned, [nodejs.org](https://nodejs.org/)) |
 | Rust | Stable toolchain ([rustup.rs](https://rustup.rs/)) |
 | Windows | Visual Studio Build Tools with C++ workload |
 | macOS | Xcode Command Line Tools |
-| Linux (Ubuntu) | libwebkit2gtk-4.1-dev, libappindicator3-dev, librsvg2-dev |
+| Linux (Ubuntu) | `libwebkit2gtk-4.1-dev`, `libappindicator3-dev`, `librsvg2-dev` |
 
-Initial Setup
+  Initial Setup
 
-bash
+```bash
 git clone https://github.com/scottconverse/klodock.git
 cd klodock
 npm install
+```
 
-
-Development Server
+  Development Server
 
 Start the Tauri dev server with hot-reload for both the frontend and backend:
 
-bash
+```bash
 npx tauri dev
+```
 
+This compiles the Rust backend, starts the Vite dev server for the React frontend, and opens the application window. Changes to `.tsx` files trigger instant HMR; changes to `.rs` files trigger a Rust recompile.
 
-This compiles the Rust backend, starts the Vite dev server for the React frontend, and opens the application window. Changes to .tsx files trigger instant HMR; changes to .rs files trigger a Rust recompile.
+  Code Structure Conventions
 
-Code Structure Conventions
+  * Frontend IPC calls go through `src/lib/tauri.ts`, which wraps `@tauri-apps/api/core.invoke()` with typed function signatures.
+  * Rust commands are `#[tauri::command]` async functions registered in `lib.rs`.
+  * Shared types are defined in `src/lib/types.ts` (frontend) and as `serde`-derived structs in each Rust module.
 
-  * Frontend IPC calls go through src/lib/tauri.ts, which wraps @tauri-apps/api/core.invoke() with typed function signatures.
-  * Rust commands are #[tauri::command] async functions registered in lib.rs.
-  * Shared types are defined in src/lib/types.ts (frontend) and as serde-derived structs in each Rust module.
+  Running Tests
 
-Running Tests
-
-bash
-Frontend unit and component tests (vitest)
+```bash
+# Frontend unit and component tests (vitest)
 npx vitest run
 
-Rust integration tests (skips ignored tests)
+# Rust integration tests (skips ignored tests)
 cd src-tauri && cargo test
 
-Rust ignored tests (requires real system state: keychain, network, etc.)
+# Rust ignored tests (requires real system state: keychain, network, etc.)
 cd src-tauri && cargo test -- --ignored
 
-E2E tests (requires built app + msedgedriver for Edge WebView2)
+# E2E tests (requires built app + msedgedriver for Edge WebView2)
 npm run test:e2e
 
-Watch mode for frontend tests
+# Watch mode for frontend tests
 npx vitest
+```
 
+  Building for Production
 
-Building for Production
-
-bash
+```bash
 npx tauri build
+```
 
+This compiles an optimized Rust binary, bundles the Vite-built frontend, and produces platform-specific installers in `src-tauri/target/release/bundle/`.
 
-This compiles an optimized Rust binary, bundles the Vite-built frontend, and produces platform-specific installers in src-tauri/target/release/bundle/.
-
-Useful Commands
+  Useful Commands
 
 | Command | Purpose |
-|---------|---------|
-| npx tauri dev | Dev server with hot-reload |
-| npx vitest run | Run frontend tests once |
-| npx vitest | Run frontend tests in watch mode |
-| cd src-tauri && cargo test | Run Rust tests |
-| cd src-tauri && cargo test -- --ignored | Run ignored Rust tests |
-| npm run test:e2e | Run E2E tests (WebdriverIO + tauri-driver) |
-| cd src-tauri && cargo check | Fast Rust type-check without building |
-| npx tauri build | Production build with installers |
-| npm run build | Build frontend only (Vite) |
+|||
+| `npx tauri dev` | Dev server with hot-reload |
+| `npx vitest run` | Run frontend tests once |
+| `npx vitest` | Run frontend tests in watch mode |
+| `cd src-tauri && cargo test` | Run Rust tests |
+| `cd src-tauri && cargo test -- --ignored` | Run ignored Rust tests |
+| `npm run test:e2e` | Run E2E tests (WebdriverIO + tauri-driver) |
+| `cd src-tauri && cargo check` | Fast Rust type-check without building |
+| `npx tauri build` | Production build with installers |
+| `npm run build` | Build frontend only (Vite) |
+
 
 
 
 7. Testing
 
-Test Summary
+  Test Summary
 
 | Layer | Framework | Count | Status |
-|-------|-----------|-------|--------|
+|-|--|-|--|
 | Frontend unit/component | Vitest + Testing Library | 26 | Passing |
 | Rust integration | Cargo test | 12 | Passing |
 | Rust (ignored, require real state) | Cargo test --ignored | 7 | Passing |
 | End-to-end | WebdriverIO v9 + tauri-driver + msedgedriver | 13 | Passing |
 | Total | | 58 | 0 failures |
 
-Frontend Tests (Vitest)
+  Frontend Tests (Vitest)
 
-Tests are located in src/__tests__/ and cover:
+Tests are located in `src/__tests__/` and cover:
 
-  * Component tests --- ToneSlider (rendering, interaction, ARIA attributes), SafetyBadge (rating display)
-  * Wizard screen tests --- ModelProvider (provider card rendering, validation gating), Personality (role cards, tone slider, preview updates)
-  * Library tests --- wizard-state (initial state, step detection, completion logic)
+  * Component tests  `ToneSlider` (rendering, interaction, ARIA attributes), `SafetyBadge` (rating display)
+  * Wizard screen tests  `ModelProvider` (provider card rendering, validation gating), `Personality` (role cards, tone slider, preview updates)
+  * Library tests  `wizard-state` (initial state, step detection, completion logic)
 
-Run with: npx vitest run
+Run with: `npx vitest run`
 
-Rust Integration Tests (Cargo)
+  Rust Integration Tests (Cargo)
 
-Tests are located in src-tauri/tests/ and cover:
+Tests are located in `src-tauri/tests/` and cover:
 
-  * installer_test --- Node.js detection, version manager detection, KloDock node path validation
-  * setup_state_test --- Fresh state generation, step completion persistence
-  * daemon_test --- Stale .env scrubbing, daemon status when not running
-  * uninstall_test --- Uninstall state serialization, partial uninstall resume detection
-  * autostart_test --- Default-disabled check (platform-gated)
+  * installer_test  Node.js detection, version manager detection, KloDock node path validation
+  * setup_state_test  Fresh state generation, step completion persistence
+  * daemon_test  Stale `.env` scrubbing, daemon status when not running
+  * uninstall_test  Uninstall state serialization, partial uninstall resume detection
+  * autostart_test  Default-disabled check (platform-gated)
 
-Run with: cd src-tauri && cargo test
+Run with: `cd src-tauri && cargo test`
 
-Ignored Tests (Require Real System State)
+  Ignored Tests (Require Real System State)
 
-These tests are marked #[ignore] because they interact with real OS resources:
+These tests are marked `#[ignore]` because they interact with real OS resources:
 
-  * keychain_test (3 tests) --- Store/retrieve round-trip, delete, list. Interacts with the real OS keychain. Uses a Mutex for serial execution to avoid race conditions on the shared DPAPI key index.
-  * installer_test (2 tests) --- Full Node.js download and install. Requires network and writes to ~/.klodock/node/.
-  * autostart_test (1 test per platform) --- Enable/disable round-trip. Modifies registry keys, launch agents, or systemd units.
-  * setup_state_test (1 test) --- verify_all_steps calls real system checks.
+  * keychain_test (3 tests)  Store/retrieve round-trip, delete, list. Interacts with the real OS keychain. Uses a Mutex for serial execution to avoid race conditions on the shared DPAPI key index.
+  * installer_test (2 tests)  Full Node.js download and install. Requires network and writes to `~/.klodock/node/`.
+  * autostart_test (1 test per platform)  Enable/disable round-trip. Modifies registry keys, launch agents, or systemd units.
+  * setup_state_test (1 test)  `verify_all_steps` calls real system checks.
 
-Run with: cd src-tauri && cargo test -- --ignored
+Run with: `cd src-tauri && cargo test -- --ignored`
 
-End-to-End Tests (WebdriverIO)
+  End-to-End Tests (WebdriverIO)
 
-13 real E2E tests launch the compiled application using WebdriverIO v9 with tauri-driver and msedgedriver (Edge WebView2). Configuration is in wdio.conf.ts. Run with npm run test:e2e.
+13 real E2E tests launch the compiled application using WebdriverIO v9 with tauri-driver and msedgedriver (Edge WebView2). Configuration is in `wdio.conf.ts`. Run with `npm run test:e2e`.
 
-  * e2e/wizard-walkthrough.e2e.ts (8 tests) --- Full wizard walkthrough from Welcome screen through Done, exercising each step of the setup flow.
-  * e2e/accessibility.e2e.ts (7 tests) --- WCAG 2.1 AA compliance checks including keyboard navigation, ARIA labels, focus management, and screen reader compatibility.
+  * `e2e/wizard-walkthrough.e2e.ts` (8 tests)  Full wizard walkthrough from Welcome screen through Done, exercising each step of the setup flow.
+  * `e2e/accessibility.e2e.ts` (7 tests)  WCAG 2.1 AA compliance checks including keyboard navigation, ARIA labels, focus management, and screen reader compatibility.
 
-The older stub files (setup-wizard.spec.ts, secret-lifecycle.spec.ts, channel-setup.spec.ts, resume-wizard.spec.ts, autostart.spec.ts, uninstall.spec.ts) still exist in e2e/ but are superseded by the real test suites above.
+The older stub files (`setup-wizard.spec.ts`, `secret-lifecycle.spec.ts`, `channel-setup.spec.ts`, `resume-wizard.spec.ts`, `autostart.spec.ts`, `uninstall.spec.ts`) still exist in `e2e/` but are superseded by the real test suites above.
+
 
 
 
 8. Build Artifacts
 
-What npx tauri build Produces
+  What `npx tauri build` Produces
 
 | Platform | Artifact | Format | Notes |
-|----------|----------|--------|-------|
-| Windows | MSI installer | .msi | Standard Windows Installer package |
-| Windows | NSIS installer | .exe | Lighter-weight NSIS setup executable |
-| macOS | App bundle | .app in .dmg | Universal binary (Intel + Apple Silicon) |
-| Linux | AppImage | .AppImage | Portable, no install required |
-| Linux | Debian package | .deb | For apt-based distributions |
+|-|-|--|-|
+| Windows | MSI installer | `.msi` | Standard Windows Installer package |
+| Windows | NSIS installer | `.exe` | Lighter-weight NSIS setup executable |
+| macOS | App bundle | `.app` in `.dmg` | Universal binary (Intel + Apple Silicon) |
+| Linux | AppImage | `.AppImage` | Portable, no install required |
+| Linux | Debian package | `.deb` | For apt-based distributions |
 
-Verified Windows Build Sizes
+  Verified Windows Build Sizes
 
 | Artifact | Size |
-|----------|------|
-| KloDock_1.2.0_x64_en-US.msi | 672 KB |
-| KloDock_1.2.0_x64-setup.exe | 415 KB |
+|-||
+| `KloDock_1.2.0_x64_en-US.msi` | 672 KB |
+| `KloDock_1.2.0_x64-setup.exe` | 415 KB |
 
 These sizes reflect the Tauri advantage: no bundled browser engine. The application uses the system's Edge WebView2 (Windows), WebKitGTK (Linux), or WKWebView (macOS).
 
-Output directory: src-tauri/target/release/bundle/
+Output directory: `src-tauri/target/release/bundle/`
+
 
 
 
@@ -513,29 +522,30 @@ Output directory: src-tauri/target/release/bundle/
 
 Four GitHub Actions workflows automate building, testing, releasing, and compatibility monitoring.
 
-Workflows
+  Workflows
 
 | Workflow | File | Trigger | Platforms | Purpose |
-|----------|------|---------|-----------|---------|
-| Build | build.yml | Push/PR to main | Ubuntu, macOS, Windows | Compiles the full Tauri application on all three platforms. Catches compilation errors before merge. |
-| Test | test.yml | Push/PR to main | Ubuntu, macOS, Windows | Runs Rust integration tests (cargo test), frontend unit tests (vitest), and E2E tests (npm run test:e2e) on all platforms. All passing. |
-| Release | release.yml | Tag push (v*) | Ubuntu, macOS, Windows | Builds platform-specific installers via tauri-action and publishes them as GitHub Release assets. |
-| Compatibility | compat.yml | Nightly (06:00 UTC) + manual | Ubuntu | Installs the latest OpenClaw from npm and runs the Rust test suite against it. On failure, automatically creates a GitHub Issue tagged bug + compatibility. |
+|-|||--||
+| Build | `build.yml` | Push/PR to `main` | Ubuntu, macOS, Windows | Compiles the full Tauri application on all three platforms. Catches compilation errors before merge. |
+| Test | `test.yml` | Push/PR to `main` | Ubuntu, macOS, Windows | Runs Rust integration tests (`cargo test`), frontend unit tests (`vitest`), and E2E tests (`npm run test:e2e`) on all platforms. All passing. |
+| Release | `release.yml` | Tag push (`v*`) | Ubuntu, macOS, Windows | Builds platform-specific installers via `tauri-action` and publishes them as GitHub Release assets. |
+| Compatibility | `compat.yml` | Nightly (06:00 UTC) + manual | Ubuntu | Installs the latest OpenClaw from npm and runs the Rust test suite against it. On failure, automatically creates a GitHub Issue tagged `bug` + `compatibility`. |
 
-Dependency Caching
+  Dependency Caching
 
 All workflows cache:
-  * ~/.cargo/registry and ~/.cargo/git (Cargo registry)
-  * src-tauri/target (Rust build artifacts)
-  * node_modules (via setup-node cache)
+  * `~/.cargo/registry` and `~/.cargo/git` (Cargo registry)
+  * `src-tauri/target` (Rust build artifacts)
+  * `node_modules` (via `setup-node` cache)
 
-Cache keys are based on Cargo.lock hash for Rust and npm lockfile for Node.
+Cache keys are based on `Cargo.lock` hash for Rust and npm lockfile for Node.
+
 
 
 
 10. Roadmap
 
-Phase 1: Setup Wizard (Shipped)
+  Phase 1: Setup Wizard (Shipped)
 
   * 8-screen setup wizard from download to running agent
   * Silent Node.js detection and installation
@@ -550,33 +560,34 @@ Phase 1: Setup Wizard (Shipped)
   * Accessibility (WCAG 2.1 AA)
   * Cross-platform CI/CD with nightly compatibility checks
 
-Phase 2: Dashboard and Ecosystem (Shipped in v1.2.0)
+  Phase 2: Dashboard and Ecosystem (Shipped in v1.2.0)
 
-  *  SHIPPED
-  *  SHIPPED
-  *  SHIPPED
-  * WhatsApp integration --- Deferred from Phase 1 due to Baileys library fragility; evaluating alternatives
-  * Multi-agent support --- Run and manage multiple OpenClaw instances
+  * ~~Agent dashboard  Real-time status, log viewer, conversation history~~ SHIPPED
+  * ~~Skill marketplace  Full ClawHub integration with install, update, and review flows~~ SHIPPED
+  * ~~Settings panel  Advanced configuration without editing JSON~~ SHIPPED
+  * WhatsApp integration  Deferred from Phase 1 due to Baileys library fragility; evaluating alternatives
+  * Multi-agent support  Run and manage multiple OpenClaw instances
 
-Phase 3: Future Considerations
+  Phase 3: Future Considerations
 
-  *  SHIPPED in v1.2.0 (OpenClaw auto-update from npm with one-click UI)
-  * Plugin system --- Community-developed UI extensions
-  * Team management --- Shared configurations for organizations
-  * Analytics dashboard --- Usage metrics and conversation insights (local only)
-  * Mobile companion --- Status monitoring and quick replies from mobile devices
+  * ~~Auto-update  Silent background updates for KloDock itself via Tauri's updater~~ SHIPPED in v1.2.0 (OpenClaw auto-update from npm with one-click UI)
+  * Plugin system  Community-developed UI extensions
+  * Team management  Shared configurations for organizations
+  * Analytics dashboard  Usage metrics and conversation insights (local only)
+  * Mobile companion  Status monitoring and quick replies from mobile devices
+
 
 
 
 11. Competitive Positioning
 
-
+```
                 More Control / Local
 
                     * KloDock
                  (free, local, GUI)
 
-  Easier ----                          ---- Harder
+  Easier -                          - Harder
 
   Clawnify      OneClaw      KiwiClaw
   ($$$)         ($10/mo)     ($15-39/mo)
@@ -585,10 +596,10 @@ Phase 3: Future Considerations
                 (free but terminal)
 
                 Less Control / Cloud
-
+```
 
 | Product | Price | Local/Cloud | GUI | Terminal Required |
-|---------|-------|-------------|-----|-------------------|
+||-|-|--|-|
 | KloDock | Free | Local | Yes | No |
 | OpenClaw CLI | Free | Local | No | Yes |
 | Clawnify | $20+/mo | Cloud | Yes | No |
@@ -599,6 +610,7 @@ KloDock occupies the unique position of being both free and easy to use while ke
 
 
 
+
 12. Known Limitations
 
   * OpenClaw is fictional. This project is a proof-of-concept demonstrating the architecture, UI patterns, and security model for wrapping a complex CLI tool in a native desktop GUI. The "OpenClaw" agent framework, "ClawHub" skill registry, and competing services referenced throughout are not real products.
@@ -606,6 +618,7 @@ KloDock occupies the unique position of being both free and easy to use while ke
   * WhatsApp integration deferred. The original PRD included WhatsApp as a channel option. This was deferred because the Baileys library (the primary open-source WhatsApp Web API) is fragile and breaks frequently with WhatsApp protocol changes.
 
   * No code signing. Windows and macOS builds are not code-signed, which will trigger OS security warnings on first launch. Code signing certificates are needed for production distribution.
+
 
 
 
