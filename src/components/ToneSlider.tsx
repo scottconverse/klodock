@@ -41,7 +41,7 @@ export function ToneSlider({ value, onChange }: ToneSliderProps) {
         aria-valuenow={Math.round(value * 100)}
         aria-valuetext={label}
       />
-      <div className="flex justify-between text-xs text-neutral-500">
+      <div className="flex justify-between text-xs text-neutral-600">
         <span>Formal</span>
         <span className="font-medium text-primary-600">{label}</span>
         <span>Casual</span>

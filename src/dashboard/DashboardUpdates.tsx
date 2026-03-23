@@ -81,7 +81,7 @@ export function DashboardUpdates() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" aria-hidden="true" />
       </div>
     );
   }
@@ -93,7 +93,7 @@ export function DashboardUpdates() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-neutral-900">Updates</h2>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-neutral-600">
             {isUpToDate
               ? "Everything is up to date."
               : versions?.updateAvailable
@@ -110,9 +110,10 @@ export function DashboardUpdates() {
             inline-flex items-center gap-1.5 rounded-lg border
             border-neutral-200 px-3 py-1.5 text-xs font-medium
             text-neutral-600 hover:bg-neutral-50 disabled:opacity-50
+            focus:ring-2 focus:ring-blue-500 focus:outline-none
           "
         >
-          <RefreshCw className={`h-3 w-3 ${checking ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-3 w-3 ${checking ? "animate-spin" : ""}`} aria-hidden="true" />
           {checking ? "Checking..." : "Check for updates"}
         </button>
       </div>
@@ -122,17 +123,17 @@ export function DashboardUpdates() {
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Package className="h-5 w-5 text-primary-500" />
+              <Package className="h-5 w-5 text-primary-500" aria-hidden="true" />
               <div>
                 <h3 className="text-sm font-semibold text-neutral-900">KloDock</h3>
-                <p className="text-xs text-neutral-500">Desktop application</p>
+                <p className="text-xs text-neutral-600">Desktop application</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-mono text-neutral-700">
                 v{versions?.klodock ?? "?"}
               </span>
-              <CheckCircle2 className="h-4 w-4 text-success-500" />
+              <CheckCircle2 className="h-4 w-4 text-success-500" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -145,10 +146,10 @@ export function DashboardUpdates() {
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Package className="h-5 w-5 text-neutral-500" />
+              <Package className="h-5 w-5 text-neutral-500" aria-hidden="true" />
               <div>
                 <h3 className="text-sm font-semibold text-neutral-900">OpenClaw</h3>
-                <p className="text-xs text-neutral-500">AI agent framework</p>
+                <p className="text-xs text-neutral-600">AI agent framework</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -156,9 +157,9 @@ export function DashboardUpdates() {
                 {versions?.openclawCurrent ?? "Not installed"}
               </span>
               {isUpToDate ? (
-                <CheckCircle2 className="h-4 w-4 text-success-500" />
+                <CheckCircle2 className="h-4 w-4 text-success-500" aria-hidden="true" />
               ) : versions?.updateAvailable ? (
-                <ArrowUpCircle className="h-4 w-4 text-primary-500" />
+                <ArrowUpCircle className="h-4 w-4 text-primary-500" aria-hidden="true" />
               ) : null}
             </div>
           </div>
@@ -182,12 +183,13 @@ export function DashboardUpdates() {
                   inline-flex items-center gap-1.5 rounded-lg bg-primary-600
                   px-4 py-2 text-sm font-medium text-white
                   hover:bg-primary-700 disabled:opacity-50
+                  focus:ring-2 focus:ring-blue-500 focus:outline-none
                 "
               >
                 {updating ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Updating...</>
+                  <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Updating...</>
                 ) : (
-                  <><ArrowUpCircle className="h-4 w-4" /> Update now</>
+                  <><ArrowUpCircle className="h-4 w-4" aria-hidden="true" /> Update now</>
                 )}
               </button>
             </div>
@@ -196,7 +198,7 @@ export function DashboardUpdates() {
           {/* Up to date message */}
           {isUpToDate && (
             <div className="mt-3 flex items-center gap-2 text-sm text-success-600">
-              <CheckCircle2 className="h-4 w-4" />
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
               Up to date
             </div>
           )}
@@ -206,7 +208,7 @@ export function DashboardUpdates() {
       {/* Error */}
       {updateError && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 flex items-start gap-2">
-          <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+          <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
           <p className="text-xs text-amber-700">{updateError}</p>
         </div>
       )}
@@ -214,7 +216,7 @@ export function DashboardUpdates() {
       {/* Success */}
       {updateSuccess && (
         <div className="rounded-lg border border-success-200 bg-success-50 p-3 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-success-500" />
+          <CheckCircle2 className="h-4 w-4 text-success-500" aria-hidden="true" />
           <p className="text-xs text-success-700">OpenClaw updated successfully!</p>
         </div>
       )}
@@ -226,18 +228,18 @@ export function DashboardUpdates() {
           <button
             type="button"
             onClick={() => openLink("https://docs.openclaw.ai")}
-            className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700"
+            className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-blue-500 focus:outline-none rounded"
           >
             OpenClaw Documentation
-            <ExternalLink className="h-3 w-3" />
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </button>
           <button
             type="button"
             onClick={() => openLink("https://clawhub.ai")}
-            className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700"
+            className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 focus:ring-2 focus:ring-blue-500 focus:outline-none rounded"
           >
             ClawHub Skill Registry
-            <ExternalLink className="h-3 w-3" />
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </button>
         </div>
       </div>

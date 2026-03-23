@@ -174,7 +174,7 @@ export function Skills() {
             className="h-8 w-8 animate-spin motion-reduce:animate-none text-primary-500"
             aria-hidden="true"
           />
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-neutral-600">
             Finding skills for you...
           </p>
         </div>
@@ -238,7 +238,7 @@ export function Skills() {
 
       {skills.length === 0 ? (
         <div className="mt-12 text-center">
-          <p className="text-neutral-500">
+          <p className="text-neutral-600">
             No skill recommendations available right now.
           </p>
         </div>
@@ -264,7 +264,7 @@ export function Skills() {
                     <h3 className="text-sm font-semibold text-neutral-900">
                       {skill.name}
                     </h3>
-                    <p className="mt-0.5 text-xs text-neutral-500">
+                    <p className="mt-0.5 text-xs text-neutral-600">
                       {skill.author}
                     </p>
                   </div>
@@ -278,8 +278,8 @@ export function Skills() {
                 <div className="flex items-center justify-between pt-1">
                   <span className={`text-xs font-medium ${
                     skill.install_count === 0
-                      ? "text-neutral-500"
-                      : "text-neutral-500"
+                      ? "text-neutral-600"
+                      : "text-neutral-600"
                   }`}>
                     {skill.install_count > 0
                       ? `${skill.install_count.toLocaleString()} installs`
@@ -378,7 +378,7 @@ export function Skills() {
                         <h3 className="text-sm font-semibold text-neutral-900">
                           {skill.name}
                         </h3>
-                        <p className="mt-0.5 text-xs text-neutral-500">
+                        <p className="mt-0.5 text-xs text-neutral-600">
                           {skill.author}
                         </p>
                       </div>
@@ -390,7 +390,7 @@ export function Skills() {
                     </p>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-xs font-medium text-neutral-500">
+                      <span className="text-xs font-medium text-neutral-600">
                         Bundled with OpenClaw
                       </span>
 

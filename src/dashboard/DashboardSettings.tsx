@@ -221,7 +221,7 @@ export function DashboardSettings() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" aria-hidden="true" />
       </div>
     );
   }
@@ -232,7 +232,7 @@ export function DashboardSettings() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-neutral-900">Settings</h2>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-neutral-600">
           Manage your AI provider, API keys, and gateway configuration.
         </p>
       </div>
@@ -241,7 +241,7 @@ export function DashboardSettings() {
       <div className="rounded-xl border border-primary-200 bg-primary-50 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Cpu className="h-5 w-5 text-primary-600" />
+            <Cpu className="h-5 w-5 text-primary-600" aria-hidden="true" />
             <div>
               <p className="text-sm font-semibold text-primary-900">Active Model</p>
               <p className="text-xs font-mono text-primary-700">{currentModel}</p>
@@ -249,13 +249,13 @@ export function DashboardSettings() {
           </div>
           {saved && (
             <span className="inline-flex items-center gap-1.5 text-sm text-success-600">
-              <CheckCircle2 className="h-4 w-4" />
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
               Saved
             </span>
           )}
           {saving && (
             <span className="inline-flex items-center gap-1.5 text-sm text-primary-600">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               Saving...
             </span>
           )}
@@ -264,7 +264,7 @@ export function DashboardSettings() {
 
       {error && (
         <div className="rounded-lg border border-error-200 bg-error-50 p-3 flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-error-500" />
+          <AlertTriangle className="h-4 w-4 text-error-500" aria-hidden="true" />
           <p className="text-sm text-error-700">{error}</p>
         </div>
       )}
@@ -272,7 +272,7 @@ export function DashboardSettings() {
       {/* AI Provider cards — same grid as wizard */}
       <div>
         <h3 className="text-sm font-semibold text-neutral-700 mb-3">AI Providers</h3>
-        <p className="text-xs text-neutral-500 mb-4">
+        <p className="text-xs text-neutral-600 mb-4">
           Connect a provider, then click "Set as Primary" to switch your agent's AI model.
           {validated.size > 0 && ` ${validated.size} provider${validated.size > 1 ? "s" : ""} connected.`}
         </p>
@@ -301,6 +301,7 @@ export function DashboardSettings() {
                       w-full rounded-lg bg-primary-600 px-3 py-1.5
                       text-xs font-medium text-white
                       hover:bg-primary-700 disabled:opacity-50
+                      focus:ring-2 focus:ring-blue-500 focus:outline-none
                     "
                   >
                     Set as Primary
@@ -312,7 +313,7 @@ export function DashboardSettings() {
                     rounded-lg bg-success-100 border border-success-200
                     px-3 py-1.5 text-xs font-medium text-success-700
                   ">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                     Primary Provider
                   </div>
                 )}
@@ -322,8 +323,9 @@ export function DashboardSettings() {
                     onClick={() => handleRemoveKey(p.id)}
                     className="
                       w-full rounded-lg border border-neutral-200 px-3 py-1.5
-                      text-xs font-medium text-neutral-500
+                      text-xs font-medium text-neutral-600
                       hover:text-error-600 hover:border-error-200 hover:bg-error-50
+                      focus:ring-2 focus:ring-blue-500 focus:outline-none
                     "
                   >
                     Remove Key
@@ -338,31 +340,33 @@ export function DashboardSettings() {
       {/* Gateway settings */}
       <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
-          <Server className="h-4 w-4 text-neutral-500" />
+          <Server className="h-4 w-4 text-neutral-500" aria-hidden="true" />
           <h3 className="text-sm font-semibold text-neutral-700">Gateway</h3>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Port</label>
+            <label htmlFor="gateway-port" className="block text-xs text-neutral-600 mb-1">Port</label>
             <input
+              id="gateway-port"
               type="number"
               value={port}
               onChange={(e) => setPort(Number(e.target.value))}
-              className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
             />
           </div>
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Mode</label>
+            <label htmlFor="gateway-mode" className="block text-xs text-neutral-600 mb-1">Mode</label>
             <p className="text-sm font-medium text-neutral-900 bg-neutral-50 px-3 py-2 rounded-lg border border-neutral-300">
               Local
             </p>
           </div>
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Authentication</label>
+            <label htmlFor="gateway-auth" className="block text-xs text-neutral-600 mb-1">Authentication</label>
             <select
+              id="gateway-auth"
               value={authMode}
               onChange={(e) => setAuthMode(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
             >
               <option value="password">Password</option>
               <option value="none">None</option>
@@ -378,7 +382,7 @@ export function DashboardSettings() {
             Uninstall KloDock...
           </summary>
           <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-            <p className="text-xs text-neutral-500 mb-3">
+            <p className="text-xs text-neutral-600 mb-3">
               This will stop your agent and remove Node.js, OpenClaw, and stored API keys.
               Your personal data (conversations, personality) is kept unless you choose otherwise.
             </p>
@@ -398,6 +402,7 @@ export function DashboardSettings() {
                 rounded-lg border border-neutral-300 bg-white
                 px-4 py-2 text-xs font-medium text-neutral-600
                 hover:text-error-600 hover:border-error-200 hover:bg-error-50
+                focus:ring-2 focus:ring-blue-500 focus:outline-none
               "
             >
               Uninstall

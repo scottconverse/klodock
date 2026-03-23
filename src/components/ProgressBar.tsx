@@ -77,7 +77,7 @@ export function ProgressBar({
                         ? "text-primary-700"
                         : isCompleted
                           ? "text-success-700"
-                          : "text-neutral-500"
+                          : "text-neutral-600"
                     }
                   `}
                 >

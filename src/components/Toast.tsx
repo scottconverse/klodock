@@ -92,15 +92,15 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
       `}
       role="alert"
     >
-      <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${style.text}`} />
+      <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${style.text}`} aria-hidden="true" />
       <p className={`text-sm ${style.text} flex-1`}>{toast.message}</p>
       <button
         type="button"
         onClick={onDismiss}
-        className="shrink-0 rounded p-0.5 text-neutral-400 hover:text-neutral-600"
+        className="shrink-0 rounded p-0.5 text-neutral-400 hover:text-neutral-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
         aria-label="Dismiss"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     </div>
   );

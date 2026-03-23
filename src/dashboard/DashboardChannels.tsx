@@ -152,28 +152,30 @@ function ChannelSection({
         className="
           flex w-full items-center justify-between rounded-xl p-5
           text-left transition-colors hover:bg-neutral-50
+          focus:ring-2 focus:ring-blue-500 focus:outline-none
         "
         aria-expanded={expanded}
+        aria-label={`${channel.name} channel setup${isConnected ? " (connected)" : ""}`}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100" aria-hidden="true">
             <Icon className="h-4.5 w-4.5 text-neutral-600" />
           </div>
           <h3 className="text-base font-semibold text-neutral-900">{channel.name}</h3>
           {channel.recommended && (
             <span className="inline-flex items-center gap-1 rounded-full bg-warning-100 px-2 py-0.5 text-xs font-medium text-warning-600">
-              <Star className="h-3 w-3" />
+              <Star className="h-3 w-3" aria-hidden="true" />
               Recommended
             </span>
           )}
           {isConnected && (
-            <CheckCircle2 className="h-5 w-5 text-success-500" />
+            <CheckCircle2 className="h-5 w-5 text-success-500" aria-hidden="true" />
           )}
         </div>
         {expanded ? (
-          <ChevronUp className="h-5 w-5 text-neutral-400" />
+          <ChevronUp className="h-5 w-5 text-neutral-400" aria-hidden="true" />
         ) : (
-          <ChevronDown className="h-5 w-5 text-neutral-400" />
+          <ChevronDown className="h-5 w-5 text-neutral-400" aria-hidden="true" />
         )}
       </button>
 
@@ -184,15 +186,16 @@ function ChannelSection({
           {isConnected && !state.token && (
             <div className="flex items-center justify-between rounded-lg bg-success-50 border border-success-200 p-3">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-success-500" />
+                <CheckCircle2 className="h-4 w-4 text-success-500" aria-hidden="true" />
                 <p className="text-sm text-success-700">Connected — token stored securely.</p>
               </div>
               <button
                 type="button"
                 onClick={onDisconnect}
-                className="inline-flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-error-600"
+                className="inline-flex items-center gap-1 text-xs font-medium text-neutral-600 hover:text-error-600 focus:ring-2 focus:ring-blue-500 focus:outline-none rounded"
+                aria-label={`Disconnect ${channel.name}`}
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3 w-3" aria-hidden="true" />
                 Disconnect
               </button>
             </div>
@@ -225,10 +228,10 @@ function ChannelSection({
                       <button
                         type="button"
                         onClick={() => handleOpenLink(step.link!.url)}
-                        className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
+                        className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline focus:ring-2 focus:ring-blue-500 focus:outline-none rounded"
                       >
                         {step.link.label}
-                        <ExternalLink className="h-3 w-3" />
+                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
                       </button>
                     )}
                   </div>
@@ -261,13 +264,13 @@ function ChannelSection({
           {/* Error / Success */}
           {state.error && (
             <p className="flex items-center gap-1.5 text-sm text-error-600" role="alert">
-              <XCircle className="h-4 w-4 shrink-0" />
+              <XCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {state.error}
             </p>
           )}
           {state.success && state.token && (
             <p className="flex items-center gap-1.5 text-sm text-success-600" role="status">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
               Token saved successfully!
             </p>
           )}
@@ -282,10 +285,12 @@ function ChannelSection({
                 inline-flex items-center justify-center gap-1.5 rounded-lg
                 bg-primary-600 px-4 py-2 text-sm font-medium text-white
                 hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50
+                focus:ring-2 focus:ring-blue-500 focus:outline-none
               "
+              aria-label={`Save ${channel.name} token`}
             >
               {state.testing ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>
+                <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Saving...</>
               ) : (
                 "Save Token"
               )}
@@ -293,10 +298,10 @@ function ChannelSection({
             <button
               type="button"
               onClick={() => handleOpenLink(channel.helpUrl)}
-              className="inline-flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-700"
+              className="inline-flex items-center gap-1 text-xs font-medium text-neutral-600 hover:text-neutral-700 focus:ring-2 focus:ring-blue-500 focus:outline-none rounded"
             >
               Need help?
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-3 w-3" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -361,7 +366,7 @@ export function DashboardChannels() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" aria-hidden="true" />
       </div>
     );
   }
@@ -372,7 +377,7 @@ export function DashboardChannels() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-neutral-900">Channels</h2>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-neutral-600">
           {connectedCount > 0
             ? `${connectedCount} channel${connectedCount > 1 ? "s" : ""} connected. Expand a channel to update or disconnect it.`
             : "Connect a messaging channel so you can talk to your agent from your phone or desktop."}
@@ -394,10 +399,12 @@ export function DashboardChannels() {
             className="
               inline-flex items-center gap-1.5 rounded-lg bg-primary-600
               px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700
+              focus:ring-2 focus:ring-blue-500 focus:outline-none
             "
+            aria-label="Open WebChat"
           >
             Open
-            <ExternalLink className="h-3.5 w-3.5" />
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>

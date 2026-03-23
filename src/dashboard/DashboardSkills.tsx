@@ -353,7 +353,7 @@ export function DashboardSkills() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" aria-hidden="true" />
       </div>
     );
   }
@@ -361,7 +361,7 @@ export function DashboardSkills() {
   if (error) {
     return (
       <div className="py-12 text-center">
-        <XCircle className="mx-auto h-10 w-10 text-neutral-300" />
+        <XCircle className="mx-auto h-10 w-10 text-neutral-300" aria-hidden="true" />
         <p className="mt-3 text-sm text-neutral-600">
           {error}
         </p>
@@ -372,6 +372,7 @@ export function DashboardSkills() {
             className="
               inline-flex items-center gap-1.5 rounded-lg bg-primary-600
               px-4 py-2 text-sm font-medium text-white hover:bg-primary-700
+              focus:ring-2 focus:ring-blue-500 focus:outline-none
             "
           >
             Go to Overview
@@ -382,9 +383,10 @@ export function DashboardSkills() {
             className="
               inline-flex items-center gap-1.5 rounded-lg border border-neutral-200
               px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50
+              focus:ring-2 focus:ring-blue-500 focus:outline-none
             "
           >
-            <RefreshCw className="h-3.5 w-3.5" />
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
             Try again
           </button>
         </div>
@@ -407,9 +409,10 @@ export function DashboardSkills() {
                 inline-flex items-center gap-1.5 rounded-lg border
                 border-neutral-200 px-3 py-1.5 text-xs font-medium
                 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50
+                focus:ring-2 focus:ring-blue-500 focus:outline-none
               "
             >
-              <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} aria-hidden="true" />
               {refreshing ? "Checking..." : "Check again"}
             </button>
             <button
@@ -419,14 +422,15 @@ export function DashboardSkills() {
                 inline-flex items-center gap-1.5 rounded-lg border
                 border-neutral-200 px-3 py-1.5 text-xs font-medium
                 text-neutral-600 hover:bg-neutral-50
+                focus:ring-2 focus:ring-blue-500 focus:outline-none
               "
             >
               Browse ClawHub
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-3 w-3" aria-hidden="true" />
             </button>
           </div>
         </div>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-neutral-600">
           Your agent has {totalCount} skills. {activeCount} are active now —
           the rest need a quick setup to unlock.
         </p>
@@ -434,12 +438,13 @@ export function DashboardSkills() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" aria-hidden="true" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search skills... (e.g., email, music, GitHub)"
+          aria-label="Search skills"
           className="
             w-full rounded-lg border border-neutral-200 bg-white
             pl-9 pr-3 py-2 text-sm placeholder:text-neutral-400
@@ -453,7 +458,7 @@ export function DashboardSkills() {
         <button
           type="button"
           onClick={() => setActiveCategory(null)}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none ${
             !activeCategory
               ? "bg-primary-600 text-white"
               : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
@@ -468,13 +473,13 @@ export function DashboardSkills() {
               key={cat.id}
               type="button"
               onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                 activeCategory === cat.id
                   ? "bg-primary-600 text-white"
                   : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
               }`}
             >
-              <Icon className="h-3 w-3" />
+              <Icon className="h-3 w-3" aria-hidden="true" />
               {cat.label} ({categoryCounts[cat.id]})
             </button>
           );
@@ -497,7 +502,7 @@ export function DashboardSkills() {
                 {/* Category header — only show when not filtered to a single category */}
                 {!activeCategory && (
                   <div className="flex items-center gap-2 mb-3">
-                    <CatIcon className="h-4 w-4 text-neutral-400" />
+                    <CatIcon className="h-4 w-4 text-neutral-400" aria-hidden="true" />
                     <h3 className="text-sm font-semibold text-neutral-700">
                       {category.label}
                     </h3>
@@ -530,19 +535,19 @@ export function DashboardSkills() {
                           </h4>
                           {skill.eligible ? (
                             <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-success-100 px-2 py-0.5 text-[11px] font-medium text-success-700">
-                              <CheckCircle2 className="h-3 w-3" />
+                              <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
                               Active
                             </span>
                           ) : isPlatformLocked ? (
                             <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-400">
-                              <Monitor className="h-3 w-3" />
+                              <Monitor className="h-3 w-3" aria-hidden="true" />
                               {reqs.find((r) => r.platformLocked)?.platformLocked}
                             </span>
                           ) : null}
                         </div>
 
                         {/* Description */}
-                        <p className="text-xs leading-relaxed text-neutral-500 line-clamp-2 mb-1">
+                        <p className="text-xs leading-relaxed text-neutral-600 line-clamp-2 mb-1">
                           {skill.description}
                         </p>
 
@@ -568,9 +573,10 @@ export function DashboardSkills() {
                                       rounded-lg border border-primary-200 bg-primary-50
                                       px-3 py-1.5 text-xs font-medium text-primary-700
                                       hover:bg-primary-100
+                                      focus:ring-2 focus:ring-blue-500 focus:outline-none
                                     "
                                   >
-                                    <Download className="h-3.5 w-3.5" />
+                                    <Download className="h-3.5 w-3.5" aria-hidden="true" />
                                     Get it
                                   </button>
                                 )}
@@ -583,6 +589,7 @@ export function DashboardSkills() {
                                       rounded-lg border border-primary-200 bg-primary-50
                                       px-3 py-1.5 text-xs font-medium text-primary-700
                                       hover:bg-primary-100
+                                      focus:ring-2 focus:ring-blue-500 focus:outline-none
                                     "
                                   >
                                     {req.action.label}
@@ -610,8 +617,10 @@ export function DashboardSkills() {
             onClick={() => setShowMoreSkills(!showMoreSkills)}
             className="
               flex w-full items-center justify-between rounded-lg
-              px-3 py-2 text-sm text-neutral-500 hover:bg-neutral-50
+              px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-50
+              focus:ring-2 focus:ring-blue-500 focus:outline-none
             "
+            aria-expanded={showMoreSkills}
           >
             <span>
               {noActionFiltered.length} more skill{noActionFiltered.length !== 1 ? "s" : ""} available
@@ -620,15 +629,15 @@ export function DashboardSkills() {
               </span>
             </span>
             {showMoreSkills ? (
-              <ChevronUp className="h-4 w-4 text-neutral-400" />
+              <ChevronUp className="h-4 w-4 text-neutral-400" aria-hidden="true" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-neutral-400" />
+              <ChevronDown className="h-4 w-4 text-neutral-400" aria-hidden="true" />
             )}
           </button>
 
           {showMoreSkills && (
             <div className="mt-2 rounded-lg bg-neutral-50 border border-neutral-100 p-3">
-              <p className="text-xs text-neutral-500 mb-3">
+              <p className="text-xs text-neutral-600 mb-3">
                 These skills need software that isn't available as a simple download yet.
                 They'll activate automatically if the required tool is installed on your system.
               </p>

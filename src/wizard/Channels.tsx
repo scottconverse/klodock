@@ -389,7 +389,7 @@ function ChannelSection({
               onClick={() => handleOpenLink(channel.helpUrl)}
               className="
                 inline-flex items-center gap-1 text-xs font-medium
-                text-neutral-500 hover:text-neutral-700
+                text-neutral-600 hover:text-neutral-700
               "
               aria-label={`${channel.name} setup help`}
             >

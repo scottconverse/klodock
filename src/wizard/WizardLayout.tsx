@@ -62,7 +62,7 @@ export function WizardLayout() {
               onClick={handleBack}
               className="
                 mb-6 inline-flex items-center gap-1.5 rounded text-sm
-                font-medium text-neutral-500 transition-colors
+                font-medium text-neutral-600 transition-colors
                 hover:text-neutral-700
                 focus-visible:outline-2 focus-visible:outline-offset-2
                 focus-visible:outline-primary-500

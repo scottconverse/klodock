@@ -1,0 +1,39 @@
+#!/bin/bash
+# Pre-commit hook: reject commits containing API key patterns.
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+TMPFILE=$(mktemp)
+TMPADDED=$(mktemp)
+trap "rm -f $TMPFILE $TMPADDED" EXIT
+
+# Get staged diff into a file
+git diff --cached --diff-filter=ACMR -U0 > "$TMPFILE" 2>/dev/null
+[ ! -s "$TMPFILE" ] && exit 0
+
+# Extract added lines only (use [+] not \+ to avoid ERE issues)
+grep "^[+]" "$TMPFILE" | grep -v "^[+][+][+]" > "$TMPADDED"
+[ ! -s "$TMPADDED" ] && exit 0
+
+# Check for API key prefixes
+REAL_HITS=$(grep -E "AIzaSy|sk-ant-|sk-proj-|gsk_[A-Za-z]|ghp_[A-Za-z]|xoxb-|xoxp-" "$TMPADDED" | grep -v -E 'test-key-placeholder|REDACTED|prefix.*AIza|minLen.*[0-9]|pre-commit|format.*valid')
+
+if [ -n "$REAL_HITS" ]; then
+  echo ""
+  echo -e "${RED}╔══════════════════════════════════════════════════════════╗${NC}"
+  echo -e "${RED}║  COMMIT BLOCKED — POSSIBLE API KEY DETECTED             ║${NC}"
+  echo -e "${RED}╚══════════════════════════════════════════════════════════╝${NC}"
+  echo ""
+  echo "$REAL_HITS"
+  echo ""
+  echo -e "${YELLOW}If these are intentionally fake/placeholder keys:${NC}"
+  echo -e "${YELLOW}  git commit --no-verify${NC}"
+  echo ""
+  echo -e "${RED}If these are REAL keys, remove them NOW.${NC}"
+  exit 1
+fi
+
+exit 0

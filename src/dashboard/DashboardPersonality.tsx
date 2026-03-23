@@ -90,7 +90,7 @@ export function DashboardPersonality() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" aria-hidden="true" />
       </div>
     );
   }
@@ -102,13 +102,13 @@ export function DashboardPersonality() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-neutral-900">Edit Personality</h2>
-            <p className="mt-1 text-sm text-neutral-500">Changes are saved to SOUL.md.</p>
+            <p className="mt-1 text-sm text-neutral-600">Changes are saved to SOUL.md.</p>
           </div>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              className="rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
               Cancel
             </button>
@@ -116,9 +116,9 @@ export function DashboardPersonality() {
               type="button"
               onClick={handleSave}
               disabled={!name.trim()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
-              <Save className="h-4 w-4" />
+              <Save className="h-4 w-4" aria-hidden="true" />
               Save
             </button>
           </div>
@@ -151,14 +151,14 @@ export function DashboardPersonality() {
                   key={opt.type}
                   type="button"
                   onClick={() => setRoleType(opt.type)}
-                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all ${
+                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                     isSelected ? "border-primary-300 bg-primary-50" : "border-neutral-200 bg-white hover:bg-neutral-50"
                   }`}
                 >
                   <Icon className={`h-4 w-4 ${isSelected ? "text-primary-600" : "text-neutral-400"}`} />
                   <div>
                     <p className="text-sm font-medium text-neutral-900">{opt.title}</p>
-                    <p className="text-xs text-neutral-500">{opt.description}</p>
+                    <p className="text-xs text-neutral-600">{opt.description}</p>
                   </div>
                 </button>
               );
@@ -188,7 +188,7 @@ export function DashboardPersonality() {
         {preview && (
           <div className="rounded-xl border border-neutral-200 bg-white shadow-sm">
             <div className="flex items-center gap-2 border-b border-neutral-200 px-5 py-3">
-              <FileText className="h-4 w-4 text-neutral-500" />
+              <FileText className="h-4 w-4 text-neutral-600" aria-hidden="true" />
               <span className="text-sm font-medium text-neutral-700">Preview</span>
             </div>
             <pre className="overflow-x-auto p-5 text-xs leading-relaxed text-neutral-700 whitespace-pre-wrap font-mono">
@@ -206,14 +206,14 @@ export function DashboardPersonality() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-neutral-900">Personality</h2>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-neutral-600">
             Your agent's identity and behavior are defined in SOUL.md.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+          className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
         >
           Edit
         </button>
@@ -221,7 +221,7 @@ export function DashboardPersonality() {
 
       {saved && (
         <div className="flex items-center gap-2 rounded-lg bg-success-50 border border-success-200 p-3">
-          <CheckCircle2 className="h-4 w-4 text-success-500" />
+          <CheckCircle2 className="h-4 w-4 text-success-500" aria-hidden="true" />
           <p className="text-sm text-success-700">Personality saved!</p>
         </div>
       )}
@@ -229,7 +229,7 @@ export function DashboardPersonality() {
       {soulContent ? (
         <div className="rounded-xl border border-neutral-200 bg-white shadow-sm">
           <div className="flex items-center gap-2 border-b border-neutral-200 px-5 py-3">
-            <FileText className="h-4 w-4 text-neutral-500" />
+            <FileText className="h-4 w-4 text-neutral-600" aria-hidden="true" />
             <span className="text-sm font-medium text-neutral-700">SOUL.md</span>
           </div>
           <pre className="overflow-x-auto p-5 text-sm leading-relaxed text-neutral-700 whitespace-pre-wrap font-mono">
@@ -238,8 +238,8 @@ export function DashboardPersonality() {
         </div>
       ) : (
         <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
-          <FileText className="mx-auto h-10 w-10 text-neutral-300" />
-          <p className="mt-3 text-sm text-neutral-500">
+          <FileText className="mx-auto h-10 w-10 text-neutral-300" aria-hidden="true" />
+          <p className="mt-3 text-sm text-neutral-600">
             No personality configured yet. Click Edit to create one.
           </p>
         </div>

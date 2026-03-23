@@ -213,7 +213,7 @@ export function Personality() {
                       <p className="text-sm font-semibold text-neutral-900">
                         {r.title}
                       </p>
-                      <p className="mt-0.5 text-xs text-neutral-500">
+                      <p className="mt-0.5 text-xs text-neutral-600">
                         {r.description}
                       </p>
                     </div>
@@ -260,7 +260,7 @@ export function Personality() {
               className="block text-sm font-medium text-neutral-700"
             >
               Any special instructions?{" "}
-              <span className="text-neutral-500">(optional)</span>
+              <span className="text-neutral-600">(optional)</span>
             </label>
             <textarea
               id="instructions"

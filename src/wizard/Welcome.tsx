@@ -30,7 +30,7 @@ export function Welcome() {
             <p className="text-sm font-semibold text-neutral-900">
               Quick &amp; easy setup
             </p>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-neutral-600">
               A guided wizard handles all the technical details for you.
             </p>
           </div>
@@ -47,7 +47,7 @@ export function Welcome() {
             <p className="text-sm font-semibold text-neutral-900">
               Your keys stay local
             </p>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-neutral-600">
               API keys are encrypted and never leave your machine.
             </p>
           </div>
@@ -64,7 +64,7 @@ export function Welcome() {
             <p className="text-sm font-semibold text-neutral-900">
               Fully customizable
             </p>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-neutral-600">
               Choose your AI provider, personality, channels, and skills.
             </p>
           </div>

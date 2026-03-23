@@ -227,7 +227,7 @@ export function Done() {
           </div>
         )}
         {daemonStatus.status === "stopped" && (
-          <p className="text-sm text-neutral-500">Agent is stopped.</p>
+          <p className="text-sm text-neutral-600">Agent is stopped.</p>
         )}
       </div>
 
@@ -239,13 +239,13 @@ export function Done() {
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-100"
               aria-hidden="true"
             >
-              <Globe className="h-5 w-5 text-primary-600" />
+              <Globe className="h-5 w-5 text-primary-600" aria-hidden="true" />
             </div>
             <div className="text-left">
               <p className="text-sm font-semibold text-neutral-900">
                 Chat in your browser
               </p>
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-neutral-600">
                 OpenClaw has a built-in web chat — no apps needed.
               </p>
             </div>
@@ -278,13 +278,13 @@ export function Done() {
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-50"
                 aria-hidden="true"
               >
-                <MessageCircle className="h-5 w-5 text-neutral-500" />
+                <MessageCircle className="h-5 w-5 text-neutral-500" aria-hidden="true" />
               </div>
               <div className="text-left">
                 <p className="text-sm font-semibold text-neutral-900">
                   Also on {configuredChannel}
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-neutral-600">
                   Send a message to your bot on {configuredChannel} to chat there
                   too.
                 </p>

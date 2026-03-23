@@ -230,7 +230,7 @@ export function ProviderCard({
         </div>
         <div>
           <h3 className="font-semibold text-neutral-900">{name}</h3>
-          <p className="text-xs text-neutral-500">{cost}</p>
+          <p className="text-xs text-neutral-600">{cost}</p>
         </div>
       </div>
 
@@ -274,7 +274,7 @@ export function ProviderCard({
                   ))}
                 </select>
               </div>
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-neutral-600">
                 Free, local AI — no API key needed. Your data never leaves your machine.
               </p>
             </div>

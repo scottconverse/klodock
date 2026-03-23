@@ -161,7 +161,7 @@ export function ModelProvider() {
       </div>
 
       <div className="mt-8 flex items-center justify-between">
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-neutral-600">
           {hasValidProvider
             ? `${validated.size} provider${validated.size > 1 ? "s" : ""} connected`
             : "Connect at least one provider to continue"}

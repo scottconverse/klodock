@@ -26,7 +26,7 @@ export function Overview() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-neutral-900">Overview</h2>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-neutral-600">
           Your agent at a glance.
         </p>
       </div>
@@ -93,7 +93,7 @@ export function Overview() {
           {/* Quick stats */}
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-neutral-500">
+              <div className="flex items-center gap-2 text-neutral-600">
                 <Clock className="h-4 w-4" aria-hidden="true" />
                 <span className="text-xs font-medium uppercase tracking-wider">Status</span>
               </div>
@@ -102,7 +102,7 @@ export function Overview() {
               </p>
             </div>
             <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-neutral-500">
+              <div className="flex items-center gap-2 text-neutral-600">
                 <Radio className="h-4 w-4" aria-hidden="true" />
                 <span className="text-xs font-medium uppercase tracking-wider">Channels</span>
               </div>
@@ -111,7 +111,7 @@ export function Overview() {
               </p>
             </div>
             <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-neutral-500">
+              <div className="flex items-center gap-2 text-neutral-600">
                 <Puzzle className="h-4 w-4" aria-hidden="true" />
                 <span className="text-xs font-medium uppercase tracking-wider">Issues</span>
               </div>
@@ -139,8 +139,7 @@ export function Overview() {
                     inline-flex items-center gap-1.5 rounded-lg bg-primary-600
                     px-4 py-2 text-sm font-medium text-white
                     transition-colors hover:bg-primary-700
-                    focus-visible:outline-2 focus-visible:outline-offset-2
-                    focus-visible:outline-primary-500
+                    focus:ring-2 focus:ring-blue-500 focus:outline-none
                   "
                 >
                   Open WebChat
