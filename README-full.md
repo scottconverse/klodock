@@ -44,7 +44,7 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 
 - **Channel setup** --- Guided configuration flows for Telegram and Discord, with token entry, validation, and connection testing built into the wizard.
 
-- **Skill marketplace with safety ratings** --- Browse and install skills from ClawHub with one click. Every skill carries a safety rating: Verified, Community, or Unreviewed.
+- **Skill browser with smart setup** --- Browse 52 skills across 8 categories (Communication, Productivity, Developer Tools, etc.) with search and filtering. Each skill shows what it needs to work — with download buttons and navigation links to close the gap.
 
 - **Agent lifecycle management** --- The OpenClaw agent runs as a managed child process with automatic restart on crash, periodic health monitoring, and graceful shutdown.
 
