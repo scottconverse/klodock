@@ -151,4 +151,4 @@ MIT
 
 ## Status
 
-**v1.2.0** — In-app Ollama download and model pull, full dashboard, auto-updater, 52 categorized skills, toast notifications, uninstall from UI.
+**v1.2.0** — In-app Ollama download and model pull, full dashboard, auto-updater, 52 categorized skills with safety badges, channel token verification, WCAG 2.1 AA accessibility pass, pre-commit API key leak prevention hook, toast notifications, uninstall from UI.

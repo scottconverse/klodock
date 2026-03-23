@@ -210,6 +210,8 @@ KloDock treats API keys as the most sensitive data in the system. The security m
 
 - **Windows file permissions.** The `.env` file and secret storage directory are locked to the current user via `icacls` with inheritance removed.
 
+- **Pre-commit hook.** A git pre-commit hook (`scripts/pre-commit`) scans staged changes for API key patterns (Google, Anthropic, OpenAI, Groq, GitHub, Slack) and blocks the commit if a potential key is detected. Install with `cp scripts/pre-commit .git/hooks/pre-commit`.
+
 - **Tauri capability restrictions.** The frontend can only invoke IPC commands that are explicitly registered in the `invoke_handler`. There is no shell access, no arbitrary filesystem access, and no network access from the webview context.
 
 - **Ollama zero-key path.** When the user selects Ollama as their provider, no API key is stored, no `.env` file is created, and no credentials leave the machine. The agent communicates directly with Ollama's local HTTP API. KloDock auto-detects Ollama, lists available models, and guards against the case where Ollama is running but has no models pulled. Note: the selected Ollama model must support **tool calling** (function calling). Models that lack tool support will produce a `"does not support tools"` error at runtime. Recommended models: `qwen2.5:7b`, `llama3.1:8b`, or `mistral:7b`.
