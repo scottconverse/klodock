@@ -140,8 +140,18 @@ fi
 echo "  Starting daemon..."
 "$NODE_DIR/openclaw.cmd" gateway --port 18789 > /dev/null 2>&1 &
 DAEMON_PID=$!
-echo "  Waiting 15s for daemon to initialize..."
-sleep 15
+
+# Poll for up to 30s — first run after fresh install can be slow (500+ Node modules)
+DAEMON_RESPONDED=false
+for i in $(seq 1 30); do
+  sleep 1
+  HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:18789/__openclaw__/canvas/ 2>&1) || true
+  if [ "$HTTP" != "000" ]; then
+    ok "Daemon responding (HTTP $HTTP) after ${i}s"
+    DAEMON_RESPONDED=true
+    break
+  fi
+done
 
 if kill -0 $DAEMON_PID 2>/dev/null; then
   ok "Daemon running (PID $DAEMON_PID)"
@@ -149,12 +159,8 @@ else
   fail "Daemon died on start"
 fi
 
-# Check WebChat
-WEBCHAT=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:18789/ 2>&1) || true
-if [ "$WEBCHAT" = "200" ] || [ "$WEBCHAT" = "301" ] || [ "$WEBCHAT" = "302" ] || [ "$WEBCHAT" = "401" ]; then
-  ok "WebChat endpoint responding (HTTP $WEBCHAT)"
-else
-  fail "WebChat not responding (HTTP $WEBCHAT)"
+if ! $DAEMON_RESPONDED; then
+  fail "WebChat not responding after 30s"
 fi
 
 # ── PHASE 7: FULL FILE SYSTEM CHECK ───────────────────

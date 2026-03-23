@@ -16,9 +16,9 @@ export function Overview() {
 
   async function openWebChat() {
     try {
-      await open("http://127.0.0.1:18789");
+      await open("http://127.0.0.1:18789/__openclaw__/canvas/");
     } catch {
-      window.open("http://127.0.0.1:18789", "_blank");
+      window.open("http://127.0.0.1:18789/__openclaw__/canvas/", "_blank");
     }
   }
 

@@ -395,7 +395,7 @@ export function DashboardChannels() {
           </div>
           <button
             type="button"
-            onClick={() => openLink("http://127.0.0.1:18789")}
+            onClick={() => openLink("http://127.0.0.1:18789/__openclaw__/canvas/")}
             className="
               inline-flex items-center gap-1.5 rounded-lg bg-primary-600
               px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700

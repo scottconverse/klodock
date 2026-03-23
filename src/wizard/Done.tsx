@@ -12,7 +12,7 @@ import {
   Globe,
   ExternalLink,
 } from "lucide-react";
-import { startDaemon, onDaemonStatus, retrieveSecret } from "@/lib/tauri";
+import { startDaemon, onDaemonStatus, retrieveSecret, readSoul } from "@/lib/tauri";
 import type { DaemonStatus } from "@/lib/types";
 
 export function Done() {
@@ -24,7 +24,31 @@ export function Done() {
     null
   );
   const [retrying, setRetrying] = useState(false);
+  const [agentName, setAgentName] = useState("Your agent");
+  const [showGreeting, setShowGreeting] = useState(false);
   const mountedRef = useRef(true);
+
+  // Read agent name from SOUL.md
+  useEffect(() => {
+    readSoul()
+      .then((soul) => {
+        const match = soul.match(/Name:\s*(.+)/i);
+        if (match?.[1]?.trim()) {
+          setAgentName(match[1].trim());
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Show greeting bubble with a slight delay once running (for emotional impact)
+  useEffect(() => {
+    if (daemonStatus.status === "running" && !showGreeting) {
+      const timer = setTimeout(() => {
+        if (mountedRef.current) setShowGreeting(true);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [daemonStatus.status, showGreeting]);
 
   // Check which channel (if any) was configured
   useEffect(() => {
@@ -231,6 +255,29 @@ export function Done() {
         )}
       </div>
 
+      {/* Agent greeting bubble — the "Say hi!" moment */}
+      {showGreeting && (
+        <div
+          className="mt-6 w-full max-w-md animate-fade-in"
+          role="status"
+          aria-label={`${agentName} says hello`}
+        >
+          <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700">
+                {agentName.charAt(0).toUpperCase()}
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-semibold text-neutral-500 mb-1">{agentName}</p>
+                <p className="text-sm text-neutral-800 leading-relaxed">
+                  Hey! I&apos;m {agentName}, your new AI assistant. I&apos;m running locally on your machine — ask me anything, or open WebChat to start a conversation.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* WebChat — always shown, primary way to talk */}
       <div className="mt-8 w-full max-w-md space-y-3">
         <div className="rounded-xl border border-primary-200 bg-primary-50 p-5 shadow-sm">
@@ -252,7 +299,7 @@ export function Done() {
           </div>
           {isRunning && (
             <a
-              href="http://127.0.0.1:18789"
+              href="http://127.0.0.1:18789/__openclaw__/canvas/"
               target="_blank"
               rel="noopener noreferrer"
               className="
