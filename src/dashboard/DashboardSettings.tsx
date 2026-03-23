@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Loader2, Server, Key, Cpu, Brain, Bot, Globe, Zap, Router,
   CheckCircle2, AlertTriangle, RefreshCw,
 } from "lucide-react";
+import { listen } from "@tauri-apps/api/event";
 import { ProviderCard } from "@/components/ProviderCard";
 import { useToast } from "@/components/Toast";
 import {
@@ -376,40 +377,142 @@ export function DashboardSettings() {
       </div>
 
       {/* Uninstall — understated, not alarming */}
-      <div className="border-t border-neutral-100 pt-4">
-        <details className="group">
-          <summary className="cursor-pointer text-xs text-neutral-400 hover:text-neutral-600 select-none">
-            Uninstall KloDock...
-          </summary>
-          <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-            <p className="text-xs text-neutral-600 mb-3">
-              This will stop your agent and remove Node.js, OpenClaw, and stored API keys.
-              Your personal data (conversations, personality) is kept unless you choose otherwise.
-            </p>
-            <button
-              type="button"
-              onClick={async () => {
-                if (!confirm("Uninstall KloDock? This will stop your agent and remove all managed software.")) return;
-                const removeData = confirm("Also remove your personal data (conversations, personality)?");
-                try {
-                  await uninstallKlodock(removeData);
-                  toast.success("Uninstall complete. You can close KloDock now.");
-                } catch (err: any) {
-                  toast.error(`Uninstall failed: ${err}`);
-                }
-              }}
-              className="
-                rounded-lg border border-neutral-300 bg-white
-                px-4 py-2 text-xs font-medium text-neutral-600
-                hover:text-error-600 hover:border-error-200 hover:bg-error-50
-                focus:ring-2 focus:ring-blue-500 focus:outline-none
-              "
-            >
-              Uninstall
-            </button>
-          </div>
-        </details>
-      </div>
+      <UninstallSection />
+    </div>
+  );
+}
+
+/* ── Uninstall with step-by-step progress ── */
+
+const STEP_LABELS: Record<string, string> = {
+  StopDaemon: "Stopping agent",
+  RemoveAutostart: "Removing autostart",
+  ScrubEnv: "Cleaning environment",
+  ClearKeychain: "Removing stored keys",
+  RemoveNode: "Removing Node.js",
+  RemoveOpenClaw: "Removing OpenClaw",
+  RemoveKlodockConfig: "Removing configuration",
+};
+
+interface UninstallProgress {
+  step: string;
+  success: boolean;
+  error: string | null;
+  completed_count: number;
+  total_count: number;
+}
+
+function UninstallSection() {
+  const toast = useToast();
+  const [uninstalling, setUninstalling] = useState(false);
+  const [progress, setProgress] = useState<UninstallProgress | null>(null);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Listen for uninstall-progress events from the backend
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    listen<UninstallProgress>("uninstall-progress", (event) => {
+      setProgress(event.payload);
+      if (event.payload.error) {
+        setError(event.payload.error);
+      }
+    }).then((fn) => { unlisten = fn; });
+    return () => { unlisten?.(); };
+  }, []);
+
+  const handleUninstall = useCallback(async () => {
+    if (!confirm("Uninstall KloDock? This will stop your agent and remove all managed software.")) return;
+    const removeData = confirm("Also remove your personal data (conversations, personality)?");
+
+    setUninstalling(true);
+    setProgress(null);
+    setError(null);
+    setDone(false);
+
+    try {
+      await uninstallKlodock(removeData);
+      setDone(true);
+      toast.success("Uninstall complete. You can close KloDock now.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      toast.error(`Uninstall failed at a step. You can retry — it will resume where it left off.`);
+    } finally {
+      setUninstalling(false);
+    }
+  }, [toast]);
+
+  return (
+    <div className="border-t border-neutral-100 pt-4">
+      <details className="group">
+        <summary
+          className="cursor-pointer text-xs text-neutral-400 hover:text-neutral-600 select-none"
+          aria-label="Expand uninstall options"
+        >
+          Uninstall KloDock...
+        </summary>
+        <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+          {done ? (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-success-600" aria-hidden="true" />
+              <p className="text-xs text-success-700 font-medium">
+                Uninstall complete. You can close KloDock now.
+              </p>
+            </div>
+          ) : uninstalling || progress ? (
+            <div className="space-y-3" role="status" aria-live="polite" aria-label="Uninstall progress">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-primary-500" aria-hidden="true" />
+                <p className="text-xs font-medium text-neutral-700">
+                  {progress
+                    ? `${STEP_LABELS[progress.step] ?? progress.step}... (${progress.completed_count}/${progress.total_count})`
+                    : "Starting uninstall..."}
+                </p>
+              </div>
+              {/* Progress bar */}
+              {progress && (
+                <div className="w-full bg-neutral-200 rounded-full h-1.5" role="progressbar"
+                  aria-valuenow={progress.completed_count} aria-valuemax={progress.total_count}>
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-300 ${error ? "bg-error-500" : "bg-primary-500"}`}
+                    style={{ width: `${(progress.completed_count / progress.total_count) * 100}%` }}
+                  />
+                </div>
+              )}
+              {error && (
+                <div className="flex items-start gap-2 mt-2">
+                  <AlertTriangle className="h-4 w-4 text-error-500 shrink-0 mt-0.5" aria-hidden="true" />
+                  <p className="text-xs text-error-600">
+                    {error}. The next time KloDock launches, it will automatically resume.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-neutral-600 mb-3">
+                This will stop your agent and remove Node.js, OpenClaw, and stored API keys.
+                Your personal data (conversations, personality) is kept unless you choose otherwise.
+              </p>
+              <button
+                type="button"
+                onClick={handleUninstall}
+                className="
+                  rounded-lg border border-neutral-300 bg-white
+                  px-4 py-2 text-xs font-medium text-neutral-600
+                  hover:text-error-600 hover:border-error-200 hover:bg-error-50
+                  focus-visible:outline-2 focus-visible:outline-offset-2
+                  focus-visible:outline-primary-500
+                "
+                aria-label="Uninstall KloDock and all managed dependencies"
+              >
+                Uninstall
+              </button>
+            </>
+          )}
+        </div>
+      </details>
     </div>
   );
 }
