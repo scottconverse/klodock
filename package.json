@@ -43,6 +43,7 @@
     "@wdio/spec-reporter": "^9.26.1",
     "@wdio/types": "^9.26.1",
     "jsdom": "^29.0.1",
+    "pdfkit": "^0.18.0",
     "puppeteer": "^24.40.0",
     "tailwindcss": "^4.2.2",
     "ts-node": "^10.9.2",
