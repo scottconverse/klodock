@@ -139,10 +139,16 @@ pub async fn read_config() -> Result<OpenClawConfig, String> {
     }
     let bytes = tokio::fs::read(&path)
         .await
-        .map_err(|e| format!("Failed to read config at {}: {}", path.display(), e))?;
+        .map_err(|e| {
+            log::error!("Config read failed at {}: {}", path.display(), e);
+            "Couldn't load your settings. Try restarting KloDock.".to_string()
+        })?;
 
     serde_json::from_slice::<OpenClawConfig>(&bytes)
-        .map_err(|e| format!("Failed to parse openclaw.json: {}", e))
+        .map_err(|e| {
+            log::error!("Config parse failed: {}", e);
+            "Couldn't read your settings — config file may be corrupted. Try resetting in Settings.".to_string()
+        })
 }
 
 /// Merge and write the config to `openclaw.json`.
@@ -156,14 +162,20 @@ pub async fn write_config(config: OpenClawConfig) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
+            .map_err(|e| {
+                log::error!("Config dir creation failed at {}: {}", parent.display(), e);
+                "Couldn't create settings folder. Check disk space or permissions.".to_string()
+            })?;
     }
 
     // Read existing config to merge
     let mut existing: serde_json::Value = if path.exists() {
         let bytes = tokio::fs::read(&path)
             .await
-            .map_err(|e| format!("Failed to read existing config: {}", e))?;
+            .map_err(|e| {
+                log::error!("Existing config read failed: {}", e);
+                "Couldn't read existing settings. Try restarting KloDock.".to_string()
+            })?;
         serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Object(serde_json::Map::new()))
     } else {
         serde_json::Value::Object(serde_json::Map::new())
@@ -171,7 +183,10 @@ pub async fn write_config(config: OpenClawConfig) -> Result<(), String> {
 
     // Merge our config on top
     let new_value = serde_json::to_value(&config)
-        .map_err(|e| format!("Failed to serialize config: {}", e))?;
+        .map_err(|e| {
+            log::error!("Config serialization failed: {}", e);
+            "Couldn't prepare settings for saving.".to_string()
+        })?;
 
     if let (Some(existing_obj), Some(new_obj)) = (existing.as_object_mut(), new_value.as_object()) {
         for (k, v) in new_obj {
@@ -182,9 +197,15 @@ pub async fn write_config(config: OpenClawConfig) -> Result<(), String> {
     }
 
     let json = serde_json::to_string_pretty(&existing)
-        .map_err(|e| format!("Failed to serialize config: {}", e))?;
+        .map_err(|e| {
+            log::error!("Config serialization failed: {}", e);
+            "Couldn't prepare settings for saving.".to_string()
+        })?;
 
     tokio::fs::write(&path, json.as_bytes())
         .await
-        .map_err(|e| format!("Failed to write config at {}: {}", path.display(), e))
+        .map_err(|e| {
+            log::error!("Config write failed at {}: {}", path.display(), e);
+            "Couldn't save your settings. Check disk space or permissions.".to_string()
+        })
 }

@@ -84,12 +84,15 @@ pub async fn check_node() -> Result<NodeStatus, String> {
                         node_path: Some(path.to_string_lossy().to_string()),
                     })
                 }
-                Err(e) => Ok(NodeStatus {
-                    version: None,
-                    meets_requirement: false,
-                    managed_by: Some(manager),
-                    node_path: Some(format!("{} (error: {e})", path.display())),
-                }),
+                Err(e) => {
+                    log::warn!("System node version check failed: {}", e);
+                    Ok(NodeStatus {
+                        version: None,
+                        meets_requirement: false,
+                        managed_by: Some(manager),
+                        node_path: Some(path.to_string_lossy().to_string()),
+                    })
+                }
             }
         }
         Err(_) => Ok(NodeStatus {
@@ -134,7 +137,10 @@ pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
     let tmp_dir = crate::paths::klodock_base_dir()?.join("tmp");
     tokio::fs::create_dir_all(&tmp_dir)
         .await
-        .map_err(|e| format!("Failed to create temp directory: {e}"))?;
+        .map_err(|e| {
+            log::error!("Temp dir creation failed: {}", e);
+            "Couldn't prepare download folder. Check disk space or permissions.".to_string()
+        })?;
 
     let archive_path = tmp_dir.join(&archive_name);
 
@@ -153,7 +159,10 @@ pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
     emit_progress(&app, "extract", 75.0, "Extracting Node.js...");
     tokio::fs::create_dir_all(&install_dir)
         .await
-        .map_err(|e| format!("Failed to create install directory: {e}"))?;
+        .map_err(|e| {
+            log::error!("Install dir creation failed: {}", e);
+            "Couldn't create install folder. Check disk space or permissions.".to_string()
+        })?;
 
     extract_archive(&archive_path, &install_dir, &archive_ext).await?;
     emit_progress(&app, "extract", 90.0, "Extraction complete.");
@@ -164,15 +173,17 @@ pub async fn install_node(app: tauri::AppHandle) -> Result<String, String> {
     // Verify installation
     let node_path = klodock_node_path()?;
     if !node_path.exists() {
-        return Err(format!(
-            "Installation completed but node binary not found at {}. \
-             The archive may have a different directory structure than expected.",
-            node_path.display()
-        ));
+        log::error!("Node binary not found at {} after install", node_path.display());
+        return Err(
+            "Couldn't find Node.js after install. Try restarting KloDock.".to_string()
+        );
     }
 
     let version = run_node_version(&node_path)
-        .map_err(|e| format!("Node installed but version check failed: {e}"))?;
+        .map_err(|e| {
+            log::error!("Node version check failed after install: {}", e);
+            "Couldn't verify the Node.js install. Try restarting KloDock.".to_string()
+        })?;
 
     emit_progress(&app, "done", 100.0, &format!("Node.js v{version} installed successfully!"));
     Ok(version)
@@ -251,11 +262,15 @@ fn run_node_version(node_path: &std::path::Path) -> Result<String, String> {
 
     let output = cmd
         .output()
-        .map_err(|e| format!("Failed to execute node: {e}"))?;
+        .map_err(|e| {
+            log::error!("Node execution failed: {}", e);
+            "Couldn't run Node.js. It may not be installed correctly.".to_string()
+        })?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("node --version failed: {stderr}"));
+        log::error!("node --version failed: {}", stderr);
+        return Err("Couldn't check Node.js version. Try reinstalling.".to_string());
     }
 
     let version_str = String::from_utf8_lossy(&output.stdout)
@@ -347,14 +362,14 @@ async fn download_file(
 ) -> Result<(), String> {
     let response = reqwest::get(url)
         .await
-        .map_err(|e| format!("Download failed: {e}"))?;
+        .map_err(|e| {
+            log::error!("Download request failed for {}: {}", url, e);
+            "Couldn't connect to download server. Check your internet.".to_string()
+        })?;
 
     if !response.status().is_success() {
-        return Err(format!(
-            "Download failed with status {}: {}",
-            response.status(),
-            url
-        ));
+        log::error!("Download returned status {} for {}", response.status(), url);
+        return Err("Couldn't download Node.js. The server may be down — try again later.".to_string());
     }
 
     let total_size = response.content_length().unwrap_or(0);
@@ -362,17 +377,26 @@ async fn download_file(
 
     let mut file = tokio::fs::File::create(dest)
         .await
-        .map_err(|e| format!("Failed to create file: {e}"))?;
+        .map_err(|e| {
+            log::error!("File creation failed at {}: {}", dest.display(), e);
+            "Couldn't save download. Check disk space or permissions.".to_string()
+        })?;
 
     use tokio::io::AsyncWriteExt;
     let mut stream = response.bytes_stream();
     use futures_util::StreamExt;
 
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| format!("Download stream error: {e}"))?;
+        let chunk = chunk.map_err(|e| {
+            log::error!("Download stream error: {}", e);
+            "Couldn't finish downloading. Check your internet and try again.".to_string()
+        })?;
         file.write_all(&chunk)
             .await
-            .map_err(|e| format!("Failed to write to file: {e}"))?;
+            .map_err(|e| {
+                log::error!("File write error: {}", e);
+                "Couldn't save download. Check disk space.".to_string()
+            })?;
         downloaded += chunk.len() as u64;
 
         if total_size > 0 {
@@ -392,7 +416,10 @@ async fn download_file(
 
     file.flush()
         .await
-        .map_err(|e| format!("Failed to flush file: {e}"))?;
+        .map_err(|e| {
+            log::error!("File flush error: {}", e);
+            "Couldn't finish saving download. Check disk space.".to_string()
+        })?;
 
     Ok(())
 }
@@ -401,14 +428,23 @@ async fn download_file(
 async fn download_file_simple(url: &str, dest: &std::path::Path) -> Result<(), String> {
     let bytes = reqwest::get(url)
         .await
-        .map_err(|e| format!("Download failed: {e}"))?
+        .map_err(|e| {
+            log::error!("Download failed for {}: {}", url, e);
+            "Couldn't download checksum file. Check your internet.".to_string()
+        })?
         .bytes()
         .await
-        .map_err(|e| format!("Failed to read response: {e}"))?;
+        .map_err(|e| {
+            log::error!("Response read error for {}: {}", url, e);
+            "Couldn't read download response. Try again.".to_string()
+        })?;
 
     tokio::fs::write(dest, &bytes)
         .await
-        .map_err(|e| format!("Failed to write file: {e}"))?;
+        .map_err(|e| {
+            log::error!("File write error at {}: {}", dest.display(), e);
+            "Couldn't save checksum file. Check disk space.".to_string()
+        })?;
 
     Ok(())
 }
@@ -422,29 +458,38 @@ async fn verify_checksum(
     // Read SHASUMS256.txt and find the line matching our archive
     let shasums_content = tokio::fs::read_to_string(shasums_path)
         .await
-        .map_err(|e| format!("Failed to read SHASUMS256.txt: {e}"))?;
+        .map_err(|e| {
+            log::error!("Checksum file read error: {}", e);
+            "Couldn't read checksum file. Try downloading again.".to_string()
+        })?;
 
     let expected_hash = shasums_content
         .lines()
         .find(|line| line.ends_with(archive_name))
         .and_then(|line| line.split_whitespace().next())
-        .ok_or_else(|| format!("No checksum found for {archive_name} in SHASUMS256.txt"))?
+        .ok_or_else(|| {
+            log::error!("No checksum found for {} in SHASUMS256.txt", archive_name);
+            "Couldn't verify download. Try again.".to_string()
+        })?
         .to_string();
 
     // Compute SHA256 of the downloaded archive
     let archive_bytes = tokio::fs::read(archive_path)
         .await
-        .map_err(|e| format!("Failed to read archive for checksum: {e}"))?;
+        .map_err(|e| {
+            log::error!("Archive read error for checksum: {}", e);
+            "Couldn't verify download integrity. Try again.".to_string()
+        })?;
 
     let mut hasher = Sha256::new();
     hasher.update(&archive_bytes);
     let actual_hash = format!("{:x}", hasher.finalize());
 
     if actual_hash != expected_hash {
-        return Err(format!(
-            "Checksum mismatch! Expected: {expected_hash}, Got: {actual_hash}. \
-             The download may be corrupted. Please try again."
-        ));
+        log::error!("Checksum mismatch: expected {}, got {}", expected_hash, actual_hash);
+        return Err(
+            "Download appears corrupted. Please try again.".to_string()
+        );
     }
 
     Ok(())
@@ -500,30 +545,43 @@ async fn extract_zip(
     let output = cmd
         .output()
         .await
-        .map_err(|e| format!("Failed to run PowerShell Expand-Archive: {e}"))?;
+        .map_err(|e| {
+            log::error!("PowerShell Expand-Archive failed: {}", e);
+            "Couldn't extract Node.js archive. Try restarting KloDock.".to_string()
+        })?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("Zip extraction failed: {stderr}"));
+        log::error!("Zip extraction failed: {}", stderr);
+        return Err("Couldn't extract Node.js. The download may be corrupted — try again.".to_string());
     }
 
     // The zip contains a top-level directory like `node-v24.14.0-win-x64/`.
     // We need to move its contents to install_dir.
     let mut entries = tokio::fs::read_dir(&extract_tmp)
         .await
-        .map_err(|e| format!("Failed to read extracted directory: {e}"))?;
+        .map_err(|e| {
+            log::error!("Read extracted dir failed: {}", e);
+            "Couldn't read extracted files. Try again.".to_string()
+        })?;
 
     let nested_dir = entries
         .next_entry()
         .await
-        .map_err(|e| format!("Failed to read entry: {e}"))?
-        .ok_or("Extracted archive is empty")?;
+        .map_err(|e| {
+            log::error!("Read entry failed: {}", e);
+            "Couldn't read extracted files. Try again.".to_string()
+        })?
+        .ok_or_else(|| "Couldn't extract Node.js — archive was empty.".to_string())?;
 
     // Remove existing install_dir if it exists, then rename the nested dir
     let _ = tokio::fs::remove_dir_all(install_dir).await;
     tokio::fs::rename(nested_dir.path(), install_dir)
         .await
-        .map_err(|e| format!("Failed to move extracted files: {e}"))?;
+        .map_err(|e| {
+            log::error!("Move extracted files failed: {}", e);
+            "Couldn't finalize Node.js install. Check disk space.".to_string()
+        })?;
 
     // Cleanup
     let _ = tokio::fs::remove_dir_all(&extract_tmp).await;
@@ -541,7 +599,10 @@ async fn extract_tar_gz(
     let _ = tokio::fs::remove_dir_all(&extract_tmp).await;
     tokio::fs::create_dir_all(&extract_tmp)
         .await
-        .map_err(|e| format!("Failed to create temp extract dir: {e}"))?;
+        .map_err(|e| {
+            log::error!("Temp extract dir creation failed: {}", e);
+            "Couldn't prepare extraction folder. Check disk space.".to_string()
+        })?;
 
     let output = tokio::process::Command::new("tar")
         .args([
@@ -552,28 +613,41 @@ async fn extract_tar_gz(
         ])
         .output()
         .await
-        .map_err(|e| format!("Failed to run tar: {e}"))?;
+        .map_err(|e| {
+            log::error!("tar execution failed: {}", e);
+            "Couldn't extract Node.js archive. Try again.".to_string()
+        })?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("tar extraction failed: {stderr}"));
+        log::error!("tar extraction failed: {}", stderr);
+        return Err("Couldn't extract Node.js. The download may be corrupted — try again.".to_string());
     }
 
     // Move nested directory contents to install_dir
     let mut entries = tokio::fs::read_dir(&extract_tmp)
         .await
-        .map_err(|e| format!("Failed to read extracted directory: {e}"))?;
+        .map_err(|e| {
+            log::error!("Read extracted dir failed: {}", e);
+            "Couldn't read extracted files. Try again.".to_string()
+        })?;
 
     let nested_dir = entries
         .next_entry()
         .await
-        .map_err(|e| format!("Failed to read entry: {e}"))?
-        .ok_or("Extracted archive is empty")?;
+        .map_err(|e| {
+            log::error!("Read entry failed: {}", e);
+            "Couldn't read extracted files. Try again.".to_string()
+        })?
+        .ok_or_else(|| "Couldn't extract Node.js — archive was empty.".to_string())?;
 
     let _ = tokio::fs::remove_dir_all(install_dir).await;
     tokio::fs::rename(nested_dir.path(), install_dir)
         .await
-        .map_err(|e| format!("Failed to move extracted files: {e}"))?;
+        .map_err(|e| {
+            log::error!("Move extracted files failed: {}", e);
+            "Couldn't finalize Node.js install. Check disk space.".to_string()
+        })?;
 
     let _ = tokio::fs::remove_dir_all(&extract_tmp).await;
     Ok(())

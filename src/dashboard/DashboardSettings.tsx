@@ -4,6 +4,7 @@ import {
   CheckCircle2, AlertTriangle, RefreshCw,
 } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import { ProviderCard } from "@/components/ProviderCard";
 import { useToast } from "@/components/Toast";
 import {
@@ -376,8 +377,88 @@ export function DashboardSettings() {
         </div>
       </div>
 
+      {/* Keep API Keys toggle */}
+      <KeepKeysToggle />
+
       {/* Uninstall — understated, not alarming */}
       <UninstallSection />
+    </div>
+  );
+}
+
+/* ── Keep API Keys toggle ── */
+
+function KeepKeysToggle() {
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
+
+  useEffect(() => {
+    invoke<boolean>("get_keep_keys")
+      .then((val) => setEnabled(val))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function toggle() {
+    const next = !enabled;
+    try {
+      await invoke("set_keep_keys", { enabled: next });
+      setEnabled(next);
+      toast.success(next
+        ? "API keys will stay on disk when the agent stops."
+        : "API keys will be removed from disk when the agent stops."
+      );
+    } catch {
+      toast.error("Couldn't save that setting. Try again.");
+    }
+  }
+
+  if (loading) return null;
+
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-neutral-900">
+            Keep API keys on disk
+          </p>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Leave your API keys in a file so you can use OpenClaw from the terminal.
+            If you only use KloDock, leave this off.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          aria-label="Keep API keys accessible on disk"
+          onClick={toggle}
+          className={`
+            relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full
+            border-2 border-transparent transition-colors duration-200
+            focus-visible:outline-2 focus-visible:outline-offset-2
+            focus-visible:outline-primary-500
+            ${enabled ? "bg-primary-600" : "bg-neutral-200"}
+          `}
+        >
+          <span
+            className={`
+              pointer-events-none inline-block h-5 w-5 rounded-full
+              bg-white shadow-sm ring-0 transition-transform duration-200
+              ${enabled ? "translate-x-5" : "translate-x-0"}
+            `}
+          />
+        </button>
+      </div>
+      {enabled && (
+        <div className="mt-3 rounded-lg bg-warning-50 border border-warning-200 p-3">
+          <p className="text-xs text-warning-700">
+            ⚠ Your API keys will remain in a plain-text file on disk even when the agent is stopped.
+            Anyone with access to your computer could read them.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

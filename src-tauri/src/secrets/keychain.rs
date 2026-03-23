@@ -48,7 +48,10 @@ mod platform {
 
         let dir = super::secrets_dir()?;
         std::fs::create_dir_all(&dir)
-            .map_err(|e| format!("Failed to create secrets dir: {e}"))?;
+            .map_err(|e| {
+                log::error!("Secrets dir creation failed: {}", e);
+                "Couldn't prepare secure storage. Check disk space or permissions.".to_string()
+            })?;
 
         let path = dir.join(hashed_filename(key));
         let path_str = path.to_string_lossy().to_string();
@@ -76,24 +79,35 @@ mod platform {
         }
 
         let mut child = cmd.spawn()
-            .map_err(|e| format!("DPAPI encrypt failed: {e}"))?;
+            .map_err(|e| {
+                log::error!("DPAPI encrypt spawn failed: {}", e);
+                "Couldn't encrypt your API key. Try restarting KloDock.".to_string()
+            })?;
 
         if let Some(ref mut stdin) = child.stdin {
             stdin.write_all(value.as_bytes())
-                .map_err(|e| format!("Failed to write to PowerShell stdin: {e}"))?;
+                .map_err(|e| {
+                    log::error!("PowerShell stdin write failed: {}", e);
+                    "Couldn't encrypt your API key. Try again.".to_string()
+                })?;
         }
         drop(child.stdin.take());
 
         let output = child.wait_with_output()
-            .map_err(|e| format!("DPAPI encrypt failed: {e}"))?;
+            .map_err(|e| {
+                log::error!("DPAPI encrypt wait failed: {}", e);
+                "Couldn't encrypt your API key. Try restarting KloDock.".to_string()
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("DPAPI encrypt failed: {stderr}"));
+            log::error!("DPAPI encrypt failed: {}", stderr);
+            return Err("Couldn't securely store your API key. Try restarting KloDock.".to_string());
         }
 
         if !path.exists() {
-            return Err("DPAPI encrypt completed but output file was not created".to_string());
+            log::error!("DPAPI output file not created at {}", path.display());
+            return Err("Couldn't save encrypted key. Check disk space.".to_string());
         }
 
         Ok(())
@@ -126,11 +140,15 @@ mod platform {
                 ])
                 .creation_flags(0x08000000) // CREATE_NO_WINDOW
                 .output()
-        }.map_err(|e| format!("DPAPI decrypt failed: {e}"))?;
+        }.map_err(|e| {
+            log::error!("DPAPI decrypt failed: {}", e);
+            "Couldn't decrypt your API key. Try re-entering it.".to_string()
+        })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("DPAPI decrypt failed: {stderr}"));
+            log::error!("DPAPI decrypt command failed: {}", stderr);
+            return Err("Couldn't read your stored key — it may be corrupted. Try re-entering it.".to_string());
         }
 
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
@@ -141,7 +159,10 @@ mod platform {
         let path = super::secrets_dir()?.join(hashed_filename(key));
         if path.exists() {
             std::fs::remove_file(&path)
-                .map_err(|e| format!("Failed to delete secret file: {e}"))?;
+                .map_err(|e| {
+                    log::error!("Secret file delete failed: {}", e);
+                    "Couldn't remove stored key. Check permissions.".to_string()
+                })?;
         }
         Ok(())
     }
@@ -155,26 +176,38 @@ mod platform {
 
     fn entry(key: &str) -> Result<Entry, String> {
         Entry::new(SERVICE, key)
-            .map_err(|e| format!("Keychain entry error for '{}': {}", key, e))
+            .map_err(|e| {
+                log::error!("Keychain entry error for '{}': {}", key, e);
+                "Couldn't access your system keychain. Check permissions.".to_string()
+            })
     }
 
     pub fn store(key: &str, value: &str) -> Result<(), String> {
         entry(key)?
             .set_password(value)
-            .map_err(|e| format!("Failed to store secret '{}': {}", key, e))
+            .map_err(|e| {
+                log::error!("Keychain store failed for '{}': {}", key, e);
+                "Couldn't save your API key to the system keychain.".to_string()
+            })
     }
 
     pub fn retrieve(key: &str) -> Result<String, String> {
         entry(key)?
             .get_password()
-            .map_err(|e| format!("Failed to retrieve secret '{}': {}", key, e))
+            .map_err(|e| {
+                log::error!("Keychain retrieve failed for '{}': {}", key, e);
+                "Couldn't read your API key from the system keychain.".to_string()
+            })
     }
 
     pub fn delete(key: &str) -> Result<(), String> {
         match entry(key)?.delete_credential() {
             Ok(()) => Ok(()),
             Err(keyring::Error::NoEntry) => Ok(()),
-            Err(e) => Err(format!("Failed to delete secret '{}': {}", key, e)),
+            Err(e) => {
+                log::error!("Keychain delete failed for '{}': {}", key, e);
+                Err("Couldn't remove your API key from the system keychain.".to_string())
+            }
         }
     }
 }
@@ -192,7 +225,10 @@ fn secrets_dir() -> Result<std::path::PathBuf, String> {
 fn read_index() -> Result<Vec<String>, String> {
     match platform::retrieve(KEY_INDEX) {
         Ok(json) => serde_json::from_str::<Vec<String>>(&json)
-            .map_err(|e| format!("Failed to parse key index: {}", e)),
+            .map_err(|e| {
+                log::error!("Key index parse failed: {}", e);
+                "Couldn't read stored key list — it may be corrupted.".to_string()
+            }),
         Err(_) => Ok(Vec::new()),
     }
 }
@@ -200,7 +236,10 @@ fn read_index() -> Result<Vec<String>, String> {
 /// Persist the key index.
 fn write_index(keys: &[String]) -> Result<(), String> {
     let json = serde_json::to_string(keys)
-        .map_err(|e| format!("Failed to serialize key index: {}", e))?;
+        .map_err(|e| {
+            log::error!("Key index serialize failed: {}", e);
+            "Couldn't update stored key list.".to_string()
+        })?;
     platform::store(KEY_INDEX, &json)
 }
 
@@ -259,13 +298,19 @@ fn write_openclaw_auth_profile(provider: &str, api_key: &str) -> Result<(), Stri
     // Ensure directory exists
     if let Some(parent) = profile_path.parent() {
         std::fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create auth profile dir: {e}"))?;
+            .map_err(|e| {
+                log::error!("Auth profile dir creation failed: {}", e);
+                "Couldn't prepare auth profile folder. Check disk space.".to_string()
+            })?;
     }
 
     // Read existing profiles or start fresh
     let mut profiles: serde_json::Value = if profile_path.exists() {
         let content = std::fs::read_to_string(&profile_path)
-            .map_err(|e| format!("Failed to read auth-profiles.json: {e}"))?;
+            .map_err(|e| {
+                log::error!("Auth profiles read failed: {}", e);
+                "Couldn't read auth profiles. Try again.".to_string()
+            })?;
         serde_json::from_str(&content).unwrap_or_else(|_| {
             serde_json::json!({ "version": 1, "profiles": {} })
         })
@@ -285,9 +330,15 @@ fn write_openclaw_auth_profile(provider: &str, api_key: &str) -> Result<(), Stri
 
     // Write back
     let json = serde_json::to_string_pretty(&profiles)
-        .map_err(|e| format!("Failed to serialize auth profiles: {e}"))?;
+        .map_err(|e| {
+            log::error!("Auth profiles serialize failed: {}", e);
+            "Couldn't prepare auth profiles for saving.".to_string()
+        })?;
     std::fs::write(&profile_path, json)
-        .map_err(|e| format!("Failed to write auth-profiles.json: {e}"))?;
+        .map_err(|e| {
+            log::error!("Auth profiles write failed: {}", e);
+            "Couldn't save auth profiles. Check disk space or permissions.".to_string()
+        })?;
 
     log::info!("Wrote OpenClaw auth profile for provider '{}'", provider);
     Ok(())
@@ -355,10 +406,16 @@ pub async fn test_api_key(provider: String, key: String) -> Result<bool, String>
             match status {
                 200..=299 => Ok(true),
                 401 | 403 => Ok(false),
-                _ => Err(format!("Unexpected status {} from {} API", status, provider)),
+                _ => {
+                    log::warn!("Unexpected status {} from {} API", status, provider);
+                    Err(format!("Couldn't verify {} key — unexpected response. Try again later.", provider))
+                }
             }
         }
-        Err(e) => Err(format!("Network error testing {} key: {}", provider, e)),
+        Err(e) => {
+            log::error!("Network error testing {} key: {}", provider, e);
+            Err("Couldn't connect to verify your key. Check your internet.".to_string())
+        }
     }
 }
 
@@ -371,7 +428,10 @@ pub async fn check_ollama() -> Result<bool, String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(3))
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+        .map_err(|e| {
+            log::error!("HTTP client creation failed: {}", e);
+            "Couldn't check Ollama status. Try restarting KloDock.".to_string()
+        })?;
 
     match client.get("http://localhost:11434/api/tags").send().await {
         Ok(resp) => Ok(resp.status().is_success()),
@@ -386,17 +446,26 @@ pub async fn test_channel_token(channel: String, token: String) -> Result<String
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()
-        .map_err(|e| format!("HTTP client error: {e}"))?;
+        .map_err(|e| {
+            log::error!("HTTP client creation failed: {}", e);
+            "Couldn't test channel token. Try restarting KloDock.".to_string()
+        })?;
 
     match channel.to_lowercase().as_str() {
         "telegram" => {
             let url = format!("https://api.telegram.org/bot{}/getMe", token);
             let resp = client.get(&url).send().await
-                .map_err(|e| format!("Network error: {e}"))?;
+                .map_err(|e| {
+                    log::error!("Telegram API network error: {}", e);
+                    "Couldn't connect to Telegram. Check your internet.".to_string()
+                })?;
             if resp.status().is_success() {
                 // Parse the response to get the bot name
                 let body: serde_json::Value = resp.json().await
-                    .map_err(|e| format!("Failed to parse response: {e}"))?;
+                    .map_err(|e| {
+                        log::error!("Telegram response parse error: {}", e);
+                        "Couldn't read Telegram's response. Try again.".to_string()
+                    })?;
                 let bot_name = body["result"]["first_name"]
                     .as_str()
                     .unwrap_or("Your bot");
@@ -404,17 +473,24 @@ pub async fn test_channel_token(channel: String, token: String) -> Result<String
             } else if resp.status().as_u16() == 401 {
                 Err("Invalid token. Please check your BotFather token and try again.".into())
             } else {
-                Err(format!("Telegram returned status {}", resp.status().as_u16()))
+                log::warn!("Telegram returned status {}", resp.status().as_u16());
+                Err("Couldn't verify Telegram token. Try again later.".to_string())
             }
         }
         "discord" => {
             let resp = client.get("https://discord.com/api/v10/users/@me")
                 .header("Authorization", format!("Bot {}", token))
                 .send().await
-                .map_err(|e| format!("Network error: {e}"))?;
+                .map_err(|e| {
+                    log::error!("Discord API network error: {}", e);
+                    "Couldn't connect to Discord. Check your internet.".to_string()
+                })?;
             if resp.status().is_success() {
                 let body: serde_json::Value = resp.json().await
-                    .map_err(|e| format!("Failed to parse response: {e}"))?;
+                    .map_err(|e| {
+                        log::error!("Discord response parse error: {}", e);
+                        "Couldn't read Discord's response. Try again.".to_string()
+                    })?;
                 let bot_name = body["username"]
                     .as_str()
                     .unwrap_or("Your bot");
@@ -422,7 +498,8 @@ pub async fn test_channel_token(channel: String, token: String) -> Result<String
             } else if resp.status().as_u16() == 401 {
                 Err("Invalid token. Please check your Discord bot token and try again.".into())
             } else {
-                Err(format!("Discord returned status {}", resp.status().as_u16()))
+                log::warn!("Discord returned status {}", resp.status().as_u16());
+                Err("Couldn't verify Discord token. Try again later.".to_string())
             }
         }
         other => Err(format!("Unsupported channel: '{}'", other)),
@@ -447,7 +524,10 @@ pub async fn list_ollama_models() -> Result<Vec<OllamaModel>, String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()
-        .map_err(|e| format!("Failed to create HTTP client: {e}"))?;
+        .map_err(|e| {
+            log::error!("HTTP client creation failed: {}", e);
+            "Couldn't check Ollama models. Try restarting KloDock.".to_string()
+        })?;
 
     let resp = match client.get("http://localhost:11434/api/tags").send().await {
         Ok(r) => r,
@@ -461,7 +541,10 @@ pub async fn list_ollama_models() -> Result<Vec<OllamaModel>, String> {
     let body: serde_json::Value = resp
         .json()
         .await
-        .map_err(|e| format!("Failed to parse Ollama response: {e}"))?;
+        .map_err(|e| {
+            log::error!("Ollama response parse error: {}", e);
+            "Couldn't read Ollama's model list. Try again.".to_string()
+        })?;
 
     let models = body
         .get("models")

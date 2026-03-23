@@ -20,11 +20,17 @@ fn desktop_file_path() -> Result<PathBuf, String> {
 impl Autostart for LinuxAutostart {
     fn enable() -> Result<(), String> {
         let exe_path = std::env::current_exe()
-            .map_err(|e| format!("Failed to determine KloDock executable path: {e}"))?;
+            .map_err(|e| {
+                log::error!("Couldn't find KloDock exe path: {}", e);
+                "Couldn't find the KloDock app. Try reinstalling.".to_string()
+            })?;
 
         let dir = autostart_dir()?;
         std::fs::create_dir_all(&dir)
-            .map_err(|e| format!("Failed to create autostart directory: {e}"))?;
+            .map_err(|e| {
+                log::error!("Autostart dir creation failed: {}", e);
+                "Couldn't create autostart folder. Check permissions.".to_string()
+            })?;
 
         let content = format!(
             "[Desktop Entry]\n\
@@ -40,7 +46,10 @@ impl Autostart for LinuxAutostart {
         );
 
         std::fs::write(desktop_file_path()?, content)
-            .map_err(|e| format!("Failed to write desktop file: {e}"))?;
+            .map_err(|e| {
+                log::error!("Desktop file write failed: {}", e);
+                "Couldn't enable auto-start. Check permissions.".to_string()
+            })?;
 
         Ok(())
     }
@@ -49,7 +58,10 @@ impl Autostart for LinuxAutostart {
         let path = desktop_file_path()?;
         if path.exists() {
             std::fs::remove_file(&path)
-                .map_err(|e| format!("Failed to remove desktop file: {e}"))?;
+                .map_err(|e| {
+                    log::error!("Desktop file removal failed: {}", e);
+                    "Couldn't disable auto-start. Check permissions.".to_string()
+                })?;
         }
         Ok(())
     }

@@ -22,7 +22,10 @@ pub fn set_file_permissions(path: &std::path::Path, mode: u32) -> Result<(), Str
         use std::os::unix::fs::PermissionsExt;
         let perms = std::fs::Permissions::from_mode(mode);
         std::fs::set_permissions(path, perms)
-            .map_err(|e| format!("Failed to set permissions on {}: {}", path.display(), e))?;
+            .map_err(|e| {
+                log::error!("Permission set failed on {}: {}", path.display(), e);
+                "Couldn't secure file permissions. Check your user account.".to_string()
+            })?;
     }
 
     #[cfg(windows)]
@@ -42,17 +45,17 @@ pub fn set_file_permissions(path: &std::path::Path, mode: u32) -> Result<(), Str
             match output {
                 Ok(o) if !o.status.success() => {
                     let stderr = String::from_utf8_lossy(&o.stderr);
-                    log::warn!("icacls failed to set permissions on {}: {}", path.display(), stderr);
-                    return Err(format!("Failed to restrict file permissions on {}: {}", path.display(), stderr));
+                    log::warn!("icacls failed on {}: {}", path.display(), stderr);
+                    return Err("Couldn't secure file permissions. Check your user account.".to_string());
                 }
                 Err(e) => {
-                    log::warn!("icacls could not be executed for {}: {}", path.display(), e);
-                    return Err(format!("Failed to restrict file permissions on {}: {}", path.display(), e));
+                    log::warn!("icacls execution failed for {}: {}", path.display(), e);
+                    return Err("Couldn't secure file permissions. Check your user account.".to_string());
                 }
                 _ => {} // success
             }
         } else {
-            return Err("Cannot determine Windows username for file permission restriction".to_string());
+            return Err("Couldn't secure file permissions — Windows username not found.".to_string());
         }
     }
 
@@ -75,7 +78,10 @@ pub async fn write_env(entries: HashMap<String, String>) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
+            .map_err(|e| {
+                log::error!("Config dir creation failed at {}: {}", parent.display(), e);
+                "Couldn't create settings folder. Check disk space or permissions.".to_string()
+            })?;
     }
 
     // Build the .env content: KEY=VALUE per line.
@@ -93,7 +99,10 @@ pub async fn write_env(entries: HashMap<String, String>) -> Result<(), String> {
 
     tokio::fs::write(&path, content.as_bytes())
         .await
-        .map_err(|e| format!("Failed to write .env at {}: {}", path.display(), e))?;
+        .map_err(|e| {
+            log::error!("Env file write failed at {}: {}", path.display(), e);
+            "Couldn't save environment settings. Check disk space or permissions.".to_string()
+        })?;
 
     // Restrict permissions to owner-only (600)
     set_file_permissions(&path, 0o600)?;
@@ -108,7 +117,10 @@ pub async fn delete_env() -> Result<(), String> {
     match tokio::fs::remove_file(&path).await {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(e) => Err(format!("Failed to delete .env at {}: {}", path.display(), e)),
+        Err(e) => {
+            log::error!("Env file delete failed at {}: {}", path.display(), e);
+            Err("Couldn't delete environment file. Check permissions.".to_string())
+        }
     }
 }
 
@@ -120,7 +132,10 @@ pub async fn read_env() -> Result<HashMap<String, String>, String> {
     let path = env_path()?;
     let content = tokio::fs::read_to_string(&path)
         .await
-        .map_err(|e| format!("Failed to read .env at {}: {}", path.display(), e))?;
+        .map_err(|e| {
+            log::error!("Env file read failed at {}: {}", path.display(), e);
+            "Couldn't read environment settings. The file may be missing.".to_string()
+        })?;
 
     let map: HashMap<String, String> = content
         .lines()

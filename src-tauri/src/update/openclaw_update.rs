@@ -69,6 +69,9 @@ pub async fn update_openclaw(app: tauri::AppHandle) -> Result<String, String> {
     log::info!("Stopping daemon for OpenClaw update...");
     let _ = crate::process::daemon::stop_daemon().await;
 
+    // Back up config and personality before updating (cheap insurance)
+    backup_config().await;
+
     // Reuse the install command — it runs `npm install -g openclaw@latest`
     // which will upgrade if already installed
     log::info!("Running OpenClaw update via npm...");
@@ -122,8 +125,14 @@ async fn fetch_latest_npm_version() -> Result<String, String> {
             cmd.output()
         })
         .await
-        .map_err(|e| format!("Task join error: {e}"))?
-        .map_err(|e| format!("Failed to run npm view: {e}"))?;
+        .map_err(|e| {
+            log::error!("npm view task join error: {}", e);
+            "Couldn't check for updates. Try again later.".to_string()
+        })?
+        .map_err(|e| {
+            log::error!("npm view execution failed: {}", e);
+            "Couldn't check for updates. Try again later.".to_string()
+        })?;
 
         if output.status.success() {
             let version = String::from_utf8_lossy(&output.stdout)
@@ -135,7 +144,7 @@ async fn fetch_latest_npm_version() -> Result<String, String> {
         }
     }
 
-    Err("Could not determine latest version from npm registry.".into())
+    Err("Couldn't check for the latest version. Try again later.".into())
 }
 
 /// Compare two semver-ish strings. Returns true if `latest` is strictly newer
@@ -183,4 +192,47 @@ fn is_newer(current: &str, latest: &str) -> bool {
     }
 
     false
+}
+
+/// Back up openclaw.json and SOUL.md before an update. Best-effort — if
+/// backup fails we still proceed (the update itself is more important).
+async fn backup_config() {
+    let openclaw_dir = match crate::paths::openclaw_base_dir() {
+        Ok(p) => p,
+        Err(_) => return,
+    };
+
+    let backup_dir = openclaw_dir.join("backups");
+    if tokio::fs::create_dir_all(&backup_dir).await.is_err() {
+        log::warn!("Couldn't create backup directory");
+        return;
+    }
+
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+        .to_string();
+
+    // Back up openclaw.json
+    let config_src = openclaw_dir.join("openclaw.json");
+    if config_src.exists() {
+        let dest = backup_dir.join(format!("openclaw.json.{timestamp}.bak"));
+        if let Err(e) = tokio::fs::copy(&config_src, &dest).await {
+            log::warn!("Config backup failed: {e}");
+        } else {
+            log::info!("Backed up openclaw.json to {}", dest.display());
+        }
+    }
+
+    // Back up SOUL.md
+    let soul_src = openclaw_dir.join("workspace").join("SOUL.md");
+    if soul_src.exists() {
+        let dest = backup_dir.join(format!("SOUL.md.{timestamp}.bak"));
+        if let Err(e) = tokio::fs::copy(&soul_src, &dest).await {
+            log::warn!("SOUL.md backup failed: {e}");
+        } else {
+            log::info!("Backed up SOUL.md to {}", dest.display());
+        }
+    }
 }

@@ -106,10 +106,16 @@ pub async fn resume_uninstall(app: tauri::AppHandle) -> Result<bool, String> {
 
     let contents = tokio::fs::read_to_string(&state_path)
         .await
-        .map_err(|e| format!("Failed to read uninstall state: {e}"))?;
+        .map_err(|e| {
+            log::error!("Uninstall state read error: {}", e);
+            "Couldn't read uninstall progress. Try uninstalling again.".to_string()
+        })?;
 
     let state: UninstallState = serde_json::from_str(&contents)
-        .map_err(|e| format!("Corrupt uninstall-state.json: {e}"))?;
+        .map_err(|e| {
+            log::error!("Corrupt uninstall-state.json: {}", e);
+            "Couldn't resume uninstall — progress file is corrupted. Try again.".to_string()
+        })?;
 
     run_remaining_steps(app, state).await?;
     Ok(true)
@@ -145,7 +151,8 @@ async fn run_remaining_steps(
         if let Err(e) = result {
             // Persist current progress so the user can retry.
             persist_state(&state).await.ok();
-            return Err(format!("Step {step:?} failed: {e}"));
+            log::error!("Uninstall step {:?} failed: {}", step, e);
+            return Err(format!("Couldn't complete uninstall step. {e}"));
         }
 
         state.remaining.remove(0);
@@ -190,7 +197,10 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
             if node_dir.exists() {
                 tokio::fs::remove_dir_all(&node_dir)
                     .await
-                    .map_err(|e| format!("Failed to remove node dir: {e}"))?;
+                    .map_err(|e| {
+                        log::error!("Node dir removal failed: {}", e);
+                        "Couldn't remove Node.js files. Close any terminals and try again.".to_string()
+                    })?;
             }
             Ok(())
         }
@@ -224,7 +234,10 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
             if base.exists() {
                 tokio::fs::remove_dir_all(&base)
                     .await
-                    .map_err(|e| format!("Failed to remove ~/.klodock: {e}"))?;
+                    .map_err(|e| {
+                        log::error!("KloDock config removal failed: {}", e);
+                        "Couldn't remove KloDock data. Close KloDock and try again.".to_string()
+                    })?;
             }
 
             // Optionally nuke user data.
@@ -233,7 +246,10 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
                 if openclaw_dir.exists() {
                     tokio::fs::remove_dir_all(&openclaw_dir)
                         .await
-                        .map_err(|e| format!("Failed to remove ~/.openclaw: {e}"))?;
+                        .map_err(|e| {
+                            log::error!("OpenClaw data removal failed: {}", e);
+                            "Couldn't remove user data. Close all apps and try again.".to_string()
+                        })?;
                 }
             }
 
@@ -259,15 +275,24 @@ async fn persist_state(state: &UninstallState) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("Failed to create state dir: {e}"))?;
+            .map_err(|e| {
+                log::error!("State dir creation failed: {}", e);
+                "Couldn't save uninstall progress. Check disk space.".to_string()
+            })?;
     }
 
     let json = serde_json::to_string_pretty(state)
-        .map_err(|e| format!("Failed to serialize uninstall state: {e}"))?;
+        .map_err(|e| {
+            log::error!("Uninstall state serialization failed: {}", e);
+            "Couldn't save uninstall progress.".to_string()
+        })?;
 
     tokio::fs::write(&path, json)
         .await
-        .map_err(|e| format!("Failed to write uninstall-state.json: {e}"))?;
+        .map_err(|e| {
+            log::error!("Uninstall state write failed: {}", e);
+            "Couldn't save uninstall progress. Check disk space.".to_string()
+        })?;
 
     Ok(())
 }

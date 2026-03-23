@@ -17,7 +17,10 @@ pub struct WindowsAutostart;
 impl Autostart for WindowsAutostart {
     fn enable() -> Result<(), String> {
         let exe_path = std::env::current_exe()
-            .map_err(|e| format!("Failed to determine KloDock executable path: {e}"))?;
+            .map_err(|e| {
+                log::error!("Couldn't find KloDock exe path: {}", e);
+                "Couldn't find the KloDock app. Try reinstalling.".to_string()
+            })?;
 
         // Launch minimized to system tray
         let value = format!("\"{}\" --minimized", exe_path.display());
@@ -39,11 +42,15 @@ impl Autostart for WindowsAutostart {
                 ])
                 .creation_flags(0x08000000) // CREATE_NO_WINDOW
                 .output()
-        }.map_err(|e| format!("Failed to run reg.exe: {e}"))?;
+        }.map_err(|e| {
+            log::error!("reg.exe execution failed: {}", e);
+            "Couldn't update startup settings. Try running as administrator.".to_string()
+        })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("Failed to enable autostart: {stderr}"));
+            log::error!("Autostart enable failed: {}", stderr);
+            return Err("Couldn't enable auto-start. Try running as administrator.".to_string());
         }
 
         log::info!("Autostart enabled: {value}");
@@ -63,7 +70,10 @@ impl Autostart for WindowsAutostart {
                 ])
                 .creation_flags(0x08000000) // CREATE_NO_WINDOW
                 .output()
-        }.map_err(|e| format!("Failed to run reg.exe: {e}"))?;
+        }.map_err(|e| {
+            log::error!("reg.exe execution failed (disable): {}", e);
+            "Couldn't update startup settings. Try running as administrator.".to_string()
+        })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -71,7 +81,8 @@ impl Autostart for WindowsAutostart {
             if stderr.contains("unable to find") || stderr.contains("not find") {
                 return Ok(());
             }
-            return Err(format!("Failed to disable autostart: {stderr}"));
+            log::error!("Autostart disable failed: {}", stderr);
+            return Err("Couldn't disable auto-start. Try running as administrator.".to_string());
         }
 
         log::info!("Autostart disabled");
@@ -90,7 +101,10 @@ impl Autostart for WindowsAutostart {
                 ])
                 .creation_flags(0x08000000) // CREATE_NO_WINDOW
                 .output()
-        }.map_err(|e| format!("Failed to run reg.exe: {e}"))?;
+        }.map_err(|e| {
+            log::error!("reg.exe query failed: {}", e);
+            "Couldn't check auto-start status.".to_string()
+        })?;
 
         // If the query succeeds and contains our value name, it's enabled
         if output.status.success() {

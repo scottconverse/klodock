@@ -72,7 +72,10 @@ pub async fn download_ollama(app: tauri::AppHandle) -> Result<String, String> {
     let tmp_dir = crate::paths::klodock_base_dir()?.join("tmp");
     tokio::fs::create_dir_all(&tmp_dir)
         .await
-        .map_err(|e| format!("Failed to create temp directory: {e}"))?;
+        .map_err(|e| {
+            log::error!("Temp dir creation failed: {}", e);
+            "Couldn't prepare download folder. Check disk space or permissions.".to_string()
+        })?;
 
     let installer_name = if cfg!(target_os = "windows") {
         "OllamaSetup.exe"
@@ -89,14 +92,14 @@ pub async fn download_ollama(app: tauri::AppHandle) -> Result<String, String> {
     // Download with progress
     let response = reqwest::get(OLLAMA_DOWNLOAD_URL)
         .await
-        .map_err(|e| format!("Download failed: {e}"))?;
+        .map_err(|e| {
+            log::error!("Ollama download failed: {}", e);
+            "Couldn't connect to Ollama servers. Check your internet.".to_string()
+        })?;
 
     if !response.status().is_success() {
-        return Err(format!(
-            "Download failed with status {}: {}",
-            response.status(),
-            OLLAMA_DOWNLOAD_URL
-        ));
+        log::error!("Ollama download returned status {}", response.status());
+        return Err("Couldn't download Ollama. The server may be down — try again later.".to_string());
     }
 
     let total_size = response.content_length().unwrap_or(0);
@@ -104,17 +107,26 @@ pub async fn download_ollama(app: tauri::AppHandle) -> Result<String, String> {
 
     let mut file = tokio::fs::File::create(&dest)
         .await
-        .map_err(|e| format!("Failed to create file: {e}"))?;
+        .map_err(|e| {
+            log::error!("File creation failed: {}", e);
+            "Couldn't save Ollama installer. Check disk space.".to_string()
+        })?;
 
     use futures_util::StreamExt;
     use tokio::io::AsyncWriteExt;
     let mut stream = response.bytes_stream();
 
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| format!("Download stream error: {e}"))?;
+        let chunk = chunk.map_err(|e| {
+            log::error!("Ollama download stream error: {}", e);
+            "Couldn't finish downloading Ollama. Check your internet.".to_string()
+        })?;
         file.write_all(&chunk)
             .await
-            .map_err(|e| format!("Failed to write to file: {e}"))?;
+            .map_err(|e| {
+                log::error!("File write error: {}", e);
+                "Couldn't save Ollama download. Check disk space.".to_string()
+            })?;
         downloaded += chunk.len() as u64;
 
         if total_size > 0 {
@@ -134,7 +146,10 @@ pub async fn download_ollama(app: tauri::AppHandle) -> Result<String, String> {
 
     file.flush()
         .await
-        .map_err(|e| format!("Failed to flush file: {e}"))?;
+        .map_err(|e| {
+            log::error!("File flush error: {}", e);
+            "Couldn't finish saving Ollama download. Check disk space.".to_string()
+        })?;
 
     emit_ollama_progress(&app, "download", 80.0, "Download complete.");
 
@@ -148,7 +163,8 @@ pub async fn download_ollama(app: tauri::AppHandle) -> Result<String, String> {
 pub async fn install_ollama(app: tauri::AppHandle, installer_path: String) -> Result<(), String> {
     let path = PathBuf::from(&installer_path);
     if !path.exists() {
-        return Err(format!("Installer not found at: {installer_path}"));
+        log::error!("Ollama installer not found at: {}", installer_path);
+        return Err("Couldn't find the Ollama installer. Try downloading again.".to_string());
     }
 
     emit_ollama_progress(&app, "install", 85.0, "Installing Ollama...");
@@ -166,11 +182,15 @@ pub async fn install_ollama(app: tauri::AppHandle, installer_path: String) -> Re
 
         let output = cmd
             .output()
-            .map_err(|e| format!("Failed to run Ollama installer: {e}"))?;
+            .map_err(|e| {
+                log::error!("Ollama installer execution failed: {}", e);
+                "Couldn't run the Ollama installer. Try again.".to_string()
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("Ollama installer failed: {stderr}"));
+            log::error!("Ollama installer failed: {}", stderr);
+            return Err("Ollama installation didn't complete. Try again or install from ollama.com.".to_string());
         }
     }
 
@@ -200,7 +220,7 @@ pub async fn install_ollama(app: tauri::AppHandle, installer_path: String) -> Re
         }
         attempts += 1;
         if attempts > 15 {
-            return Err("Ollama installed but API not responding after 15 seconds. Try restarting.".into());
+            return Err("Ollama installed but couldn't start. Try restarting your computer.".into());
         }
         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         emit_ollama_progress(
@@ -234,10 +254,14 @@ pub async fn pull_ollama_model(app: tauri::AppHandle, model: String) -> Result<(
         .json(&serde_json::json!({ "name": model, "stream": true }))
         .send()
         .await
-        .map_err(|e| format!("Failed to start model pull: {e}"))?;
+        .map_err(|e| {
+            log::error!("Model pull request failed: {}", e);
+            "Couldn't connect to Ollama. Make sure it's running.".to_string()
+        })?;
 
     if !response.status().is_success() {
-        return Err(format!("Model pull failed with status {}", response.status()));
+        log::error!("Model pull returned status {}", response.status());
+        return Err("Couldn't pull model. Ollama may be busy — try again.".to_string());
     }
 
     // Stream the NDJSON response for progress
@@ -246,7 +270,10 @@ pub async fn pull_ollama_model(app: tauri::AppHandle, model: String) -> Result<(
     let mut buffer = String::new();
 
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| format!("Stream error: {e}"))?;
+        let chunk = chunk.map_err(|e| {
+            log::error!("Model download stream error: {}", e);
+            "Couldn't finish downloading model. Check your internet.".to_string()
+        })?;
         buffer.push_str(&String::from_utf8_lossy(&chunk));
 
         // Process complete JSON lines
@@ -289,7 +316,8 @@ pub async fn pull_ollama_model(app: tauri::AppHandle, model: String) -> Result<(
 
                 // Check for error
                 if let Some(err) = json.get("error").and_then(|e| e.as_str()) {
-                    return Err(format!("Model pull error: {err}"));
+                    log::error!("Model pull error from Ollama: {}", err);
+                    return Err("Couldn't download model. Check the model name and try again.".to_string());
                 }
             }
         }
@@ -428,7 +456,7 @@ async fn start_ollama_service() -> Result<(), String> {
             return Ok(());
         }
 
-        Err("Could not find Ollama executable to start".into())
+        Err("Couldn't start Ollama. Try launching it manually.".into())
     }
 
     #[cfg(not(target_os = "windows"))]
@@ -439,7 +467,7 @@ async fn start_ollama_service() -> Result<(), String> {
                 .spawn();
             return Ok(());
         }
-        Err("Could not find Ollama executable".into())
+        Err("Couldn't start Ollama. Try launching it manually.".into())
     }
 }
 

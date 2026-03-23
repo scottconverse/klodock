@@ -57,7 +57,10 @@ pub struct SkillMetadata {
 fn cache_path() -> Result<PathBuf, String> {
     let path = crate::paths::klodock_base_dir()?.join(CACHE_DIR_NAME);
     std::fs::create_dir_all(&path)
-        .map_err(|e| format!("Failed to create cache directory: {e}"))?;
+        .map_err(|e| {
+            log::error!("Cache dir creation failed: {}", e);
+            "Couldn't create cache folder. Check disk space or permissions.".to_string()
+        })?;
     Ok(path)
 }
 
@@ -66,9 +69,15 @@ fn cache_path() -> Result<PathBuf, String> {
 fn write_cache(skills: &[SkillMetadata]) -> Result<(), String> {
     let path = cache_path()?.join(SKILLS_CACHE_FILE);
     let json = serde_json::to_string_pretty(skills)
-        .map_err(|e| format!("Failed to serialize skills cache: {e}"))?;
+        .map_err(|e| {
+            log::error!("Skills cache serialize failed: {}", e);
+            "Couldn't prepare skills cache for saving.".to_string()
+        })?;
     std::fs::write(&path, json)
-        .map_err(|e| format!("Failed to write skills cache: {e}"))?;
+        .map_err(|e| {
+            log::error!("Skills cache write failed: {}", e);
+            "Couldn't save skills cache. Check disk space.".to_string()
+        })?;
     Ok(())
 }
 
@@ -80,9 +89,15 @@ fn read_cache() -> Result<Vec<SkillMetadata>, String> {
         return Ok(Vec::new());
     }
     let data = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Failed to read skills cache: {e}"))?;
+        .map_err(|e| {
+            log::error!("Skills cache read failed: {}", e);
+            "Couldn't read skills cache. It will be refreshed automatically.".to_string()
+        })?;
     serde_json::from_str(&data)
-        .map_err(|e| format!("Failed to parse skills cache: {e}"))
+        .map_err(|e| {
+            log::error!("Skills cache parse failed: {}", e);
+            "Couldn't read skills cache — it may be corrupted. It will be refreshed.".to_string()
+        })
 }
 
 /// JSON shape returned by `openclaw skills list --json`.
@@ -157,21 +172,31 @@ async fn query_openclaw_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
     // as Node loads 500+ modules for the first time on Windows.
     let output = match tokio::time::timeout(std::time::Duration::from_secs(180), task).await {
         Ok(join_result) => join_result
-            .map_err(|e| format!("Task join error: {e}"))?
-            .map_err(|e| format!("Failed to run openclaw skills list: {e}"))?,
+            .map_err(|e| {
+                log::error!("Skills task join error: {}", e);
+                "Couldn't load skills list. Try restarting KloDock.".to_string()
+            })?
+            .map_err(|e| {
+                log::error!("openclaw skills list failed: {}", e);
+                "Couldn't load skills. Make sure OpenClaw is installed.".to_string()
+            })?,
         Err(_) => {
-            return Err("Skills query timed out. Your agent may not be running — try starting it from the Overview page.".into());
+            return Err("Skills query timed out. Try starting your agent from the Overview page.".into());
         }
     };
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("openclaw skills list failed: {stderr}"));
+        log::error!("openclaw skills list failed: {}", stderr);
+        return Err("Couldn't load skills list. Try restarting your agent.".to_string());
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let parsed: SkillsListOutput = serde_json::from_str(&stdout)
-        .map_err(|e| format!("Failed to parse skills JSON: {e}"))?;
+        .map_err(|e| {
+            log::error!("Skills JSON parse failed: {}", e);
+            "Couldn't read skills data. Try restarting your agent.".to_string()
+        })?;
 
     Ok(parsed.skills.into_iter().map(map_skill_entry).collect())
 }
@@ -238,7 +263,10 @@ fn map_skill_entry(entry: SkillEntry) -> (bool, SkillMetadata) {
 fn fallback_bundled_skills() -> Result<Vec<(bool, SkillMetadata)>, String> {
     log::warn!("Using bundled skills fallback (live query failed)");
     let parsed: SkillsListOutput = serde_json::from_str(BUNDLED_SKILLS_JSON)
-        .map_err(|e| format!("Failed to parse bundled skills JSON: {e}"))?;
+        .map_err(|e| {
+            log::error!("Bundled skills JSON parse failed: {}", e);
+            "Couldn't load built-in skills list. Try reinstalling KloDock.".to_string()
+        })?;
 
     Ok(parsed.skills.into_iter().map(map_skill_entry).collect())
 }

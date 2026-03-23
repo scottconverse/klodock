@@ -81,7 +81,10 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
 
     let mut child = cmd
         .spawn()
-        .map_err(|e| format!("Failed to start npm install: {e}"))?;
+        .map_err(|e| {
+            log::error!("npm install spawn failed: {}", e);
+            "Couldn't start the installer. Try restarting KloDock.".to_string()
+        })?;
 
     // Stream stdout for progress
     let stdout = child.stdout.take();
@@ -114,7 +117,10 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
     let status = child
         .wait()
         .await
-        .map_err(|e| format!("npm install process error: {e}"))?;
+        .map_err(|e| {
+            log::error!("npm install process error: {}", e);
+            "Couldn't complete the install. Try restarting KloDock.".to_string()
+        })?;
 
     let _stdout_lines = stdout_handle.await.unwrap_or_default();
     let stderr_lines = stderr_handle.await.unwrap_or_default();
@@ -132,10 +138,11 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
             "The OpenClaw package wasn't found on npm. It may not be published yet. \
              Please check back later."
         } else {
-            "OpenClaw installation failed. See details below."
+            "Couldn't install OpenClaw. Try restarting KloDock and trying again."
         };
 
-        return Err(format!("{user_msg}\n\nDetails: {stderr_text}"));
+        log::error!("npm install failed: {}", stderr_text);
+        return Err(user_msg.to_string());
     }
 
     emit(&app, "Verifying installation...", Some(0.9));
@@ -240,11 +247,15 @@ fn run_openclaw_version(bin_path: &std::path::Path) -> Result<String, String> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
     let output = cmd.output()
-        .map_err(|e| format!("Failed to run openclaw: {e}"))?;
+        .map_err(|e| {
+            log::error!("OpenClaw execution failed: {}", e);
+            "Couldn't run OpenClaw. It may not be installed correctly.".to_string()
+        })?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("openclaw --version failed: {stderr}"));
+        log::error!("openclaw --version failed: {}", stderr);
+        return Err("Couldn't check OpenClaw version. Try reinstalling.".to_string());
     }
 
     let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();

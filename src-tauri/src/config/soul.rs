@@ -79,7 +79,10 @@ pub async fn read_soul() -> Result<String, String> {
     let path = soul_path()?;
     tokio::fs::read_to_string(&path)
         .await
-        .map_err(|e| format!("Failed to read SOUL.md at {}: {}", path.display(), e))
+        .map_err(|e| {
+            log::error!("SOUL.md read failed at {}: {}", path.display(), e);
+            "Couldn't load your personality settings. Try setting them up again.".to_string()
+        })
 }
 
 /// Overwrite SOUL.md with the provided raw markdown content.
@@ -91,12 +94,18 @@ pub async fn write_soul(content: String) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
+            .map_err(|e| {
+                log::error!("Workspace dir creation failed at {}: {}", parent.display(), e);
+                "Couldn't create workspace folder. Check disk space or permissions.".to_string()
+            })?;
     }
 
     tokio::fs::write(&path, content.as_bytes())
         .await
-        .map_err(|e| format!("Failed to write SOUL.md at {}: {}", path.display(), e))
+        .map_err(|e| {
+            log::error!("SOUL.md write failed at {}: {}", path.display(), e);
+            "Couldn't save personality settings. Check disk space or permissions.".to_string()
+        })
 }
 
 /// Generate a SOUL.md markdown string from the structured `SoulConfig` and

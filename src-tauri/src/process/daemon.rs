@@ -86,7 +86,10 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     if !secrets.is_empty() {
         env::write_env(secrets)
             .await
-            .map_err(|e| format!("Failed to write .env: {e}"))?;
+            .map_err(|e| {
+                log::error!("Env write for daemon start failed: {}", e);
+                "Couldn't prepare API keys for your agent. Try restarting KloDock.".to_string()
+            })?;
         log::info!("Materialized {} secrets to .env", key_names.len());
     }
 
@@ -127,10 +130,8 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     }
 
     let child = cmd.spawn().map_err(|e| {
-        format!(
-            "Failed to start OpenClaw daemon: {e}. \
-             Make sure OpenClaw is installed correctly."
-        )
+        log::error!("Daemon spawn failed: {}", e);
+        "Couldn't start your agent. Try reinstalling OpenClaw.".to_string()
     })?;
 
     let pid = child.id().unwrap_or(0);
@@ -140,11 +141,17 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     if let Some(parent) = pid_path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("Failed to create PID directory: {e}"))?;
+            .map_err(|e| {
+                log::error!("PID dir creation failed: {}", e);
+                "Couldn't save agent process info. Check disk space.".to_string()
+            })?;
     }
     tokio::fs::write(&pid_path, pid.to_string())
         .await
-        .map_err(|e| format!("Failed to write PID file: {e}"))?;
+        .map_err(|e| {
+            log::error!("PID file write failed: {}", e);
+            "Couldn't save agent process info. Check disk space.".to_string()
+        })?;
 
     log::info!("OpenClaw daemon started with PID {pid}");
     let _ = app.emit(STATUS_EVENT, &DaemonStatus::Running);
@@ -171,7 +178,10 @@ pub async fn stop_daemon() -> Result<DaemonStatus, String> {
     if pid_path.exists() {
         let pid_str = tokio::fs::read_to_string(&pid_path)
             .await
-            .map_err(|e| format!("Failed to read PID file: {e}"))?;
+            .map_err(|e| {
+                log::error!("PID file read failed: {}", e);
+                "Couldn't read agent status. Try restarting KloDock.".to_string()
+            })?;
 
         if let Ok(pid) = pid_str.trim().parse::<u32>() {
             kill_process(pid).await;
@@ -210,7 +220,10 @@ pub async fn get_daemon_status() -> Result<DaemonStatus, String> {
 
     let pid_str = tokio::fs::read_to_string(&pid_path)
         .await
-        .map_err(|e| format!("Failed to read PID file: {e}"))?;
+        .map_err(|e| {
+            log::error!("PID file read failed for status check: {}", e);
+            "Couldn't check agent status. Try restarting KloDock.".to_string()
+        })?;
 
     let pid: u32 = match pid_str.trim().parse() {
         Ok(p) => p,
@@ -238,7 +251,10 @@ pub async fn scrub_stale_env() -> Result<(), String> {
     if env_path.exists() {
         tokio::fs::remove_file(&env_path)
             .await
-            .map_err(|e| format!("Failed to scrub stale .env: {e}"))?;
+            .map_err(|e| {
+                log::error!("Stale env scrub failed at {}: {}", env_path.display(), e);
+                "Couldn't clean up old settings. Check file permissions.".to_string()
+            })?;
         log::info!("Scrubbed stale .env at {}", env_path.display());
     }
     Ok(())
@@ -281,9 +297,9 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
                     );
                     let _ = app.emit(
                         STATUS_EVENT,
-                        &DaemonStatus::Error(format!(
-                            "Daemon crashed (exit code {code}). Restarting..."
-                        )),
+                        &DaemonStatus::Error(
+                            "Your agent stopped unexpectedly. Restarting...".to_string()
+                        ),
                     );
                     tokio::time::sleep(delay).await;
 
@@ -295,9 +311,9 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
                             cleanup_after_stop().await;
                             let _ = app.emit(
                                 STATUS_EVENT,
-                                &DaemonStatus::Error(format!(
-                                    "Daemon couldn't be restarted: {e}"
-                                )),
+                                &DaemonStatus::Error(
+                                    "Couldn't restart your agent. Try restarting KloDock.".to_string()
+                                ),
                             );
                             return;
                         }
@@ -309,9 +325,9 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
                             cleanup_after_stop().await;
                             let _ = app.emit(
                                 STATUS_EVENT,
-                                &DaemonStatus::Error(format!(
-                                    "Daemon couldn't be restarted: {e}"
-                                )),
+                                &DaemonStatus::Error(
+                                    "Couldn't restart your agent. Try restarting KloDock.".to_string()
+                                ),
                             );
                             return;
                         }
@@ -353,9 +369,9 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
                             cleanup_after_stop().await;
                             let _ = app.emit(
                                 STATUS_EVENT,
-                                &DaemonStatus::Error(format!(
-                                    "Daemon couldn't be restarted: {e}"
-                                )),
+                                &DaemonStatus::Error(
+                                    "Couldn't restart your agent. Try restarting KloDock.".to_string()
+                                ),
                             );
                             return;
                         }
@@ -379,7 +395,9 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
                 cleanup_after_stop().await;
                 let _ = app.emit(
                     STATUS_EVENT,
-                    &DaemonStatus::Error(format!("Daemon monitoring error: {e}")),
+                    &DaemonStatus::Error(
+                        "Couldn't monitor your agent. Try restarting KloDock.".to_string()
+                    ),
                 );
                 return;
             }

@@ -68,7 +68,10 @@ pub async fn get_setup_state() -> Result<SetupState, String> {
     }
     let contents = tokio::fs::read_to_string(&path)
         .await
-        .map_err(|e| format!("Failed to read setup state: {e}"))?;
+        .map_err(|e| {
+            log::error!("Setup state read failed: {}", e);
+            "Couldn't load setup progress. Try restarting KloDock.".to_string()
+        })?;
     // If the file is corrupt, empty, or wrong schema, return fresh state
     // instead of crashing. The user shouldn't lose progress because of a
     // malformed JSON file — they just restart the wizard.
@@ -115,13 +118,22 @@ async fn persist_state(state: &SetupState) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
-            .map_err(|e| format!("Failed to create .klodock dir: {e}"))?;
+            .map_err(|e| {
+                log::error!("KloDock dir creation failed: {}", e);
+                "Couldn't create settings folder. Check disk space or permissions.".to_string()
+            })?;
     }
     let json =
-        serde_json::to_string_pretty(state).map_err(|e| format!("Failed to serialize state: {e}"))?;
+        serde_json::to_string_pretty(state).map_err(|e| {
+            log::error!("Setup state serialize failed: {}", e);
+            "Couldn't save setup progress.".to_string()
+        })?;
     tokio::fs::write(&path, json)
         .await
-        .map_err(|e| format!("Failed to write setup state: {e}"))?;
+        .map_err(|e| {
+            log::error!("Setup state write failed: {}", e);
+            "Couldn't save setup progress. Check disk space or permissions.".to_string()
+        })?;
     Ok(())
 }
 
