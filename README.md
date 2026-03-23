@@ -151,4 +151,4 @@ MIT
 
 ## Status
 
-**v1.2.0** — In-app Ollama download and model pull, full dashboard, auto-updater, 52 categorized skills with safety badges, channel token verification, first-message onboarding greeting (agent introduces itself on the Done screen), corrected WebChat URLs to OpenClaw canvas endpoint, WCAG 2.1 AA accessibility pass, pre-commit API key leak prevention hook, toast notifications, uninstall from UI.
+**v1.2.0** — In-app Ollama download and model pull, full dashboard, auto-updater, 52 categorized skills with safety badges, channel token verification, first-message onboarding greeting, system tray icon with context menu (close minimizes to tray, right-click for Show/WebChat/Start Agent/Quit), corrected WebChat URLs to OpenClaw canvas endpoint, WCAG 2.1 AA accessibility pass, pre-commit API key leak prevention hook, toast notifications, uninstall from UI.

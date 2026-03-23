@@ -570,6 +570,7 @@ Cache keys are based on `Cargo.lock` hash for Rust and npm lockfile for Node.
   * ~~First-message onboarding  Agent greeting bubble on Done screen so users see their agent respond immediately~~ SHIPPED
   * ~~WCAG 2.1 AA accessibility  ARIA labels, keyboard navigation, contrast ratios, screen reader support~~ SHIPPED
   * ~~Pre-commit security hook  Automated API key leak prevention on every commit~~ SHIPPED
+  * ~~System tray icon  Minimize to tray on close, right-click menu (Show/WebChat/Start Agent/Quit), tooltip shows daemon status~~ SHIPPED
   * WhatsApp integration  Deferred from Phase 1 due to Baileys library fragility; evaluating alternatives
   * Multi-agent support  Run and manage multiple OpenClaw instances
 

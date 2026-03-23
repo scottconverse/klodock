@@ -6,6 +6,7 @@ pub mod setup;
 pub mod process;
 pub mod clawhub;
 pub mod update;
+pub mod tray;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,14 +20,32 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
-        .setup(|_app| {
+        .setup(|app| {
             if cfg!(debug_assertions) {
-                _app.handle().plugin(
+                app.handle().plugin(
                     tauri_plugin_log::Builder::default()
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
             }
+
+            // System tray icon
+            tray::setup_tray(app.handle())?;
+
+            // Close button minimizes to tray instead of quitting
+            use tauri::Manager;
+            if let Some(window) = app.handle().get_webview_window("main") {
+                window.on_window_event({
+                    let w = window.clone();
+                    move |event| {
+                        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                            api.prevent_close();
+                            let _ = w.hide();
+                        }
+                    }
+                });
+            }
+
             // On launch, scrub any stale .env from a prior crash (Phase 2 Step 1)
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = process::daemon::scrub_stale_env().await {

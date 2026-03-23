@@ -158,6 +158,11 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     Ok(DaemonStatus::Running)
 }
 
+/// Internal version for non-Tauri callers (e.g., tray quit handler).
+pub async fn stop_daemon_internal() -> Result<DaemonStatus, String> {
+    stop_daemon().await
+}
+
 /// Stop the daemon process, scrub .env (unless "keep keys" is on), remove PID file.
 #[tauri::command]
 pub async fn stop_daemon() -> Result<DaemonStatus, String> {
