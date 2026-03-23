@@ -571,6 +571,15 @@ Cache keys are based on `Cargo.lock` hash for Rust and npm lockfile for Node.
   * ~~WCAG 2.1 AA accessibility  ARIA labels, keyboard navigation, contrast ratios, screen reader support~~ SHIPPED
   * ~~Pre-commit security hook  Automated API key leak prevention on every commit~~ SHIPPED
   * ~~System tray icon  Minimize to tray on close, right-click menu (Show/WebChat/Start Agent/Quit), tooltip shows daemon status~~ SHIPPED
+  * ~~Activity feed  Timestamped agent event log on dashboard Overview with color-coded levels and refresh~~ SHIPPED
+  * ~~Per-skill updates  Detect when OpenClaw update brings new skills, banner on Skills page with link to Updates~~ SHIPPED
+  * ~~Ollama model pull progress  Progress bar with percent, downloaded/total bytes, completion state~~ SHIPPED
+  * ~~Plain-English errors  85+ technical error messages rewritten for non-technical users across 13 Rust modules~~ SHIPPED
+  * ~~Keep API keys toggle  Settings toggle for terminal users who want .env preserved on daemon stop~~ SHIPPED
+  * ~~Config backup  Automatic backup of openclaw.json and SOUL.md before every OpenClaw update~~ SHIPPED
+  * ~~Cross-platform CI  GitHub Actions builds and tests on Windows, macOS, and Linux on every push~~ SHIPPED
+  * ~~Rust integration tests  31 tests covering config, env, SHA256, settings, uninstall state~~ SHIPPED
+  * ~~Puppeteer E2E tests  16 tests covering wizard flow, dashboard pages, and accessibility~~ SHIPPED
   * WhatsApp integration  Deferred from Phase 1 due to Baileys library fragility; evaluating alternatives
   * Multi-agent support  Run and manage multiple OpenClaw instances
 
