@@ -6,10 +6,11 @@ import {
   MessageSquare, Code2, Music, Home, Wrench,
   FileText, Image, Globe, ShieldCheck,
 } from "lucide-react";
-import { listAllSkills } from "@/lib/tauri";
+import { listAllSkills, checkOpenclawUpdate } from "@/lib/tauri";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { open } from "@tauri-apps/plugin-shell";
 import type { SkillMetadata } from "@/lib/types";
+import type { UpdateInfo } from "@/lib/types";
 
 /* ── Categories ─────────────────────────────────────────── */
 
@@ -243,12 +244,19 @@ export function DashboardSkills() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showMoreSkills, setShowMoreSkills] = useState(false);
+  const [skillUpdateAvailable, setSkillUpdateAvailable] = useState(false);
 
   const loadSkills = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
     setError(false);
     try {
-      setSkills(await listAllSkills());
+      const [fetchedSkills] = await Promise.all([
+        listAllSkills(),
+        checkOpenclawUpdate()
+          .then((info) => setSkillUpdateAvailable(info.update_available))
+          .catch(() => {}),
+      ]);
+      setSkills(fetchedSkills);
     } catch (err: any) {
       const msg = err?.toString() ?? "";
       if (msg.includes("not installed") || msg.includes("not found")) {
@@ -396,6 +404,22 @@ export function DashboardSkills() {
 
   return (
     <div className="space-y-5">
+      {/* Skill update banner */}
+      {skillUpdateAvailable && (
+        <div className="flex items-center justify-between rounded-lg border border-primary-200 bg-primary-50 p-3">
+          <p className="text-sm text-primary-800">
+            New skills available — update OpenClaw to get them.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard/updates")}
+            className="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            Go to Updates
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
