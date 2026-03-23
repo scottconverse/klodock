@@ -42,9 +42,9 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 
   Pull one with: `ollama pull qwen2.5:7b`
 
-- **Channel setup** --- Guided configuration flows for Telegram and Discord, with token entry, validation, and connection testing built into the wizard.
+- **Channel setup with API verification** --- Guided configuration flows for Telegram and Discord, with token entry, format validation, and live API verification (Telegram `getMe`, Discord `users/@me`) before saving. Shows bot name on successful connection.
 
-- **Skill browser with smart setup** --- Browse 52 skills across 8 categories (Communication, Productivity, Developer Tools, etc.) with search and filtering. Each skill shows what it needs to work — with download buttons and navigation links to close the gap.
+- **Skill browser with safety badges** --- Browse 52 skills across 8 categories (Communication, Productivity, Developer Tools, etc.) with search, filtering, and three-tier safety ratings: **Verified** (bundled/audited), **Community** (established), **Unreviewed** (new/unknown). Each skill shows what it needs to work — with download buttons and navigation links to close the gap. Bundled JSON fallback ensures the skill list loads even on first run when the live query is slow.
 
 - **Agent lifecycle management** --- The OpenClaw agent runs as a managed child process with automatic restart on crash, periodic health monitoring, and graceful shutdown.
 

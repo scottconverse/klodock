@@ -31,7 +31,7 @@ KloDock fills the gap: **easy + local + free.**
 
 - **7-step setup wizard** — from download to a working agent in minutes, not hours
 - **Full dashboard with 6 pages** — Overview, Skills, Personality, Channels, Settings, Updates
-- **52 bundled skills** — categorized into Communication, Productivity, Developer Tools, Media & Audio, Smart Home, AI Services, Images & Video, System & Security — with search, category filtering, and actionable requirements (download buttons, navigation to Settings/Channels)
+- **52 bundled skills with safety badges** — categorized into Communication, Productivity, Developer Tools, Media & Audio, Smart Home, AI Services, Images & Video, System & Security — with search, category filtering, safety ratings (Verified/Community/Unreviewed), and actionable requirements (download buttons, navigation to Settings/Channels). Bundled JSON fallback ensures skills load even on first run when the live query is slow
 - **Dashboard Settings** — full AI provider card grid (same as wizard), provider switching with "Set as Primary", gateway config, uninstall from Settings
 - **Dashboard Channels** — full token setup flow (same as wizard), disconnect capability
 - **Dashboard Personality** — inline edit with name, role, tone, live preview
@@ -44,7 +44,7 @@ KloDock fills the gap: **easy + local + free.**
   - `qwen2.5:7b` — 4.7 GB, good balance of speed and capability
   - `llama3.1:8b` — 4.7 GB, Meta's flagship small model with tool support
   - `mistral:7b` — 4.1 GB, fast inference, solid tool calling
-- **Channel setup** — guided Telegram and Discord configuration
+- **Channel setup with verification** — guided Telegram and Discord configuration with API-level token testing (Telegram `getMe`, Discord `users/@me`) before saving
 - **Daemon auto-restart** — managed child process with backoff (up to 3 attempts), health monitoring
 - **Start on login** — optional system tray launcher (no system service required)
 - **Clean uninstall** — resumable, leaves user data intact by default
