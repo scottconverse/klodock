@@ -9,6 +9,9 @@
     "core:default",
     "shell:allow-open",
     "fs:allow-read-text-file",
-    "fs:scope-home"
+    "fs:scope-home",
+    "updater:default",
+    "process:allow-restart",
+    "process:allow-exit"
   ]
 }

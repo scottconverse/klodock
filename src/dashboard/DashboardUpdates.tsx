@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 import {
   CheckCircle2, Loader2, Package, ExternalLink,
-  AlertCircle, RefreshCw, ArrowUpCircle,
+  AlertCircle, RefreshCw, ArrowUpCircle, RotateCcw,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
 import { getVersion } from "@tauri-apps/api/app";
+import { check } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import { checkOpenClaw, checkOpenclawUpdate, updateOpenclaw } from "@/lib/tauri";
 import { useToast } from "@/components/Toast";
 
 interface VersionState {
   klodock: string;
+  klodockUpdateAvailable: boolean;
+  klodockLatest: string | null;
   openclawCurrent: string | null;
   openclawLatest: string | null;
   updateAvailable: boolean;
@@ -21,6 +25,8 @@ export function DashboardUpdates() {
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [klodockUpdating, setKlodockUpdating] = useState(false);
+  const [klodockUpdateReady, setKlodockUpdateReady] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
@@ -29,14 +35,17 @@ export function DashboardUpdates() {
     setUpdateError(null);
 
     try {
-      const [oc, updateInfo, appVersion] = await Promise.all([
+      const [oc, updateInfo, appVersion, klodockUpdate] = await Promise.all([
         checkOpenClaw().catch(() => ({ installed: false, version: null as string | null })),
         checkOpenclawUpdate().catch(() => null),
         getVersion().catch(() => "unknown"),
+        check().catch(() => null),
       ]);
 
       setVersions({
         klodock: appVersion,
+        klodockUpdateAvailable: klodockUpdate?.available ?? false,
+        klodockLatest: klodockUpdate?.version ?? null,
         openclawCurrent: updateInfo?.current_version ?? oc.version ?? null,
         openclawLatest: updateInfo?.latest_version ?? null,
         updateAvailable: updateInfo?.update_available ?? false,
@@ -45,6 +54,8 @@ export function DashboardUpdates() {
       const fallbackVersion = await getVersion().catch(() => "unknown");
       setVersions({
         klodock: fallbackVersion,
+        klodockUpdateAvailable: false,
+        klodockLatest: null,
         openclawCurrent: null,
         openclawLatest: null,
         updateAvailable: false,
@@ -71,6 +82,33 @@ export function DashboardUpdates() {
       toast.error("Update failed. See details below.");
     } finally {
       setUpdating(false);
+    }
+  }
+
+  async function handleKlodockUpdate() {
+    setKlodockUpdating(true);
+    setUpdateError(null);
+    try {
+      const update = await check();
+      if (update?.available) {
+        await update.downloadAndInstall();
+        setKlodockUpdateReady(true);
+        toast.success("KloDock updated! Restart to apply.");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "KloDock update failed.";
+      setUpdateError(msg);
+      toast.error("KloDock update failed.");
+    } finally {
+      setKlodockUpdating(false);
+    }
+  }
+
+  async function handleRelaunch() {
+    try {
+      await relaunch();
+    } catch {
+      toast.error("Couldn't restart. Please close and reopen KloDock.");
     }
   }
 
@@ -120,7 +158,11 @@ export function DashboardUpdates() {
 
       <div className="space-y-4">
         {/* KloDock */}
-        <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <div className={`rounded-xl border p-5 shadow-sm ${
+          versions?.klodockUpdateAvailable
+            ? "border-primary-300 bg-primary-50/30"
+            : "border-neutral-200 bg-white"
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Package className="h-5 w-5 text-primary-500" aria-hidden="true" />
@@ -133,9 +175,69 @@ export function DashboardUpdates() {
               <span className="text-sm font-mono text-neutral-700">
                 v{versions?.klodock ?? "?"}
               </span>
-              <CheckCircle2 className="h-4 w-4 text-success-500" aria-hidden="true" />
+              {!versions?.klodockUpdateAvailable && !klodockUpdateReady && (
+                <CheckCircle2 className="h-4 w-4 text-success-500" aria-hidden="true" />
+              )}
+              {versions?.klodockUpdateAvailable && !klodockUpdateReady && (
+                <ArrowUpCircle className="h-4 w-4 text-primary-500" aria-hidden="true" />
+              )}
             </div>
           </div>
+
+          {/* KloDock update available */}
+          {versions?.klodockUpdateAvailable && !klodockUpdateReady && (
+            <div className="mt-4 flex items-center justify-between rounded-lg bg-primary-100 border border-primary-200 p-3">
+              <div>
+                <p className="text-sm font-medium text-primary-900">
+                  KloDock {versions.klodockLatest} available
+                </p>
+                <p className="text-xs text-primary-700">
+                  You have v{versions.klodock}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleKlodockUpdate}
+                disabled={klodockUpdating}
+                className="
+                  inline-flex items-center gap-1.5 rounded-lg bg-primary-600
+                  px-4 py-2 text-sm font-medium text-white
+                  hover:bg-primary-700 disabled:opacity-50
+                  focus:ring-2 focus:ring-blue-500 focus:outline-none
+                "
+              >
+                {klodockUpdating ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Downloading...</>
+                ) : (
+                  <><ArrowUpCircle className="h-4 w-4" aria-hidden="true" /> Update KloDock</>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* KloDock update ready — restart prompt */}
+          {klodockUpdateReady && (
+            <div className="mt-4 flex items-center justify-between rounded-lg bg-success-100 border border-success-200 p-3">
+              <div>
+                <p className="text-sm font-medium text-success-900">
+                  Update downloaded — restart to apply
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleRelaunch}
+                className="
+                  inline-flex items-center gap-1.5 rounded-lg bg-success-600
+                  px-4 py-2 text-sm font-medium text-white
+                  hover:bg-success-700
+                  focus:ring-2 focus:ring-green-500 focus:outline-none
+                "
+              >
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                Restart now
+              </button>
+            </div>
+          )}
         </div>
 
         {/* OpenClaw */}

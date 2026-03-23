@@ -26,6 +26,14 @@
       "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https://asset.localhost data:"
     }
   },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/scottconverse/klodock/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE2OThBNTBDMEZDQUU2MTMKUldRVDVzb1BES1dZcHM0QXlMR0lGY3I4eDVyT08wdDB1UGpIakdUU012TmJNZGtRMkUyWGwyWDgK"
+    }
+  },
   "bundle": {
     "active": true,
     "targets": [
