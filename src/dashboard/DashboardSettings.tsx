@@ -296,7 +296,27 @@ export function DashboardSettings() {
                 isLocal={p.isLocal}
                 validated={validated.has(p.id)}
                 onValidated={handleValidated}
-                onModelSelected={(pid, modelId) => setSelectedModels(prev => ({ ...prev, [pid]: modelId }))}
+                onModelSelected={async (pid, modelId) => {
+                  setSelectedModels(prev => ({ ...prev, [pid]: modelId }));
+                  // Auto-save if this is the active provider
+                  if (activeProvider === pid && modelId !== currentModel) {
+                    try {
+                      const gw = config?.gateway as Record<string, unknown> | undefined;
+                      await writeConfig({
+                        agents: { defaults: { workspace: "~/.openclaw/workspace", model: { primary: modelId } } },
+                        gateway: {
+                          mode: gw?.mode ?? "local",
+                          port: gw?.port ?? 18789,
+                          auth: gw?.auth ?? { mode: "password", password: crypto.randomUUID().slice(0, 12) },
+                        },
+                      });
+                      const newConfig = await readConfig();
+                      setConfig(newConfig);
+                    } catch {
+                      // Fallback: user can click "Apply" button
+                    }
+                  }
+                }}
                 activeModelId={currentModel}
               />
               {/* Action row below card */}

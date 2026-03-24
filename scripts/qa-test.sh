@@ -1,5 +1,5 @@
 #!/bin/bash
-# KloDock v1.2 — Full QA Test Suite
+# KloDock v1.3 — Full QA Test Suite
 cd "$(dirname "$0")/.."
 
 PASS=0; FAIL=0; WARN=0; SKIP=0
@@ -8,7 +8,7 @@ fail() { echo "  ✗ FAIL  $1"; FAIL=$((FAIL+1)); }
 warn() { echo "  ⚠ WARN  $1"; WARN=$((WARN+1)); }
 
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║       KloDock v1.2 — Full QA Test Suite             ║"
+echo "║       KloDock v1.3 — Full QA Test Suite             ║"
 echo "╚══════════════════════════════════════════════════════╝"
 
 # ── 1. CLEAN INSTALL ──────────────────────────────────
@@ -51,7 +51,7 @@ TAURI_VER=$(node -e "process.stdout.write(require('./src-tauri/tauri.conf.json')
 CARGO_VER=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
 
 [ "$PKG_VER" = "$TAURI_VER" ] && [ "$TAURI_VER" = "$CARGO_VER" ] && ok "Versions match: $PKG_VER" || fail "Mismatch: pkg=$PKG_VER tauri=$TAURI_VER cargo=$CARGO_VER"
-[ "$PKG_VER" = "1.2.0" ] && ok "Version is 1.2.0" || fail "Version is $PKG_VER"
+[ "$PKG_VER" = "1.3.0" ] && ok "Version is 1.3.0" || fail "Version is $PKG_VER"
 
 # ── 5. SECURITY ───────────────────────────────────────
 echo ""
@@ -110,9 +110,9 @@ test -f src/components/Toast.tsx && ok "Toast component exists" || fail "Toast m
 # ── 10. DOCS ──────────────────────────────────────────
 echo ""
 echo "━━━ 10. Docs & Landing Page ━━━"
-grep -q "1.2" README.md && ok "README v1.2" || fail "README outdated"
-grep -q "1.2" README-full.md && ok "README-full v1.2" || fail "README-full outdated"
-grep -q "v1.2" website/index.html && ok "Landing page v1.2" || fail "Landing outdated"
+grep -q "1.3" README.md && ok "README v1.3" || fail "README outdated"
+grep -q "1.3" README-full.md && ok "README-full v1.3" || fail "README-full outdated"
+grep -q "v1.3" website/index.html && ok "Landing page v1.3" || fail "Landing outdated"
 grep -q "dashboard-overview" website/index.html && ok "Screenshots in landing" || fail "No screenshots"
 test -f KloDock-README.pdf && ok "PDF exists" || fail "PDF missing"
 for ss in overview skills personality channels settings updates; do
@@ -129,9 +129,9 @@ node -e "const p=require('./package.json'); process.exit(p.description?0:1)" && 
 # ── 12. BUILD ARTIFACT ────────────────────────────────
 echo ""
 echo "━━━ 12. Build Artifact ━━━"
-INST="src-tauri/target/release/bundle/nsis/KloDock_1.2.0_x64-setup.exe"
+INST="src-tauri/target/release/bundle/nsis/KloDock_1.3.0_x64-setup.exe"
 test -f "$INST" && ok "Installer exists" || fail "Installer missing"
-echo "$INST" | grep -q "1.2.0" && ok "Installer versioned correctly" || fail "Installer wrong version"
+echo "$INST" | grep -q "1.3.0" && ok "Installer versioned correctly" || fail "Installer wrong version"
 
 # ── SUMMARY ───────────────────────────────────────────
 echo ""

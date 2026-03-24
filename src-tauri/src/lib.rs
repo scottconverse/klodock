@@ -44,7 +44,9 @@ pub fn run() {
                     move |event| {
                         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                             api.prevent_close();
-                            let _ = w.hide();
+                            // Minimize to taskbar (keeps taskbar button) instead of hiding
+                            // (which removes it). The tray icon still works for restoring.
+                            let _ = w.minimize();
                         }
                     }
                 });

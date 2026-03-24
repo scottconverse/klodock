@@ -99,7 +99,7 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
                 auth: { password },
                 client: {
                   id: CLIENT_ID,
-                  version: "1.2.0",
+                  version: "1.3.0",
                   platform: "web",
                   mode: CLIENT_MODE,
                 },
@@ -271,12 +271,14 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
     };
   }, [connect]);
 
-  // Auto-focus input when agent finishes responding
+  // Auto-focus input when agent finishes responding or connection established
   useEffect(() => {
-    if (!streaming) {
-      inputRef.current?.focus();
+    if (!streaming && connected) {
+      // Small delay to ensure DOM is ready after state update
+      const timer = setTimeout(() => inputRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
     }
-  }, [streaming]);
+  }, [streaming, connected]);
 
   function sendMessage() {
     const text = input.trim();
