@@ -65,10 +65,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            // Chat proxy commands
-            chat::proxy::chat_connect,
-            chat::proxy::chat_send,
-            chat::proxy::chat_disconnect,
+            // Chat command
+            chat::proxy::chat_send_message,
             // Installer commands
             installer::node::check_node,
             installer::node::install_node,

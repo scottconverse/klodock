@@ -151,6 +151,13 @@ export function DashboardSettings() {
     if (providerId === "ollama" && selectedModel) {
       setOllamaSelectedModel(selectedModel);
     }
+    // Auto-set as primary when a cloud provider connects
+    // This prevents the "key stored but agent uses wrong provider" bug.
+    // If the current model uses a different provider, switch to the new one.
+    const currentProvider = detectActiveProvider(currentModel);
+    if (providerId !== "ollama" && currentProvider !== providerId) {
+      handleSetPrimary(providerId);
+    }
   }
 
   async function handleSetPrimary(providerId: string) {
@@ -298,8 +305,9 @@ export function DashboardSettings() {
                 onValidated={handleValidated}
                 onModelSelected={async (pid, modelId) => {
                   setSelectedModels(prev => ({ ...prev, [pid]: modelId }));
-                  // Auto-save if this is the active provider
-                  if (activeProvider === pid && modelId !== currentModel) {
+                  // Auto-save model change — if user picks a tier on a connected
+                  // provider, they want to use it. Write to config immediately.
+                  if (validated.has(pid) && modelId !== currentModel) {
                     try {
                       const gw = config?.gateway as Record<string, unknown> | undefined;
                       await writeConfig({
@@ -312,8 +320,9 @@ export function DashboardSettings() {
                       });
                       const newConfig = await readConfig();
                       setConfig(newConfig);
+                      setActiveProvider(pid);
                     } catch {
-                      // Fallback: user can click "Apply" button
+                      // Config write failed — user can try Set as Primary manually
                     }
                   }
                 }}

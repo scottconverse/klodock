@@ -1,231 +1,143 @@
-//! WebSocket proxy for chat — connects to the OpenClaw gateway from Rust
-//! (no browser origin restrictions) and relays messages to the frontend
-//! via Tauri events.
+//! Chat via openclaw agent CLI — runs the agent as a child process
+//! and captures the response. No WebSocket, no gateway auth needed.
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use futures_util::{SinkExt, StreamExt};
-use tauri::{AppHandle, Emitter, Manager};
-use serde::{Deserialize, Serialize};
-use tokio_tungstenite::{connect_async, tungstenite::Message};
+use tauri::{AppHandle, Emitter};
 
-/// Shared state for the active WebSocket connection
-struct ChatConnection {
-    /// Sender half of the WS — used to send messages to the gateway
-    tx: futures_util::stream::SplitSink<
-        tokio_tungstenite::WebSocketStream<
-            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
-        >,
-        Message,
-    >,
-}
 
-type SharedChat = Arc<Mutex<Option<ChatConnection>>>;
 
-#[derive(Clone, Serialize)]
-struct ChatEvent {
-    /// "connected", "disconnected", "message", "error"
-    kind: String,
-    /// The raw JSON payload from the gateway (for message events)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    data: Option<String>,
-    /// Human-readable error (for error events)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    error: Option<String>,
-}
-
-#[derive(Deserialize)]
-pub struct ConnectParams {
-    port: u16,
-    password: String,
-}
-
-/// Connect to the gateway WebSocket.
-/// Spawns a background task that reads messages and emits them as Tauri events.
+/// Send a message to the agent via CLI and get the response.
+/// This uses `openclaw agent --message <text>` which works without
+/// the gateway running (falls back to embedded mode).
 #[tauri::command]
-pub async fn chat_connect(
+pub async fn chat_send_message(
     app: AppHandle,
-    params: ConnectParams,
-) -> Result<(), String> {
-    let state = app
-        .try_state::<SharedChat>()
-        .ok_or("Chat state not initialized")?;
+    message: String,
+) -> Result<String, String> {
+    let node_dir = crate::paths::klodock_base_dir()
+        .map_err(|_| "Couldn't find KloDock installation")?
+        .join("node");
 
-    // Close any existing connection
-    {
-        let mut guard = state.lock().await;
-        if let Some(mut conn) = guard.take() {
-            let _ = conn.tx.close().await;
+    let openclaw_path = if cfg!(windows) {
+        let node_exe = node_dir.join("node.exe");
+        let openclaw_js = node_dir
+            .join("node_modules")
+            .join("openclaw")
+            .join("openclaw.mjs");
+        if node_exe.exists() && openclaw_js.exists() {
+            (node_exe, openclaw_js)
+        } else {
+            return Err("OpenClaw is not installed. Complete the setup wizard first.".into());
         }
-    }
-
-    let url = format!("ws://127.0.0.1:{}", params.port);
-    let password = params.password.clone();
-
-    // Connect — no Origin header, so no origin rejection
-    let (ws_stream, _) = connect_async(&url)
-        .await
-        .map_err(|e| format!("Couldn't connect to agent: {}", e))?;
-
-    let (mut tx, mut rx) = ws_stream.split();
-
-    // Read the challenge, send connect frame
-    let challenge_msg = rx
-        .next()
-        .await
-        .ok_or("Gateway closed before challenge")?
-        .map_err(|e| format!("WS read error: {}", e))?;
-
-    let challenge_text = challenge_msg.into_text().unwrap_or_default().to_string();
-    let challenge: serde_json::Value =
-        serde_json::from_str(&challenge_text).map_err(|_| "Invalid challenge")?;
-
-    // Verify it's a challenge
-    if challenge.get("event").and_then(|v| v.as_str()) != Some("connect.challenge") {
-        return Err("Unexpected first message from gateway".into());
-    }
-
-    // Send connect frame — as Rust process, no origin issues
-    let connect_frame = serde_json::json!({
-        "type": "req",
-        "id": "connect-1",
-        "method": "connect",
-        "params": {
-            "minProtocol": 3,
-            "maxProtocol": 3,
-            "auth": { "password": password },
-            "client": {
-                "id": "openclaw-control-ui",
-                "version": "1.3.0",
-                "platform": "web",
-                "mode": "ui"
-            },
-            "scopes": [
-                "operator.read",
-                "operator.write",
-                "operator.admin",
-                "operator.approvals",
-                "operator.pairing"
-            ]
+    } else {
+        let cmd = node_dir.join("openclaw");
+        if cmd.exists() {
+            // On unix, openclaw is the direct binary
+            (cmd.clone(), cmd)
+        } else {
+            return Err("OpenClaw is not installed. Complete the setup wizard first.".into());
         }
-    });
+    };
 
-    tx.send(Message::Text(connect_frame.to_string().into()))
-        .await
-        .map_err(|e| format!("Couldn't send connect: {}", e))?;
+    let openclaw_dir = crate::paths::openclaw_base_dir()
+        .map_err(|_| "Couldn't find OpenClaw configuration")?;
 
-    // Read connect response
-    let response_msg = rx
-        .next()
-        .await
-        .ok_or("Gateway closed before connect response")?
-        .map_err(|e| format!("WS read error: {}", e))?;
-
-    let response_text = response_msg.into_text().unwrap_or_default().to_string();
-    let response: serde_json::Value =
-        serde_json::from_str(&response_text).map_err(|_| "Invalid connect response")?;
-
-    if response.get("ok").and_then(|v| v.as_bool()) != Some(true) {
-        let error_msg = response
-            .pointer("/error/message")
-            .and_then(|v| v.as_str())
-            .unwrap_or("Connection rejected by gateway");
-        return Err(error_msg.to_string());
-    }
-
-    // Store the sender
+    // Materialize API keys from keychain to .env so openclaw agent can read them
     {
-        let mut guard = state.lock().await;
-        *guard = Some(ChatConnection { tx });
-    }
+        use crate::secrets::keychain;
+        use crate::config::env;
+        use std::collections::HashMap;
 
-    // Emit connected event
-    let _ = app.emit("chat-event", ChatEvent {
-        kind: "connected".into(),
-        data: None,
-        error: None,
-    });
-
-    // Spawn background reader
-    let app_handle = app.clone();
-    let state_clone = Arc::clone(&state);
-    tokio::spawn(async move {
-        while let Some(msg_result) = rx.next().await {
-            match msg_result {
-                Ok(Message::Text(text)) => {
-                    let text_str = text.to_string();
-                    // Skip tick and health events to reduce noise
-                    if text_str.contains("\"event\":\"tick\"") || text_str.contains("\"event\":\"health\"") {
-                        continue;
-                    }
-                    let _ = app_handle.emit("chat-event", ChatEvent {
-                        kind: "message".into(),
-                        data: Some(text_str),
-                        error: None,
-                    });
-                }
-                Ok(Message::Close(_)) => break,
-                Err(e) => {
-                    log::warn!("Chat WS error: {}", e);
-                    break;
-                }
-                _ => {} // Ignore binary, ping, pong
+        let key_names = keychain::list_secrets().unwrap_or_default();
+        let mut secrets = HashMap::new();
+        for key_name in &key_names {
+            if let Ok(value) = keychain::retrieve_secret(key_name.clone()) {
+                secrets.insert(key_name.clone(), value);
             }
         }
-
-        // Connection closed
-        {
-            let mut guard = state_clone.lock().await;
-            *guard = None;
+        if !secrets.is_empty() {
+            let _ = env::write_env(secrets).await;
         }
-        let _ = app_handle.emit("chat-event", ChatEvent {
-            kind: "disconnected".into(),
-            data: None,
-            error: None,
-        });
-    });
-
-    Ok(())
-}
-
-/// Send a message to the gateway via the proxied WebSocket
-#[tauri::command]
-pub async fn chat_send(app: AppHandle, frame: String) -> Result<(), String> {
-    let state = app
-        .try_state::<SharedChat>()
-        .ok_or("Chat state not initialized")?;
-
-    let mut guard = state.lock().await;
-    let conn = guard.as_mut().ok_or("Not connected to agent")?;
-
-    conn.tx
-        .send(Message::Text(frame.into()))
-        .await
-        .map_err(|e| format!("Couldn't send message: {}", e))
-}
-
-/// Disconnect from the gateway
-#[tauri::command]
-pub async fn chat_disconnect(app: AppHandle) -> Result<(), String> {
-    let state = app
-        .try_state::<SharedChat>()
-        .ok_or("Chat state not initialized")?;
-
-    let mut guard = state.lock().await;
-    if let Some(mut conn) = guard.take() {
-        let _ = conn.tx.close().await;
     }
 
-    let _ = app.emit("chat-event", ChatEvent {
-        kind: "disconnected".into(),
-        data: None,
-        error: None,
-    });
+    // Build environment
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let path_sep = if cfg!(windows) { ";" } else { ":" };
+    let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);
 
-    Ok(())
+    // Emit "thinking" event
+    let _ = app.emit("chat-event", serde_json::json!({
+        "kind": "thinking",
+        "message": message,
+    }));
+
+    // Run openclaw agent
+    let mut cmd = tokio::process::Command::new(&openclaw_path.0);
+
+    if cfg!(windows) {
+        // On Windows: node.exe openclaw.mjs agent --agent main --message "..."
+        cmd.arg(openclaw_path.1.to_string_lossy().as_ref());
+    }
+
+    cmd.args(["agent", "--agent", "main", "--message", &message])
+        .env("PATH", &new_path)
+        .current_dir(&openclaw_dir)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let output = cmd
+        .output()
+        .await
+        .map_err(|e| {
+            log::error!("Chat command failed: {}", e);
+            "Couldn't send your message. Is OpenClaw installed?".to_string()
+        })?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+    // Filter out diagnostic/log lines from stderr
+    let response = if !stdout.trim().is_empty() {
+        stdout.trim().to_string()
+    } else if !stderr.trim().is_empty() {
+        // Check if stderr has actual error or just log noise
+        let error_lines: Vec<&str> = stderr
+            .lines()
+            .filter(|l| !l.contains("[diagnostic]") && !l.contains("[model-fallback"))
+            .filter(|l| !l.starts_with("\u{1b}["))  // Filter ANSI escape codes
+            .collect();
+        if error_lines.is_empty() {
+            "I couldn't generate a response. Please try again.".to_string()
+        } else {
+            // Return filtered error
+            let clean: String = error_lines.join("\n");
+            if clean.contains("No API key") || clean.contains("auth") {
+                "I need an API key to respond. Check Settings to make sure your provider is connected.".to_string()
+            } else if clean.contains("timeout") || clean.contains("Timeout") {
+                "Response timed out. The AI provider might be slow — try again.".to_string()
+            } else {
+                format!("Something went wrong: {}", clean.chars().take(200).collect::<String>())
+            }
+        }
+    } else {
+        "No response received. Try again or check your AI provider in Settings.".to_string()
+    };
+
+    // Emit response event
+    let _ = app.emit("chat-event", serde_json::json!({
+        "kind": "response",
+        "text": response,
+    }));
+
+    Ok(response)
 }
 
-/// Initialize the chat state — call from lib.rs setup
-pub fn init_chat_state(app: &AppHandle) {
-    app.manage(Arc::new(Mutex::new(None::<ChatConnection>)) as SharedChat);
+/// Initialize chat state (no-op for CLI approach)
+pub fn init_chat_state(_app: &tauri::AppHandle) {
+    // CLI-based chat is stateless — no initialization needed
 }
