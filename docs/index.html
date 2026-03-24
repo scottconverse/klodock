@@ -281,6 +281,7 @@
       <a href="#features">Features</a>
       <a href="#wizard">How It Works</a>
       <a href="#screenshots">Screenshots</a>
+      <a href="#architecture">Architecture</a>
       <a href="#security">Security</a>
       <a href="https://github.com/scottconverse/klodock" target="_blank" rel="noopener">GitHub</a>
       <a href="#download" class="nav-cta">Download</a>
@@ -544,6 +545,31 @@
       <div style="text-align:center;">
         <img src="screenshots/dashboard-updates.png" alt="Update Manager" style="border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.08);width:100%;">
         <p style="margin-top:12px;font-size:13px;color:#64748b;font-weight:500;">Update Manager</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Architecture -->
+<section class="section" id="architecture" style="background: var(--slate-50);">
+  <div class="container">
+    <h2 style="text-align:center; font-size:2rem; font-weight:800; color:var(--slate-900); margin-bottom:0.5rem;">System Architecture</h2>
+    <p style="text-align:center; color:var(--slate-500); max-width:600px; margin:0 auto 2rem; font-size:0.95rem;">Four layers, zero complexity. Tauri wraps a React frontend and Rust backend around the OpenClaw agent runtime. Everything stays local.</p>
+    <div style="background:white; border-radius:16px; padding:1.5rem; box-shadow:0 4px 24px rgba(0,0,0,0.06); border:1px solid var(--slate-200); overflow:hidden;">
+      <img src="architecture.svg" alt="KloDock system architecture diagram showing React frontend, Tauri IPC bridge, Rust backend modules, chat flow, AI providers, and local storage" style="width:100%; height:auto; display:block;" loading="lazy">
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem; margin-top:2rem;">
+      <div style="background:white; border-radius:12px; padding:1.25rem; border:1px solid var(--slate-200);">
+        <h3 style="font-size:0.85rem; font-weight:700; color:var(--blue-600); margin-bottom:0.4rem;">React Frontend</h3>
+        <p style="font-size:0.8rem; color:var(--slate-600); line-height:1.5;">8-screen setup wizard and 7-page dashboard. Tailwind v4, React Router, Lucide icons. Every interaction is visual — no terminal anywhere.</p>
+      </div>
+      <div style="background:white; border-radius:12px; padding:1.25rem; border:1px solid var(--slate-200);">
+        <h3 style="font-size:0.85rem; font-weight:700; color:var(--amber-500); margin-bottom:0.4rem;">Rust Backend</h3>
+        <p style="font-size:0.8rem; color:var(--slate-600); line-height:1.5;">12 modules handle installation, secrets, config, process management, chat relay, system tray, and auto-updates. All via type-safe Tauri IPC.</p>
+      </div>
+      <div style="background:white; border-radius:12px; padding:1.25rem; border:1px solid var(--slate-200);">
+        <h3 style="font-size:0.85rem; font-weight:700; color:var(--green-600); margin-bottom:0.4rem;">Chat via CLI Agent</h3>
+        <p style="font-size:0.8rem; color:var(--slate-600); line-height:1.5;">Messages go through OpenClaw's agent CLI — no WebSocket, no gateway auth. API keys materialize from the OS keychain only during calls.</p>
       </div>
     </div>
   </div>
