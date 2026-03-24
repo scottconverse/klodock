@@ -126,9 +126,19 @@ node -e "const p=require('./package.json'); process.exit(p.author?0:1)" && ok "A
 node -e "const p=require('./package.json'); process.exit(p.license==='MIT'?0:1)" && ok "License: MIT" || fail "Wrong license"
 node -e "const p=require('./package.json'); process.exit(p.description?0:1)" && ok "Description set" || fail "No description"
 
-# ── 12. BUILD ARTIFACT ────────────────────────────────
+# ── 12. UNINSTALL COMPLETENESS ────────────────────────
 echo ""
-echo "━━━ 12. Build Artifact ━━━"
+echo "━━━ 12. Uninstall Completeness ━━━"
+# Check that the NSIS template includes KloDock cleanup
+grep -q 'RmDir /r.*\.klodock' src-tauri/installer.nsi && ok "NSIS removes .klodock" || fail "NSIS missing .klodock cleanup"
+grep -q 'RmDir /r.*\.openclaw' src-tauri/installer.nsi && ok "NSIS removes .openclaw" || fail "NSIS missing .openclaw cleanup"
+grep -q 'DeleteRegValue.*KloDock' src-tauri/installer.nsi && ok "NSIS removes autostart registry" || fail "NSIS missing registry cleanup"
+grep -q 'taskkill.*node.exe' src-tauri/installer.nsi && ok "NSIS kills node before uninstall" || fail "NSIS missing node kill"
+grep -q 'openclaw' src-tauri/installer.nsi | grep -q 'npm' && ok "NSIS removes global openclaw" || warn "NSIS global npm cleanup unclear"
+
+# ── 13. BUILD ARTIFACT ────────────────────────────────
+echo ""
+echo "━━━ 13. Build Artifact ━━━"
 INST="src-tauri/target/release/bundle/nsis/KloDock_1.3.0_x64-setup.exe"
 test -f "$INST" && ok "Installer exists" || fail "Installer missing"
 echo "$INST" | grep -q "1.3.0" && ok "Installer versioned correctly" || fail "Installer wrong version"

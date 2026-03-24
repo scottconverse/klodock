@@ -726,6 +726,10 @@ Section Uninstall
     !insertmacro NSIS_HOOK_PREUNINSTALL
   !endif
 
+  ; Kill OpenClaw daemon (node.exe) before checking if app is running
+  ExecWait 'taskkill /F /IM node.exe /T' $0
+  Sleep 1000
+
   !insertmacro CheckIfAppIsRunning "${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
 
   ; Delete the app directory and its content from disk
@@ -746,8 +750,25 @@ Section Uninstall
 
   RMDir "$INSTDIR"
 
-  ; Remove shortcuts if not updating
+  ; Remove shortcuts and user data if not updating
   ${If} $UpdateMode <> 1
+    ; ── Always remove KloDock user data on uninstall ──────────
+    ; Managed Node.js, secrets, setup state
+    RmDir /r "$PROFILE\.klodock"
+    ; OpenClaw config, workspace, agents
+    RmDir /r "$PROFILE\.openclaw"
+    ; Autostart registry
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "KloDock"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "klodock"
+    ; Temp files
+    RmDir /r "$TEMP\openclaw"
+    ; Global npm openclaw
+    Delete "$APPDATA\npm\openclaw"
+    Delete "$APPDATA\npm\openclaw.cmd"
+    Delete "$APPDATA\npm\openclaw.ps1"
+    RmDir /r "$APPDATA\npm\node_modules\openclaw"
+    ; ── End KloDock cleanup ───────────────────────────────────
+
     !insertmacro DeleteAppUserModelId
 
     ; Remove start menu shortcut
@@ -808,6 +829,27 @@ Section Uninstall
     SetShellVarContext current
     RmDir /r "$APPDATA\${BUNDLEID}"
     RmDir /r "$LOCALAPPDATA\${BUNDLEID}"
+
+    ; ── KloDock-specific cleanup ──────────────────────────────
+    ; Remove managed Node.js, secrets, setup state
+    RmDir /r "$PROFILE\.klodock"
+
+    ; Remove OpenClaw config, workspace, agents, canvas
+    RmDir /r "$PROFILE\.openclaw"
+
+    ; Remove autostart registry entry
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "KloDock"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "klodock"
+
+    ; Remove OpenClaw temp files and logs
+    RmDir /r "$TEMP\openclaw"
+
+    ; Remove global npm openclaw if installed to user roaming
+    Delete "$APPDATA\npm\openclaw"
+    Delete "$APPDATA\npm\openclaw.cmd"
+    Delete "$APPDATA\npm\openclaw.ps1"
+    RmDir /r "$APPDATA\npm\node_modules\openclaw"
+    ; ── End KloDock cleanup ───────────────────────────────────
   ${EndIf}
 
   !ifmacrodef NSIS_HOOK_POSTUNINSTALL
