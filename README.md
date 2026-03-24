@@ -47,7 +47,7 @@ KloDock fills the gap: **easy + local + free.**
 - **Channel setup with verification** — guided Telegram and Discord configuration with API-level token testing (Telegram `getMe`, Discord `users/@me`) before saving
 - **Daemon auto-restart** — managed child process with backoff (up to 3 attempts), health monitoring
 - **Start on login** — optional system tray launcher (no system service required)
-- **Clean uninstall** — resumable, leaves user data intact by default
+- **Clean uninstall** — removes all KloDock data (Node.js, OpenClaw, config, workspace, secrets, registry entries)
 - **Accessible** — WCAG 2.1 AA, keyboard navigation, screen reader tested
 
 ## Tech Stack

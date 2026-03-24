@@ -64,7 +64,7 @@ The application is built on Tauri v2, producing a 5.1 MB NSIS installer on Windo
 
 - **Toast notification system** --- Global success, error, warning, and info notifications across all dashboard pages. Auto-dismiss with manual close.
 
-- **Uninstall from UI** --- Danger Zone section in Settings with full 7-step resumable uninstall. Two confirmation dialogs (uninstall + optional data removal).
+- **Uninstall from UI** --- Danger Zone section in Settings with full 7-step resumable uninstall. The Windows uninstaller (Add/Remove Programs) also removes all KloDock data: managed Node.js, OpenClaw, config, workspace, secrets, and registry entries.
 
 ---
 
