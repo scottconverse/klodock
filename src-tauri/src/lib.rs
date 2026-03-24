@@ -7,6 +7,7 @@ pub mod process;
 pub mod clawhub;
 pub mod update;
 pub mod tray;
+pub mod chat;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -36,6 +37,9 @@ pub fn run() {
             // System tray icon
             tray::setup_tray(app.handle())?;
 
+            // Initialize chat proxy state
+            chat::proxy::init_chat_state(app.handle());
+
             // Close button minimizes to tray instead of quitting
             use tauri::Manager;
             if let Some(window) = app.handle().get_webview_window("main") {
@@ -61,6 +65,10 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            // Chat proxy commands
+            chat::proxy::chat_connect,
+            chat::proxy::chat_send,
+            chat::proxy::chat_disconnect,
             // Installer commands
             installer::node::check_node,
             installer::node::install_node,

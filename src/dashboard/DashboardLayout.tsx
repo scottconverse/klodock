@@ -50,8 +50,8 @@ export function DashboardLayout() {
 
     checkStatus();
 
-    // Poll every 5 seconds
-    const interval = setInterval(checkStatus, 5000);
+    // Poll every 2 seconds for responsive status updates
+    const interval = setInterval(checkStatus, 2000);
 
     // Also listen for daemon events (instant updates from start/stop)
     let unlistenFn: (() => void) | null = null;

@@ -282,6 +282,34 @@ export async function updateSkill(slug: string): Promise<string> {
   return invoke<string>("update_skill", { slug });
 }
 
+/* ── Chat Proxy ─────────────────────────────────────── */
+
+export interface ChatEvent {
+  kind: "connected" | "disconnected" | "message" | "error";
+  data?: string;
+  error?: string;
+}
+
+export async function chatConnect(port: number, password: string): Promise<void> {
+  return invoke("chat_connect", { params: { port, password } });
+}
+
+export async function chatSend(frame: string): Promise<void> {
+  return invoke("chat_send", { frame });
+}
+
+export async function chatDisconnect(): Promise<void> {
+  return invoke("chat_disconnect");
+}
+
+export function onChatEvent(
+  callback: (event: ChatEvent) => void
+): Promise<UnlistenFn> {
+  return listen<ChatEvent>("chat-event", (event) => {
+    callback(event.payload);
+  });
+}
+
 /* ── Event listeners ─────────────────────────────────── */
 
 export function onInstallProgress(

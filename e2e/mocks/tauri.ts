@@ -145,6 +145,18 @@ export function buildTauriMockScript(): string {
       _daemonStatus = "running";
       return { status: "running" };
     },
+    "chat_connect": function() {
+      // Simulate successful connection — emit connected event after short delay
+      setTimeout(function() {
+        if (window.__TAURI_INTERNALS__ && window.__TAURI_INTERNALS__._eventListeners) {
+          var listeners = window.__TAURI_INTERNALS__._eventListeners["chat-event"] || [];
+          listeners.forEach(function(cb) { cb({ payload: { kind: "connected" } }); });
+        }
+      }, 100);
+      return null;
+    },
+    "chat_send": function() { return null; },
+    "chat_disconnect": function() { return null; },
     "read_soul": function() {
       return ${JSON.stringify(SOUL_MD)};
     },
@@ -232,9 +244,16 @@ export function buildTauriMockScript(): string {
     });
   }
 
-  // Mock event listener (returns an unlisten function)
+  // Event listener store for mocking event emission
+  var _eventListeners = {};
+
+  // Mock event listener (stores callback, returns unlisten function)
   function mockListen(event, callback) {
-    return Promise.resolve(function() {});
+    if (!_eventListeners[event]) _eventListeners[event] = [];
+    _eventListeners[event].push(callback);
+    return Promise.resolve(function() {
+      _eventListeners[event] = (_eventListeners[event] || []).filter(function(cb) { return cb !== callback; });
+    });
   }
 
   // Build window.__TAURI_INTERNALS__ (used by @tauri-apps/api v2)
@@ -243,6 +262,7 @@ export function buildTauriMockScript(): string {
     transformCallback: function(cb) { return cb; },
     convertFileSrc: function(path) { return path; },
     metadata: { currentWindow: { label: "main" }, currentWebview: { label: "main" } },
+    _eventListeners: _eventListeners,
   };
 
   // Build window.__TAURI__ namespace

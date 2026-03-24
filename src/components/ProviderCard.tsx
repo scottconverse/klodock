@@ -104,6 +104,12 @@ export function ProviderCard({
   const initialTier = tiers?.findIndex(t => t.modelId === activeModelId) ?? 1;
   const [selectedTier, setSelectedTier] = useState(initialTier >= 0 ? initialTier : 1);
 
+  // Sync selectedTier when activeModelId changes (e.g., after config reload)
+  useEffect(() => {
+    const idx = tiers?.findIndex(t => t.modelId === activeModelId) ?? -1;
+    if (idx >= 0) setSelectedTier(idx);
+  }, [activeModelId, tiers]);
+
   // Ollama-specific state
   const [ollamaDetected, setOllamaDetected] = useState<boolean | null>(null);
   const [ollamaIsInstalled, setOllamaIsInstalled] = useState<boolean | null>(null);

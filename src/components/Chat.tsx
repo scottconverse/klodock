@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Send, Loader2, AlertCircle, RefreshCw, X, Activity } from "lucide-react";
-import { readConfig, startDaemon } from "@/lib/tauri";
+import { readConfig, startDaemon, chatConnect, chatSend, chatDisconnect, onChatEvent } from "@/lib/tauri";
+import type { ChatEvent } from "@/lib/tauri";
 
 interface ChatMessage {
   id: string;
@@ -15,17 +16,6 @@ interface ChatProps {
   /** Called when the user closes the chat (overlay mode only). */
   onClose?: () => void;
 }
-
-const WS_PROTOCOL_VERSION = 3;
-const CLIENT_ID = "openclaw-control-ui";
-const CLIENT_MODE = "ui";
-const ALL_SCOPES = [
-  "operator.admin",
-  "operator.read",
-  "operator.write",
-  "operator.approvals",
-  "operator.pairing",
-];
 
 const STORAGE_KEY = "klodock-chat-history";
 
@@ -58,7 +48,6 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
   const [streamingElapsed, setStreamingElapsed] = useState(0);
   const [firstOllamaQuery, setFirstOllamaQuery] = useState(true);
 
-  const wsRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sessionKeyRef = useRef(`klodock-${Date.now()}`);
@@ -93,100 +82,31 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  // Connect to gateway WebSocket
-  const connect = useCallback(async () => {
-    // Close existing connection
-    if (wsRef.current) {
-      wsRef.current.onclose = null;
-      wsRef.current.onerror = null;
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-
-    setConnecting(true);
-    setConnected(false);
-    setError(null);
-
-    try {
-      // Read the gateway password from config
-      const config = await readConfig();
-      const gw = config.gateway as Record<string, unknown> | undefined;
-      const auth = gw?.auth as Record<string, string> | undefined;
-      const password = auth?.password;
-      const port = (gw?.port as number) ?? 18789;
-
-      if (!password) {
-        setError("No gateway password configured. Check Settings.");
-        setConnecting(false);
-        return;
-      }
-
-      const ws = new WebSocket(`ws://127.0.0.1:${port}`);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        // Wait for challenge
-      };
-
-      ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-
-        // Handle challenge → send connect
-        if (msg.type === "event" && msg.event === "connect.challenge") {
-          ws.send(
-            JSON.stringify({
-              type: "req",
-              id: "connect-1",
-              method: "connect",
-              params: {
-                minProtocol: WS_PROTOCOL_VERSION,
-                maxProtocol: WS_PROTOCOL_VERSION,
-                auth: { password },
-                client: {
-                  id: CLIENT_ID,
-                  version: "1.3.0",
-                  platform: "web",
-                  mode: CLIENT_MODE,
-                },
-                scopes: ALL_SCOPES,
-              },
-            })
-          );
-        }
-
-        // Handle connect response
-        if (msg.type === "res" && msg.id === "connect-1") {
-          if (msg.ok) {
-            setConnected(true);
-            setConnecting(false);
-          } else {
-            const rawError = msg.error?.message || "Connection failed";
-            // Translate technical errors to user-friendly messages
-            const userError = rawError.includes("origin not allowed")
-              ? "Couldn't connect — try restarting your agent from the Overview page."
-              : rawError.includes("unauthorized") || rawError.includes("password")
-                ? "Connection denied — your agent may need to be restarted."
-                : rawError.includes("protocol mismatch")
-                  ? "Version mismatch — try updating KloDock."
-                  : rawError;
-            setError(userError);
-            setConnecting(false);
-          }
-        }
+  // Handle incoming chat events from the Rust proxy
+  const handleChatEvent = useCallback((evt: ChatEvent) => {
+    if (evt.kind === "connected") {
+      setConnected(true);
+      setConnecting(false);
+    } else if (evt.kind === "disconnected") {
+      setConnected(false);
+      setConnecting(false);
+    } else if (evt.kind === "error") {
+      setError(evt.error || "Connection error");
+      setConnected(false);
+      setConnecting(false);
+    } else if (evt.kind === "message" && evt.data) {
+      try {
+        const msg = JSON.parse(evt.data);
 
         // Handle chat.send response
         if (msg.type === "res" && msg.id?.startsWith("chat-")) {
           if (!msg.ok) {
-            const rawError = msg.error?.message || "Couldn't send message";
-            const userError = rawError.includes("missing scope")
-              ? "Couldn't send — try restarting your agent from the Overview page."
-              : rawError;
-            setError(userError);
+            setError(msg.error?.message || "Couldn't send message");
             setStreaming(false);
           }
         }
 
-        // Handle agent events (the actual format OpenClaw gateway uses)
+        // Handle agent events
         if (msg.type === "event" && msg.event === "agent") {
           const p = msg.payload;
           const stream = p?.stream;
@@ -195,10 +115,9 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
           // Assistant stream — text field has cumulative response
           if (stream === "assistant" && data?.text) {
             if (streamMsgIdRef.current) {
-              const fullText = data.text;
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === streamMsgIdRef.current ? { ...m, content: fullText } : m
+                  m.id === streamMsgIdRef.current ? { ...m, content: data.text } : m
                 )
               );
             }
@@ -217,7 +136,7 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
             }
           }
 
-          // Lifecycle end — agent finished
+          // Lifecycle end
           if (stream === "lifecycle" && data?.phase === "end") {
             if (streaming) {
               setStreaming(false);
@@ -243,7 +162,7 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
           }
         }
 
-        // Also handle chat events (legacy/alternative format)
+        // Legacy chat events
         if (msg.type === "event" && msg.event === "chat") {
           const p = msg.payload;
           if (p?.state === "streaming" || p?.state === "final") {
@@ -266,7 +185,7 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
           }
         }
 
-        // Handle session.message events (yet another format)
+        // Session message events
         if (msg.type === "event" && msg.event === "session.message") {
           const p = msg.payload;
           if (p?.role === "assistant" && p?.content) {
@@ -284,20 +203,41 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
             }
           }
         }
-      };
+      } catch {
+        // Ignore unparseable messages
+      }
+    }
+  }, [streaming]);
 
-      ws.onerror = () => {
-        setError("Connection lost. Is your agent running?");
-        setConnected(false);
-        setConnecting(false);
-      };
+  // Connect to gateway via Rust proxy (no origin issues)
+  const connect = useCallback(async () => {
+    setConnecting(true);
+    setConnected(false);
+    setError(null);
 
-      ws.onclose = () => {
-        setConnected(false);
+    try {
+      const config = await readConfig();
+      const gw = config.gateway as Record<string, unknown> | undefined;
+      const auth = gw?.auth as Record<string, string> | undefined;
+      const password = auth?.password;
+      const port = (gw?.port as number) ?? 18789;
+
+      if (!password) {
+        setError("No gateway password configured. Check Settings.");
         setConnecting(false);
-      };
+        return;
+      }
+
+      await chatConnect(port, password);
+      // Connection events come via the chat-event listener
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't connect to agent");
+      const msg = e instanceof Error ? e.message : String(e);
+      // Translate to user-friendly
+      if (msg.includes("Couldn't connect")) {
+        setError("Your agent isn't running. Start it from the Overview page.");
+      } else {
+        setError(msg);
+      }
       setConnecting(false);
     }
   }, []);
@@ -308,9 +248,9 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
     try {
       await startDaemon();
     } catch {
-      // Daemon may already be running — that's fine, try connecting anyway
+      // Daemon may already be running
     }
-    // Wait for gateway to be ready, then try connecting
+    // Wait for gateway to be ready, then connect
     for (let i = 0; i < 10; i++) {
       await new Promise((r) => setTimeout(r, 2000));
       try {
@@ -323,12 +263,21 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
     setStartingAgent(false);
   }, [connect]);
 
+  // Subscribe to chat events from Rust proxy and connect on mount
   useEffect(() => {
+    let unlisten: (() => void) | null = null;
+
+    onChatEvent(handleChatEvent).then((fn) => {
+      unlisten = fn;
+    });
+
     connect();
+
     return () => {
-      wsRef.current?.close();
+      unlisten?.();
+      chatDisconnect().catch(() => {});
     };
-  }, [connect]);
+  }, [connect, handleChatEvent]);
 
   // Auto-focus input when agent finishes responding or connection established
   useEffect(() => {
@@ -366,9 +315,9 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
     streamMsgIdRef.current = assistantId;
     streamBufferRef.current = "";
 
-    // Send via WebSocket
+    // Send via Rust proxy
     const chatId = `chat-${Date.now()}`;
-    wsRef.current?.send(
+    chatSend(
       JSON.stringify({
         type: "req",
         id: chatId,
