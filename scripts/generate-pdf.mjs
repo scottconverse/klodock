@@ -130,6 +130,30 @@ para('KloDock fills that gap. It packages the entire OpenClaw setup and manageme
 para('Everything stays local: keys are stored in the operating system\u2019s native credential store, the agent process runs on the user\u2019s machine, and no data leaves the device except what the user\u2019s chosen AI provider requires.');
 
 // ═══════════════════════════════════════════════════════════
+// ARCHITECTURE DIAGRAM
+// ═══════════════════════════════════════════════════════════
+
+doc.addPage();
+heading1('System Architecture');
+
+para('KloDock is built on four layers: a React frontend rendered in a Tauri webview, a Rust backend that handles all system operations, the OpenClaw agent runtime (Node.js), and external AI providers. All communication between layers uses type-safe Tauri IPC calls \u2014 no HTTP servers, no WebSocket protocols, no origin headers.');
+
+para('The chat interface uses a direct CLI approach: user messages are passed to the OpenClaw agent command as a child process, which calls the AI provider and returns the response. This eliminates the gateway authentication complexity entirely.');
+
+try {
+  const archPath = resolve(SCREENSHOTS, 'architecture.png');
+  doc.moveDown(0.5);
+  doc.image(archPath, 40, doc.y, { width: 500 });
+  doc.moveDown(1);
+} catch (e) {
+  para('[Architecture diagram: see docs/architecture.svg]');
+}
+
+para('Security is enforced at every layer: API keys are encrypted in the OS keychain (Windows DPAPI, macOS Keychain, Linux libsecret), materialized to a temporary .env file only during agent calls, and scrubbed immediately after. Node.js downloads are SHA-256 verified. A pre-commit git hook prevents accidental key exposure.');
+
+doc.addPage();
+
+// ═══════════════════════════════════════════════════════════
 // 2. KEY FEATURES
 // ═══════════════════════════════════════════════════════════
 
