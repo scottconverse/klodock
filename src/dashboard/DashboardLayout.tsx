@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
@@ -7,14 +7,16 @@ import {
   Radio,
   Settings,
   RefreshCw,
+  MessageCircle,
 } from "lucide-react";
 import { KloDockLogo } from "@/components/KloDockLogo";
 import { StatusIndicator } from "@/components/StatusIndicator";
-import { getDaemonStatus } from "@/lib/tauri";
+import { getDaemonStatus, onDaemonStatus } from "@/lib/tauri";
 import type { DaemonStatus } from "@/lib/types";
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/chat", label: "Chat", icon: MessageCircle, end: false },
   { to: "/dashboard/skills", label: "Skills", icon: Puzzle, end: false },
   {
     to: "/dashboard/personality",
@@ -33,12 +35,31 @@ const NAV_ITEMS = [
 ];
 
 export function DashboardLayout() {
+  const location = useLocation();
+  const isChat = location.pathname.endsWith("/chat");
   const [status, setStatus] = useState<DaemonStatus>({ status: "stopped" });
 
   useEffect(() => {
+    // Initial check
     getDaemonStatus()
       .then((s) => setStatus(s))
       .catch(() => setStatus({ status: "error", message: "Failed to get status" }));
+
+    // Poll every 5 seconds to stay in sync
+    const interval = setInterval(() => {
+      getDaemonStatus()
+        .then((s) => setStatus(s))
+        .catch(() => {});
+    }, 5000);
+
+    // Listen for daemon status events
+    let unlistenFn: (() => void) | null = null;
+    onDaemonStatus((s) => setStatus(s)).then((fn) => { unlistenFn = fn; });
+
+    return () => {
+      clearInterval(interval);
+      unlistenFn?.();
+    };
   }, []);
 
   return (
@@ -86,7 +107,7 @@ export function DashboardLayout() {
           <StatusIndicator status={status} />
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className={`flex-1 ${isChat ? "overflow-hidden p-0" : "overflow-y-auto p-6"}`}>
           <Outlet />
         </main>
       </div>

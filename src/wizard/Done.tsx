@@ -298,10 +298,9 @@ export function Done() {
             </div>
           </div>
           {isRunning && (
-            <a
-              href="http://127.0.0.1:18789/__openclaw__/canvas/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/chat")}
               className="
                 mt-3 inline-flex w-full items-center justify-center gap-2
                 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium
@@ -309,11 +308,11 @@ export function Done() {
                 focus-visible:outline-2 focus-visible:outline-offset-2
                 focus-visible:outline-primary-500
               "
-              aria-label="Open WebChat in browser"
+              aria-label="Open chat with your agent"
             >
-              Open WebChat
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            </a>
+              Open Chat
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
           )}
         </div>
 

@@ -10,7 +10,7 @@ import { useToast } from "@/components/Toast";
 import {
   readConfig, writeConfig, listSecrets, deleteSecret,
   checkOllama, listOllamaModels, runHealthCheck,
-  restartDaemon, uninstallKlodock,
+  restartDaemon, startDaemon, uninstallKlodock,
 } from "@/lib/tauri";
 import type { OpenClawConfig } from "@/lib/types";
 
@@ -190,8 +190,12 @@ export function DashboardSettings() {
         setConfig(newConfig);
       } catch { /* best effort */ }
 
-      // Restart daemon to pick up new config
-      try { await restartDaemon(); } catch { /* best effort */ }
+      // Restart daemon to pick up new config (or start if not running)
+      try {
+        await restartDaemon();
+      } catch {
+        try { await startDaemon(); } catch { /* best effort */ }
+      }
 
       toast.success(`Switched to ${PROVIDERS.find(p => p.id === providerId)?.name ?? providerId}`);
       setTimeout(() => setSaved(false), 3000);

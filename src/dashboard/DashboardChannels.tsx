@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Send, MessageSquare, CheckCircle2, XCircle, ExternalLink,
   Loader2, ChevronDown, ChevronUp, Star, Trash2,
@@ -313,6 +314,7 @@ function ChannelSection({
 /* ── Dashboard Channels page ────────────────────────────── */
 
 export function DashboardChannels() {
+  const navigate = useNavigate();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -395,7 +397,7 @@ export function DashboardChannels() {
           </div>
           <button
             type="button"
-            onClick={() => openLink("http://127.0.0.1:18789/__openclaw__/canvas/")}
+            onClick={() => navigate("/dashboard/chat")}
             className="
               inline-flex items-center gap-1.5 rounded-lg bg-primary-600
               px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700

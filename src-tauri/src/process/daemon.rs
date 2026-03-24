@@ -61,6 +61,14 @@ fn keep_keys_setting() -> bool {
 pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     let _ = app.emit(STATUS_EVENT, &DaemonStatus::Starting);
 
+    // Step 0a: Ensure WebChat control-ui assets exist (fix for OpenClaw packaging)
+    if let Ok(node_dir) = crate::paths::klodock_base_dir().map(|p| p.join("node")) {
+        crate::installer::openclaw::fix_control_ui_assets_pub(&node_dir);
+    }
+
+    // Step 0b: Ensure gateway config allows insecure local auth for in-app chat
+    ensure_control_ui_auth().await;
+
     // Step 1: Scrub any stale .env from a prior crash
     scrub_stale_env().await?;
 
@@ -114,8 +122,36 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
 
     // Enable Vulkan GPU acceleration for Ollama. Ollama's own runtime
     // safely ignores this if no Vulkan-capable GPU is present.
-    let mut cmd = tokio::process::Command::new(&openclaw_path);
-    cmd.args(["gateway", "--port", "18789"])
+    //
+    // On Windows, spawn node.exe directly instead of the .cmd wrapper.
+    // The .cmd file uses cmd.exe which opens a console window even with
+    // CREATE_NO_WINDOW set on the child process.
+    let (spawn_exe, spawn_args): (std::path::PathBuf, Vec<String>) = if cfg!(windows) {
+        let node_exe = node_dir.join("node.exe");
+        let openclaw_js = node_dir
+            .join("node_modules")
+            .join("openclaw")
+            .join("openclaw.mjs");
+        if node_exe.exists() && openclaw_js.exists() {
+            (
+                node_exe,
+                vec![
+                    openclaw_js.to_string_lossy().into_owned(),
+                    "gateway".into(),
+                    "--port".into(),
+                    "18789".into(),
+                ],
+            )
+        } else {
+            // Fallback to .cmd if direct path not found
+            (openclaw_path.clone(), vec!["gateway".into(), "--port".into(), "18789".into()])
+        }
+    } else {
+        (openclaw_path.clone(), vec!["gateway".into(), "--port".into(), "18789".into()])
+    };
+
+    let mut cmd = tokio::process::Command::new(&spawn_exe);
+    cmd.args(&spawn_args)
         .env("PATH", &new_path)
         .env("OLLAMA_VULKAN", "1")
         .current_dir(&openclaw_dir)
@@ -153,8 +189,16 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
             "Couldn't save agent process info. Check disk space.".to_string()
         })?;
 
-    log::info!("OpenClaw daemon started with PID {pid}");
-    crate::process::activity::record("success", "Agent started");
+    // Read active model for activity log
+    let model_name = crate::config::openclaw_json::read_config().await
+        .ok()
+        .and_then(|c| c.agents)
+        .and_then(|a| a.defaults)
+        .and_then(|d| d.model)
+        .map(|m| m.primary)
+        .unwrap_or_else(|| "unknown model".into());
+    log::info!("OpenClaw daemon started with PID {pid}, model: {model_name}");
+    crate::process::activity::record("success", &format!("Agent started · {model_name}"));
     let _ = app.emit(STATUS_EVENT, &DaemonStatus::Running);
 
     // Spawn a background task to monitor the child process
@@ -243,6 +287,53 @@ pub async fn get_daemon_status() -> Result<DaemonStatus, String> {
         // Stale PID file — process is dead
         let _ = tokio::fs::remove_file(&pid_path).await;
         Ok(DaemonStatus::Stopped)
+    }
+}
+
+/// Ensure the openclaw.json gateway config includes `controlUi.allowInsecureAuth: true`
+/// so the in-app chat can connect with password auth from localhost.
+async fn ensure_control_ui_auth() {
+    use crate::config::openclaw_json::{config_path, ControlUiConfig};
+
+    let path = match config_path() {
+        Ok(p) if p.exists() => p,
+        _ => return,
+    };
+
+    let content = match tokio::fs::read_to_string(&path).await {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+
+    let mut config: serde_json::Value = match serde_json::from_str(&content) {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+
+    // Check if controlUi.allowInsecureAuth is already set
+    let already_set = config
+        .get("gateway")
+        .and_then(|g| g.get("controlUi"))
+        .and_then(|c| c.get("allowInsecureAuth"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    if already_set {
+        return;
+    }
+
+    // Add controlUi.allowInsecureAuth = true
+    if let Some(gw) = config.get_mut("gateway").and_then(|g| g.as_object_mut()) {
+        gw.insert(
+            "controlUi".to_string(),
+            serde_json::json!({ "allowInsecureAuth": true }),
+        );
+    }
+
+    // Write back
+    if let Ok(json) = serde_json::to_string_pretty(&config) {
+        let _ = tokio::fs::write(&path, json).await;
+        log::info!("Added controlUi.allowInsecureAuth to gateway config for in-app chat");
     }
 }
 
@@ -339,9 +430,22 @@ async fn monitor_daemon(mut child: tokio::process::Child, app: AppHandle) {
                     let new_path =
                         format!("{}{}{}", node_dir.display(), path_sep, current_path);
 
-                    let mut restart_cmd = tokio::process::Command::new(&openclaw_path);
+                    // On Windows, spawn node.exe directly to avoid .cmd console window
+                    let (restart_exe, restart_args) = if cfg!(windows) {
+                        let node_exe = node_dir.join("node.exe");
+                        let openclaw_js = node_dir.join("node_modules").join("openclaw").join("openclaw.mjs");
+                        if node_exe.exists() && openclaw_js.exists() {
+                            (node_exe, vec![openclaw_js.to_string_lossy().into_owned(), "gateway".into(), "--port".into(), "18789".into()])
+                        } else {
+                            (openclaw_path.clone(), vec!["gateway".into(), "--port".into(), "18789".into()])
+                        }
+                    } else {
+                        (openclaw_path.clone(), vec!["gateway".into(), "--port".into(), "18789".into()])
+                    };
+
+                    let mut restart_cmd = tokio::process::Command::new(&restart_exe);
                     restart_cmd
-                        .args(["gateway", "--port", "18789"])
+                        .args(&restart_args)
                         .env("PATH", &new_path)
                         .env("OLLAMA_VULKAN", "1")
                         .stdout(std::process::Stdio::piped())

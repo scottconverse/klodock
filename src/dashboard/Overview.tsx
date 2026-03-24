@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { Clock, Radio, Puzzle, AlertCircle, CheckCircle, XCircle, ExternalLink, MessageSquare, Activity, RefreshCw } from "lucide-react";
-import { open } from "@tauri-apps/plugin-shell";
-import { runHealthCheck, getActivityLog } from "@/lib/tauri";
+import { useNavigate } from "react-router-dom";
+import { Clock, Radio, Puzzle, AlertCircle, CheckCircle, XCircle, MessageSquare, Activity, RefreshCw } from "lucide-react";
+import { runHealthCheck, getActivityLog, startDaemon, stopDaemon, restartDaemon } from "@/lib/tauri";
 import type { HealthStatus } from "@/lib/types";
 import type { ActivityEntry } from "@/lib/tauri";
 
 export function Overview() {
+  const navigate = useNavigate();
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [error, setError] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
+  const [starting, setStarting] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const [restarting, setRestarting] = useState(false);
 
   useEffect(() => {
     runHealthCheck()
@@ -23,11 +27,52 @@ export function Overview() {
     getActivityLog(20).then(setActivityLog).catch(() => {});
   }
 
-  async function openWebChat() {
+  function openChat() {
+    navigate("/dashboard/chat");
+  }
+
+  async function handleStartAgent() {
+    setStarting(true);
     try {
-      await open("http://127.0.0.1:18789/__openclaw__/canvas/");
+      await startDaemon();
+      // Refresh health and activity after starting
+      const newHealth = await runHealthCheck();
+      setHealth(newHealth);
+      refreshActivity();
     } catch {
-      window.open("http://127.0.0.1:18789/__openclaw__/canvas/", "_blank");
+      runHealthCheck().then(setHealth).catch(() => {});
+    } finally {
+      setStarting(false);
+    }
+  }
+
+  async function handleStopAgent() {
+    setStopping(true);
+    try {
+      await stopDaemon();
+      const newHealth = await runHealthCheck();
+      setHealth(newHealth);
+      refreshActivity();
+    } catch {
+      runHealthCheck().then(setHealth).catch(() => {});
+    } finally {
+      setStopping(false);
+    }
+  }
+
+  async function handleRestartAgent() {
+    setRestarting(true);
+    try {
+      await restartDaemon();
+      // Wait a moment for the daemon to fully start
+      await new Promise((r) => setTimeout(r, 3000));
+      const newHealth = await runHealthCheck();
+      setHealth(newHealth);
+      refreshActivity();
+    } catch {
+      runHealthCheck().then(setHealth).catch(() => {});
+    } finally {
+      setRestarting(false);
     }
   }
 
@@ -84,6 +129,47 @@ export function Overview() {
             </ul>
           </div>
 
+          {/* Agent controls — visible when running */}
+          {health.daemon_alive && (
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleStopAgent}
+                disabled={stopping || restarting}
+                className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Stop your agent"
+              >
+                {stopping ? (
+                  <><RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" /> Stopping...</>
+                ) : (
+                  <><XCircle className="h-4 w-4" aria-hidden="true" /> Stop Agent</>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={handleRestartAgent}
+                disabled={stopping || restarting}
+                className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Restart your agent"
+              >
+                {restarting ? (
+                  <><RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" /> Restarting...</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4" aria-hidden="true" /> Restart Agent</>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={openChat}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
+                aria-label="Open chat with your agent"
+              >
+                <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                Open Chat
+              </button>
+            </div>
+          )}
+
           {/* Issues */}
           {health.issues.length > 0 && (
             <div className="rounded-xl border border-warning-200 bg-warning-50 p-5 shadow-sm">
@@ -96,6 +182,53 @@ export function Overview() {
                   </li>
                 ))}
               </ul>
+              {!health.daemon_alive && (
+                <button
+                  type="button"
+                  onClick={handleStartAgent}
+                  disabled={starting}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Start your agent"
+                >
+                  {starting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <Activity className="h-4 w-4" aria-hidden="true" />
+                      Start Agent
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Start Agent when no issues card but daemon stopped */}
+          {health.issues.length === 0 && !health.daemon_alive && (
+            <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm text-center">
+              <p className="text-sm text-neutral-600 mb-3">Your agent is not running.</p>
+              <button
+                type="button"
+                onClick={handleStartAgent}
+                disabled={starting}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Start your agent"
+              >
+                {starting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Starting...
+                  </>
+                ) : (
+                  <>
+                    <Activity className="h-4 w-4" aria-hidden="true" />
+                    Start Agent
+                  </>
+                )}
+              </button>
             </div>
           )}
 
@@ -184,12 +317,12 @@ export function Overview() {
                   <MessageSquare className="h-5 w-5 text-primary-600" aria-hidden="true" />
                   <div>
                     <h3 className="text-sm font-semibold text-primary-900">Chat with your agent</h3>
-                    <p className="text-xs text-primary-700">Open WebChat in your browser</p>
+                    <p className="text-xs text-primary-700">Chat with your agent right here</p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={openWebChat}
+                  onClick={openChat}
                   className="
                     inline-flex items-center gap-1.5 rounded-lg bg-primary-600
                     px-4 py-2 text-sm font-medium text-white
@@ -197,8 +330,8 @@ export function Overview() {
                     focus:ring-2 focus:ring-blue-500 focus:outline-none
                   "
                 >
-                  Open WebChat
-                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                  Open Chat
+                  <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </div>
             </div>

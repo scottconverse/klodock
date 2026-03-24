@@ -455,23 +455,28 @@ export function ProviderCard({
             >
               API Key
             </label>
-            <input
-              id={`apikey-${id}`}
-              type="password"
-              value={apiKey}
-              onChange={(e) => handleKeyChange(e.target.value)}
-              placeholder="Paste your key here..."
-              disabled={success}
-              className="
-                w-full rounded-lg border border-neutral-300 bg-neutral-50
-                px-3 py-2 text-sm placeholder:text-neutral-400
-                focus:border-primary-400 focus:outline-none focus:ring-2
-                focus:ring-primary-100
-                disabled:cursor-not-allowed disabled:opacity-60
-              "
-              aria-describedby={error ? `error-${id}` : undefined}
-              aria-label={`${name} API key`}
-            />
+            {success ? (
+              <div className="w-full rounded-lg border border-success-200 bg-success-50 px-3 py-2 text-sm text-success-700 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                Key stored securely
+              </div>
+            ) : (
+              <input
+                id={`apikey-${id}`}
+                type="password"
+                value={apiKey}
+                onChange={(e) => handleKeyChange(e.target.value)}
+                placeholder="Paste your key here..."
+                className="
+                  w-full rounded-lg border border-neutral-300 bg-neutral-50
+                  px-3 py-2 text-sm placeholder:text-neutral-400
+                  focus:border-primary-400 focus:outline-none focus:ring-2
+                  focus:ring-primary-100
+                "
+                aria-describedby={error ? `error-${id}` : undefined}
+                aria-label={`${name} API key`}
+              />
+            )}
           </div>
 
           {/* Error message */}

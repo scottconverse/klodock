@@ -147,6 +147,11 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
 
     emit(&app, "Verifying installation...", Some(0.9));
 
+    // Ensure the Control UI assets are in the expected location.
+    // OpenClaw ships canvas UI at dist/canvas-host/a2ui/ but the gateway
+    // looks for it at dist/control-ui/. Copy if missing.
+    fix_control_ui_assets(&node_dir);
+
     // Verify the binary exists
     let bin_path = openclaw_bin_path()?;
     if bin_path.exists() {
@@ -178,6 +183,41 @@ pub async fn install_openclaw(app: tauri::AppHandle) -> Result<String, String> {
                 Ok("installed".to_string())
             }
         }
+    }
+}
+
+/// Copy canvas UI assets to the location the gateway expects.
+///
+/// OpenClaw ships the canvas UI at `dist/canvas-host/a2ui/` but the gateway's
+/// `resolveControlUiRootSync` looks for `dist/control-ui/index.html`. If the
+/// control-ui directory doesn't exist, copy the canvas assets there so WebChat
+/// works out of the box without requiring `pnpm ui:build`.
+/// Public wrapper for daemon.rs to call on startup.
+pub fn fix_control_ui_assets_pub(node_dir: &std::path::Path) {
+    fix_control_ui_assets(node_dir);
+}
+
+fn fix_control_ui_assets(node_dir: &std::path::Path) {
+    let openclaw_dir = node_dir.join("node_modules").join("openclaw");
+    let source = openclaw_dir.join("dist").join("canvas-host").join("a2ui");
+    let target = openclaw_dir.join("dist").join("control-ui");
+
+    // Only copy if source exists and target doesn't
+    if source.join("index.html").exists() && !target.join("index.html").exists() {
+        if let Err(e) = std::fs::create_dir_all(&target) {
+            log::warn!("Couldn't create control-ui dir: {e}");
+            return;
+        }
+        // Copy all files from source to target
+        if let Ok(entries) = std::fs::read_dir(&source) {
+            for entry in entries.flatten() {
+                let dest = target.join(entry.file_name());
+                if let Err(e) = std::fs::copy(entry.path(), &dest) {
+                    log::warn!("Couldn't copy control-ui asset {}: {e}", entry.file_name().to_string_lossy());
+                }
+            }
+        }
+        log::info!("Copied canvas UI to control-ui/ for WebChat support");
     }
 }
 

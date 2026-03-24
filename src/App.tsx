@@ -16,6 +16,7 @@ import { DashboardPersonality } from "./dashboard/DashboardPersonality";
 import { DashboardChannels } from "./dashboard/DashboardChannels";
 import { DashboardSettings } from "./dashboard/DashboardSettings";
 import { DashboardUpdates } from "./dashboard/DashboardUpdates";
+import { DashboardChat } from "./dashboard/DashboardChat";
 import { getSetupState, resumeUninstall } from "./lib/tauri";
 
 export function App() {
@@ -98,6 +99,7 @@ export function App() {
         <Route path="channels" element={<DashboardChannels />} />
         <Route path="settings" element={<DashboardSettings />} />
         <Route path="updates" element={<DashboardUpdates />} />
+        <Route path="chat" element={<DashboardChat />} />
       </Route>
     </Routes>
   );

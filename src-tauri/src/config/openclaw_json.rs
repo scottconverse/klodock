@@ -31,6 +31,14 @@ pub struct GatewayConfig {
     pub auth: Option<GatewayAuth>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<u16>,
+    #[serde(default, rename = "controlUi", skip_serializing_if = "Option::is_none")]
+    pub control_ui: Option<ControlUiConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ControlUiConfig {
+    #[serde(default, rename = "allowInsecureAuth", skip_serializing_if = "Option::is_none")]
+    pub allow_insecure_auth: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
