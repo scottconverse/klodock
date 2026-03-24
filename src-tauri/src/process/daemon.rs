@@ -69,6 +69,9 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
     // Step 0b: Ensure gateway config allows insecure local auth for in-app chat
     ensure_control_ui_auth().await;
 
+    // Step 0c: Kill any stale daemon on port 18789 from a previous session
+    kill_stale_daemon().await;
+
     // Step 1: Scrub any stale .env from a prior crash
     scrub_stale_env().await?;
 
@@ -328,13 +331,22 @@ async fn ensure_control_ui_auth() {
         return;
     }
 
-    // Set both flags needed for Tauri webview to connect via WebSocket
+    // Set all flags needed for Tauri webview to connect via WebSocket.
+    // The Tauri webview sends Origin: http://tauri.localhost which the
+    // gateway rejects unless it's in allowedOrigins.
     if let Some(gw) = config.get_mut("gateway").and_then(|g| g.as_object_mut()) {
         gw.insert(
             "controlUi".to_string(),
             serde_json::json!({
                 "allowInsecureAuth": true,
-                "dangerouslyAllowHostHeaderOriginFallback": true
+                "dangerouslyAllowHostHeaderOriginFallback": true,
+                "allowedOrigins": [
+                    "http://tauri.localhost",
+                    "https://tauri.localhost",
+                    "tauri://localhost",
+                    "http://localhost",
+                    "http://127.0.0.1"
+                ]
             }),
         );
     }
@@ -343,6 +355,87 @@ async fn ensure_control_ui_auth() {
     if let Ok(json) = serde_json::to_string_pretty(&config) {
         let _ = tokio::fs::write(&path, json).await;
         log::info!("Added controlUi.allowInsecureAuth to gateway config for in-app chat");
+    }
+}
+
+/// Kill any daemon process occupying port 18789 from a previous session.
+/// This ensures a clean start every time — no stale config, no origin mismatch.
+async fn kill_stale_daemon() {
+    // First try the PID file
+    if let Ok(pid_path) = pid_file_path() {
+        if let Ok(pid_str) = tokio::fs::read_to_string(&pid_path).await {
+            if let Ok(pid) = pid_str.trim().parse::<u32>() {
+                log::info!("Found stale PID file with PID {pid}, killing...");
+                #[cfg(windows)]
+                {
+                    let _ = tokio::process::Command::new("taskkill")
+                        .args(["/F", "/PID", &pid.to_string()])
+                        .creation_flags(0x08000000)
+                        .output()
+                        .await;
+                }
+                #[cfg(not(windows))]
+                {
+                    let _ = tokio::process::Command::new("kill")
+                        .args(["-9", &pid.to_string()])
+                        .output()
+                        .await;
+                }
+                let _ = tokio::fs::remove_file(&pid_path).await;
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            }
+        }
+    }
+
+    // Remove OpenClaw lock files that prevent restart
+    if let Ok(temp_dir) = std::env::var("TEMP").or_else(|_| std::env::var("TMP")) {
+        let openclaw_temp = std::path::PathBuf::from(temp_dir).join("openclaw");
+        if let Ok(entries) = std::fs::read_dir(&openclaw_temp) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.contains(".lock") {
+                    log::info!("Removing stale lock file: {}", name);
+                    let _ = std::fs::remove_file(entry.path());
+                }
+            }
+        }
+    }
+
+    // Also check if port 18789 is still in use (covers manual starts)
+    match tokio::net::TcpStream::connect("127.0.0.1:18789").await {
+        Ok(_) => {
+            log::warn!("Port 18789 still in use after PID kill, trying netstat...");
+            #[cfg(windows)]
+            {
+                // Find and kill whatever is on port 18789
+                if let Ok(output) = tokio::process::Command::new("cmd")
+                    .args(["/C", "netstat -ano | findstr :18789 | findstr LISTENING"])
+                    .creation_flags(0x08000000)
+                    .output()
+                    .await
+                {
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    for line in stdout.lines() {
+                        if let Some(pid_str) = line.split_whitespace().last() {
+                            if let Ok(pid) = pid_str.parse::<u32>() {
+                                if pid > 0 {
+                                    log::info!("Killing process {pid} on port 18789");
+                                    let _ = tokio::process::Command::new("taskkill")
+                                        .args(["/F", "/PID", &pid.to_string()])
+                                        .creation_flags(0x08000000)
+                                        .output()
+                                        .await;
+                                }
+                            }
+                        }
+                    }
+                }
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            }
+        }
+        Err(_) => {
+            // Port is free — good
+        }
     }
 }
 

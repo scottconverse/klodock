@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { KloDockLogo } from "@/components/KloDockLogo";
 import { StatusIndicator } from "@/components/StatusIndicator";
-import { getDaemonStatus, onDaemonStatus } from "@/lib/tauri";
+import { getDaemonStatus, onDaemonStatus, runHealthCheck } from "@/lib/tauri";
 import type { DaemonStatus } from "@/lib/types";
 
 const NAV_ITEMS = [
@@ -40,19 +40,20 @@ export function DashboardLayout() {
   const [status, setStatus] = useState<DaemonStatus>({ status: "stopped" });
 
   useEffect(() => {
-    // Initial check
-    getDaemonStatus()
-      .then((s) => setStatus(s))
-      .catch(() => setStatus({ status: "error", message: "Failed to get status" }));
+    // Use health check (HTTP ping) as the source of truth for daemon status.
+    // getDaemonStatus checks PID file which can be stale.
+    function checkStatus() {
+      runHealthCheck()
+        .then((h) => setStatus({ status: h.daemon_alive ? "running" : "stopped" }))
+        .catch(() => setStatus({ status: "stopped" }));
+    }
 
-    // Poll every 5 seconds to stay in sync
-    const interval = setInterval(() => {
-      getDaemonStatus()
-        .then((s) => setStatus(s))
-        .catch(() => {});
-    }, 5000);
+    checkStatus();
 
-    // Listen for daemon status events
+    // Poll every 5 seconds
+    const interval = setInterval(checkStatus, 5000);
+
+    // Also listen for daemon events (instant updates from start/stop)
     let unlistenFn: (() => void) | null = null;
     onDaemonStatus((s) => setStatus(s)).then((fn) => { unlistenFn = fn; });
 

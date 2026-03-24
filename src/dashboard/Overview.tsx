@@ -309,33 +309,7 @@ export function Overview() {
             )}
           </div>
 
-          {/* WebChat quick access */}
-          {health.daemon_alive && (
-            <div className="rounded-xl border border-primary-200 bg-primary-50 p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <MessageSquare className="h-5 w-5 text-primary-600" aria-hidden="true" />
-                  <div>
-                    <h3 className="text-sm font-semibold text-primary-900">Chat with your agent</h3>
-                    <p className="text-xs text-primary-700">Chat with your agent right here</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={openChat}
-                  className="
-                    inline-flex items-center gap-1.5 rounded-lg bg-primary-600
-                    px-4 py-2 text-sm font-medium text-white
-                    transition-colors hover:bg-primary-700
-                    focus:ring-2 focus:ring-blue-500 focus:outline-none
-                  "
-                >
-                  Open Chat
-                  <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Open Chat button removed — already in agent controls row above */}
         </>
       ) : (
         <div className="flex justify-center py-12" role="status" aria-label="Loading dashboard data">

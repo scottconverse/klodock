@@ -316,6 +316,21 @@ export function DashboardSettings() {
                     Set as Primary
                   </button>
                 )}
+                {activeProvider === p.id && selectedModels[p.id] && selectedModels[p.id] !== currentModel && (
+                  <button
+                    type="button"
+                    onClick={() => handleSetPrimary(p.id)}
+                    disabled={saving}
+                    className="
+                      w-full rounded-lg bg-primary-600 px-3 py-1.5
+                      text-xs font-medium text-white
+                      hover:bg-primary-700 disabled:opacity-50
+                      focus:ring-2 focus:ring-blue-500 focus:outline-none
+                    "
+                  >
+                    {saving ? "Applying..." : "Apply Model Change"}
+                  </button>
+                )}
                 {activeProvider === p.id && (
                   <div className="
                     w-full inline-flex items-center justify-center gap-1.5

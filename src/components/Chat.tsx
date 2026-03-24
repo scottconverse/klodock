@@ -271,6 +271,13 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
     };
   }, [connect]);
 
+  // Auto-focus input when agent finishes responding
+  useEffect(() => {
+    if (!streaming) {
+      inputRef.current?.focus();
+    }
+  }, [streaming]);
+
   function sendMessage() {
     const text = input.trim();
     if (!text || !connected || streaming) return;
