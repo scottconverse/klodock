@@ -100,6 +100,7 @@ export function DashboardSettings() {
   const [storedKeys, setStoredKeys] = useState<string[]>([]);
   const [validated, setValidated] = useState<Set<string>>(new Set());
   const [ollamaSelectedModel, setOllamaSelectedModel] = useState("");
+  const [selectedModels, setSelectedModels] = useState<Record<string, string>>({});
   const [activeProvider, setActiveProvider] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -161,7 +162,7 @@ export function DashboardSettings() {
       const isOllama = providerId === "ollama";
       const primary = isOllama && ollamaSelectedModel
         ? `ollama/${ollamaSelectedModel}`
-        : PROVIDER_MODEL_REFS[providerId] ?? providerId;
+        : selectedModels[providerId] || PROVIDER_MODEL_REFS[providerId] || providerId;
 
       const gwPassword = crypto.randomUUID().slice(0, 12);
       await writeConfig({
@@ -295,6 +296,8 @@ export function DashboardSettings() {
                 isLocal={p.isLocal}
                 validated={validated.has(p.id)}
                 onValidated={handleValidated}
+                onModelSelected={(pid, modelId) => setSelectedModels(prev => ({ ...prev, [pid]: modelId }))}
+                activeModelId={currentModel}
               />
               {/* Action row below card */}
               <div className="mt-2 space-y-1.5">

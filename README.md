@@ -30,7 +30,7 @@ KloDock fills the gap: **easy + local + free.**
 ## Features
 
 - **7-step setup wizard** — from download to a working agent in minutes, not hours
-- **Full dashboard with 6 pages** — Overview, Skills, Personality, Channels, Settings, Updates
+- **Full dashboard with 7 pages** — Overview, Chat, Skills, Personality, Channels, Settings, Updates
 - **52 bundled skills with safety badges** — categorized into Communication, Productivity, Developer Tools, Media & Audio, Smart Home, AI Services, Images & Video, System & Security — with search, category filtering, safety ratings (Verified/Community/Unreviewed), and actionable requirements (download buttons, navigation to Settings/Channels). Bundled JSON fallback ensures skills load even on first run when the live query is slow
 - **Dashboard Settings** — full AI provider card grid (same as wizard), provider switching with "Set as Primary", gateway config, uninstall from Settings
 - **Dashboard Channels** — full token setup flow (same as wizard), disconnect capability
@@ -59,7 +59,7 @@ KloDock fills the gap: **easy + local + free.**
 | Routing | React Router v7 |
 | Icons | Lucide React |
 | Secret storage | DPAPI (Windows), Keychain (macOS), libsecret (Linux) |
-| Testing | Vitest (frontend), Cargo test (backend), WebdriverIO + tauri-driver (E2E) |
+| Testing | Vitest (frontend), Cargo test (backend) |
 | CI/CD | GitHub Actions (cross-platform build, test, release) |
 
 ## Project Structure
@@ -79,6 +79,7 @@ klodock/
 │   ├── dashboard/         # Agent management dashboard
 │   │   ├── DashboardLayout.tsx
 │   │   ├── Overview.tsx
+│   │   ├── DashboardChat.tsx
 │   │   ├── DashboardSkills.tsx
 │   │   ├── DashboardPersonality.tsx
 │   │   ├── DashboardChannels.tsx
@@ -86,7 +87,6 @@ klodock/
 │   │   └── DashboardUpdates.tsx
 │   ├── components/        # Shared UI components (incl. Toast.tsx)
 │   └── lib/               # Tauri IPC wrappers, types, templates
-├── e2e/                   # End-to-end tests (WebdriverIO + tauri-driver)
 └── .github/workflows/     # CI/CD (build, test, release, nightly compat)
 ```
 
@@ -117,14 +117,11 @@ npx tauri dev
 ### Run tests
 
 ```bash
-# Frontend (26 tests)
+# Frontend (20 tests)
 npx vitest run
 
-# Rust (12 tests + 7 ignored)
+# Rust (comprehensive test suite)
 cd src-tauri && cargo test
-
-# E2E (13 tests — requires built app + msedgedriver)
-npm run test:e2e
 ```
 
 ### Build
@@ -151,4 +148,4 @@ MIT
 
 ## Status
 
-**v1.2.0** — In-app Ollama download and model pull, full dashboard, auto-updater, 52 categorized skills with safety badges, channel token verification, first-message onboarding greeting, system tray icon with context menu (close minimizes to tray, right-click for Show/WebChat/Start Agent/Quit), corrected WebChat URLs to OpenClaw canvas endpoint, WCAG 2.1 AA accessibility pass, pre-commit API key leak prevention hook, toast notifications, resumable uninstall with step-by-step progress (survives crashes and resumes on next launch), plain-English error messages throughout (85+ technical errors rewritten for non-technical users), "Keep API keys on disk" toggle in Settings for terminal users, automatic config backup (openclaw.json + SOUL.md) before every OpenClaw update, activity feed on dashboard Overview (timestamped agent events with color-coded levels), per-skill update detection (banner on Skills page when OpenClaw update brings new skills), Tauri auto-updater with Ed25519 signed releases and in-app restart, cross-platform CI via GitHub Actions (Windows/macOS/Linux builds on every push), 31 Rust integration tests, 16 Puppeteer E2E tests, Ollama model pull progress bar with percent and completion state, embedded chat UI with WebSocket streaming (no external browser needed), Stop/Restart/Open Chat agent controls on Overview, "Key stored securely" display for connected providers, real-time status bar sync via polling + event listener, active model name shown in activity feed.
+**v1.2.0** — In-app Ollama download and model pull, full dashboard, auto-updater, 52 categorized skills with safety badges, channel token verification, first-message onboarding greeting, system tray icon with context menu (close minimizes to tray, right-click for Show/WebChat/Start Agent/Quit), corrected WebChat URLs to OpenClaw canvas endpoint, WCAG 2.1 AA accessibility pass, pre-commit API key leak prevention hook, toast notifications, resumable uninstall with step-by-step progress (survives crashes and resumes on next launch), plain-English error messages throughout (85+ technical errors rewritten for non-technical users), "Keep API keys on disk" toggle in Settings for terminal users, automatic config backup (openclaw.json + SOUL.md) before every OpenClaw update, activity feed on dashboard Overview (timestamped agent events with color-coded levels), per-skill update detection (banner on Skills page when OpenClaw update brings new skills), Tauri auto-updater with Ed25519 signed releases and in-app restart, cross-platform CI via GitHub Actions (Windows/macOS/Linux builds on every push), comprehensive Rust test suite, Ollama model pull progress bar with percent and completion state, embedded chat UI with WebSocket streaming (no external browser needed), Stop/Restart/Open Chat agent controls on Overview, "Key stored securely" display for connected providers, real-time status bar sync via polling + event listener, active model name shown in activity feed.

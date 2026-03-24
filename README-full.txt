@@ -19,7 +19,7 @@ KloDock is a native desktop application that wraps the open-source OpenClaw AI a
 
 KloDock fills that gap. It packages the entire OpenClaw setup and management lifecycle into a guided wizard that takes minutes, not hours, from download to a running agent. There is no command line, no config file editing, and no Markdown to write. The user downloads a lightweight installer, runs the wizard, and talks to their agent. Everything stays local: keys are stored in the operating system's native credential store, the agent process runs on the user's machine, and no data leaves the device except what the user's chosen AI provider requires.
 
-The application is built on Tauri v2, producing installers under 700 KB on Windows. It targets Windows, macOS, and Linux, with all three platforms passing CI builds and tests. KloDock is designed for accessibility from the ground up, meeting WCAG 2.1 AA requirements with full keyboard navigation, screen reader support, and high-contrast theming.
+The application is built on Tauri v2, producing a 5.1 MB NSIS installer on Windows. It targets Windows, macOS, and Linux, with all three platforms passing CI builds and tests. KloDock is designed for accessibility from the ground up, meeting WCAG 2.1 AA requirements with full keyboard navigation, screen reader support, and high-contrast theming.
 
 
 
@@ -56,9 +56,9 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 
   * WCAG 2.1 AA accessible  Full keyboard navigation, ARIA labels, screen reader testing, and high-contrast support throughout the interface.
 
-  * Lightweight  Windows MSI installer: 672 KB. NSIS setup executable: 415 KB. The entire application leverages the system webview rather than bundling a browser engine.
+  * Lightweight  Windows NSIS installer: 5.1 MB. The entire application leverages the system webview rather than bundling a browser engine.
 
-  * Full management dashboard  Six dedicated pages (Overview, Skills, Personality, Channels, Settings, Updates) replace the earlier "coming soon" placeholders. Every setting configurable in the wizard is also editable from the dashboard.
+  * Full management dashboard  Seven dedicated pages (Overview, Chat, Skills, Personality, Channels, Settings, Updates) replace the earlier "coming soon" placeholders. Every setting configurable in the wizard is also editable from the dashboard.
 
   * 52 categorized skills  Skills are grouped into 8 categories (Communication, Productivity, Developer Tools, Media & Audio, Smart Home, AI Services, Images & Video, System & Security) with search, filtering, and actionable setup buttons. Active skills show a green badge; unavailable skills show exactly what's needed with a download link or navigation button.
 
@@ -83,7 +83,7 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 |  |    React Frontend       |   |    Rust Backend        | |
 |  |                         |   |                        | |
 |  |  Wizard (7 steps)       |   |  installer/            | |
-|  |  Dashboard (6 pages)    |<->|    node.rs             | |
+|  |  Dashboard (7 pages)    |<->|    node.rs             | |
 |  |  Components             |IPC|    openclaw.rs          | |
 |  |  Lib (types, state)     |   |    skills.rs           | |
 |  |                         |   |    uninstall.rs         | |
@@ -131,7 +131,7 @@ The application is built on Tauri v2, producing installers under 700 KB on Windo
 
 KloDock uses Tauri v2 rather than Electron for three reasons:
 
-1. Bundle size. Tauri leverages the operating system's native webview (Edge WebView2 on Windows, WebKitGTK on Linux, WKWebView on macOS) instead of shipping Chromium. This keeps the installer under 700 KB versus the typical 80--150 MB Electron bundle.
+1. Bundle size. Tauri leverages the operating system's native webview (Edge WebView2 on Windows, WebKitGTK on Linux, WKWebView on macOS) instead of shipping Chromium. This keeps the installer around 5 MB versus the typical 80--150 MB Electron bundle.
 
 2. Memory footprint. A Tauri app's baseline memory consumption is roughly 30--50 MB compared to 150--300 MB for an equivalent Electron app, which matters because KloDock runs alongside the OpenClaw agent process itself.
 
@@ -235,16 +235,6 @@ klodock/
 │       ├── test.yml               # Cross-platform test suite
 │       ├── release.yml            # Tag-triggered release with GitHub assets
 │       └── compat.yml             # Nightly OpenClaw compatibility check
-├── e2e/
-│   ├── helpers/                   # Shared test utilities
-│   ├── wizard-walkthrough.e2e.ts  # 8 wizard walkthrough E2E tests (WebdriverIO)
-│   ├── accessibility.e2e.ts       # 7 accessibility E2E tests (WebdriverIO)
-│   ├── autostart.spec.ts          # Autostart toggle E2E tests (old stubs, superseded)
-│   ├── channel-setup.spec.ts      # Channel configuration E2E tests (old stubs, superseded)
-│   ├── resume-wizard.spec.ts      # Crash recovery resume E2E tests (old stubs, superseded)
-│   ├── secret-lifecycle.spec.ts   # API key lifecycle E2E tests (old stubs, superseded)
-│   ├── setup-wizard.spec.ts       # Full wizard walkthrough E2E tests (old stubs, superseded)
-│   └── uninstall.spec.ts          # Uninstall flow E2E tests (old stubs, superseded)
 ├── src/                           # React frontend
 │   ├── __tests__/
 │   │   ├── components/
@@ -266,6 +256,7 @@ klodock/
 │   ├── dashboard/
 │   │   ├── DashboardLayout.tsx     # Dashboard shell with sidebar navigation
 │   │   ├── Overview.tsx            # Agent overview panel (status, health, quick actions)
+│   │   ├── DashboardChat.tsx      # Embedded agent chat with WebSocket streaming
 │   │   ├── DashboardSkills.tsx     # 52 skills across 8 categories with search/filter
 │   │   ├── DashboardPersonality.tsx # Role, tone, and SOUL.md editing
 │   │   ├── DashboardChannels.tsx   # Telegram/Discord channel management
@@ -346,7 +337,6 @@ klodock/
 │   │   └── uninstall_test.rs      # Uninstall state persistence tests
 │   ├── Cargo.toml                 # Rust dependencies
 │   └── Cargo.lock
-├── wdio.conf.ts                   # WebdriverIO E2E test configuration
 ├── package.json                   # Node dependencies + scripts
 ├── vite.config.ts                 # Vite configuration
 ├── tsconfig.json                  # TypeScript configuration
@@ -405,9 +395,6 @@ cd src-tauri && cargo test
 # Rust ignored tests (requires real system state: keychain, network, etc.)
 cd src-tauri && cargo test -- --ignored
 
-# E2E tests (requires built app + msedgedriver for Edge WebView2)
-npm run test:e2e
-
 # Watch mode for frontend tests
 npx vitest
 ```
@@ -429,7 +416,6 @@ This compiles an optimized Rust binary, bundles the Vite-built frontend, and pro
 | `npx vitest` | Run frontend tests in watch mode |
 | `cd src-tauri && cargo test` | Run Rust tests |
 | `cd src-tauri && cargo test -- --ignored` | Run ignored Rust tests |
-| `npm run test:e2e` | Run E2E tests (WebdriverIO + tauri-driver) |
 | `cd src-tauri && cargo check` | Fast Rust type-check without building |
 | `npx tauri build` | Production build with installers |
 | `npm run build` | Build frontend only (Vite) |
@@ -443,11 +429,10 @@ This compiles an optimized Rust binary, bundles the Vite-built frontend, and pro
 
 | Layer | Framework | Count | Status |
 |-|--|-|--|
-| Frontend unit/component | Vitest + Testing Library | 26 | Passing |
-| Rust integration | Cargo test | 12 | Passing |
-| Rust (ignored, require real state) | Cargo test --ignored | 7 | Passing |
-| End-to-end | WebdriverIO v9 + tauri-driver + msedgedriver | 13 | Passing |
-| Total | | 58 | 0 failures |
+| Frontend unit/component | Vitest + Testing Library | 20 | Passing |
+| Rust integration | Cargo test | ~27 | Passing |
+| End-to-end | E2E tests planned | -- | Planned |
+| Total | | ~47 | 0 failures |
 
   Frontend Tests (Vitest)
 
@@ -482,15 +467,6 @@ These tests are marked `#[ignore]` because they interact with real OS resources:
 
 Run with: `cd src-tauri && cargo test -- --ignored`
 
-  End-to-End Tests (WebdriverIO)
-
-13 real E2E tests launch the compiled application using WebdriverIO v9 with tauri-driver and msedgedriver (Edge WebView2). Configuration is in `wdio.conf.ts`. Run with `npm run test:e2e`.
-
-  * `e2e/wizard-walkthrough.e2e.ts` (8 tests)  Full wizard walkthrough from Welcome screen through Done, exercising each step of the setup flow.
-  * `e2e/accessibility.e2e.ts` (7 tests)  WCAG 2.1 AA compliance checks including keyboard navigation, ARIA labels, focus management, and screen reader compatibility.
-
-The older stub files (`setup-wizard.spec.ts`, `secret-lifecycle.spec.ts`, `channel-setup.spec.ts`, `resume-wizard.spec.ts`, `autostart.spec.ts`, `uninstall.spec.ts`) still exist in `e2e/` but are superseded by the real test suites above.
-
 
 
 
@@ -510,8 +486,7 @@ The older stub files (`setup-wizard.spec.ts`, `secret-lifecycle.spec.ts`, `chann
 
 | Artifact | Size |
 |-||
-| `KloDock_1.2.0_x64_en-US.msi` | 672 KB |
-| `KloDock_1.2.0_x64-setup.exe` | 415 KB |
+| `KloDock_1.2.0_x64-setup.exe` (NSIS) | 5.1 MB |
 
 These sizes reflect the Tauri advantage: no bundled browser engine. The application uses the system's Edge WebView2 (Windows), WebKitGTK (Linux), or WKWebView (macOS).
 
@@ -529,7 +504,7 @@ Four GitHub Actions workflows automate building, testing, releasing, and compati
 | Workflow | File | Trigger | Platforms | Purpose |
 |-|||--||
 | Build | `build.yml` | Push/PR to `main` | Ubuntu, macOS, Windows | Compiles the full Tauri application on all three platforms. Catches compilation errors before merge. |
-| Test | `test.yml` | Push/PR to `main` | Ubuntu, macOS, Windows | Runs Rust integration tests (`cargo test`), frontend unit tests (`vitest`), and E2E tests (`npm run test:e2e`) on all platforms. All passing. |
+| Test | `test.yml` | Push/PR to `main` | Ubuntu, macOS, Windows | Runs Rust integration tests (`cargo test`) and frontend unit tests (`vitest`) on all platforms. All passing. |
 | Release | `release.yml` | Tag push (`v*`) | Ubuntu, macOS, Windows | Builds platform-specific installers via `tauri-action` and publishes them as GitHub Release assets. |
 | Compatibility | `compat.yml` | Nightly (06:00 UTC) + manual | Ubuntu | Installs the latest OpenClaw from npm and runs the Rust test suite against it. On failure, automatically creates a GitHub Issue tagged `bug` + `compatibility`. |
 
@@ -549,7 +524,7 @@ Cache keys are based on `Cargo.lock` hash for Rust and npm lockfile for Node.
 
   Phase 1: Setup Wizard (Shipped)
 
-  * 8-screen setup wizard from download to running agent
+  * 7-step setup wizard from download to running agent
   * Silent Node.js detection and installation
   * OpenClaw installation from npm
   * API key management with OS credential store
@@ -578,8 +553,8 @@ Cache keys are based on `Cargo.lock` hash for Rust and npm lockfile for Node.
   * ~~Keep API keys toggle  Settings toggle for terminal users who want .env preserved on daemon stop~~ SHIPPED
   * ~~Config backup  Automatic backup of openclaw.json and SOUL.md before every OpenClaw update~~ SHIPPED
   * ~~Cross-platform CI  GitHub Actions builds and tests on Windows, macOS, and Linux on every push~~ SHIPPED
-  * ~~Rust integration tests  31 tests covering config, env, SHA256, settings, uninstall state~~ SHIPPED
-  * ~~Puppeteer E2E tests  16 tests covering wizard flow, dashboard pages, and accessibility~~ SHIPPED
+  * ~~Rust integration tests  Comprehensive test suite covering config, env, SHA256, settings, uninstall state~~ SHIPPED
+  * E2E tests  Planned (WebdriverIO + tauri-driver)
   * WhatsApp integration  Deferred from Phase 1 due to Baileys library fragility; evaluating alternatives
   * Multi-agent support  Run and manage multiple OpenClaw instances
 

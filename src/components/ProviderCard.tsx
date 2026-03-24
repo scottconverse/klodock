@@ -24,6 +24,45 @@ const KEY_PATTERNS: Record<string, { prefix: string; minLen: number }> = {
   openrouter:{ prefix: "sk-or-",  minLen: 30 },
 };
 
+/** Model tiers per provider: Fast (cheapest), Smart (balanced), Pro (most capable) */
+interface ModelTier {
+  label: string;
+  modelId: string;
+  cost: string;
+  desc: string;
+}
+
+const MODEL_TIERS: Record<string, ModelTier[]> = {
+  anthropic: [
+    { label: "Haiku", modelId: "anthropic/claude-haiku-4-5-20251001", cost: "~$0.25/MTok", desc: "Quick answers" },
+    { label: "Sonnet", modelId: "anthropic/claude-sonnet-4-20250514", cost: "~$3/MTok", desc: "Best balance" },
+    { label: "Opus", modelId: "anthropic/claude-opus-4-20250514", cost: "~$15/MTok", desc: "Deep reasoning" },
+  ],
+  gemini: [
+    { label: "Flash Lite", modelId: "google/gemini-2.0-flash-lite", cost: "Free tier", desc: "Quick answers" },
+    { label: "Flash 2.5", modelId: "google/gemini-2.5-flash-preview-05-20", cost: "Free tier", desc: "Best balance" },
+    { label: "Pro 2.5", modelId: "google/gemini-2.5-pro-preview-05-06", cost: "~$1.25/MTok", desc: "Deep reasoning" },
+  ],
+  openai: [
+    { label: "GPT-4o Mini", modelId: "openai/gpt-4o-mini", cost: "~$0.15/MTok", desc: "Quick answers" },
+    { label: "GPT-4o", modelId: "openai/gpt-4o", cost: "~$2.50/MTok", desc: "Best balance" },
+    { label: "o3", modelId: "openai/o3", cost: "~$10/MTok", desc: "Deep reasoning" },
+  ],
+  groq: [
+    { label: "Llama 3 8B", modelId: "groq/llama-3.3-8b-versatile", cost: "Free", desc: "Quick answers" },
+    { label: "Llama 3 70B", modelId: "groq/llama-3.3-70b-versatile", cost: "Free", desc: "Best balance" },
+    { label: "Mixtral", modelId: "groq/mixtral-8x7b-32768", cost: "Free", desc: "Deep reasoning" },
+  ],
+  openrouter: [
+    { label: "Auto (cheap)", modelId: "openrouter/auto", cost: "Varies", desc: "Quick answers" },
+    { label: "Auto", modelId: "openrouter/auto", cost: "Varies", desc: "Best balance" },
+    { label: "Auto (best)", modelId: "openrouter/auto", cost: "Varies", desc: "Deep reasoning" },
+  ],
+};
+
+const TIER_LABELS = ["Fast", "Smart", "Pro"] as const;
+const TIER_ICONS = ["⚡", "★", "🧠"];
+
 function isKeyFormatValid(providerId: string, key: string): boolean {
   const rule = KEY_PATTERNS[providerId];
   if (!rule) return key.trim().length > 10; // fallback: any 10+ char key
@@ -40,6 +79,8 @@ export interface ProviderCardProps {
   isLocal?: boolean;
   validated?: boolean;
   onValidated: (providerId: string, selectedModel?: string) => void;
+  onModelSelected?: (providerId: string, modelId: string) => void;
+  activeModelId?: string;
 }
 
 export function ProviderCard({
@@ -52,11 +93,16 @@ export function ProviderCard({
   isLocal = false,
   validated = false,
   onValidated,
+  onModelSelected,
+  activeModelId,
 }: ProviderCardProps) {
   const [apiKey, setApiKey] = useState("");
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(validated);
+  const tiers = MODEL_TIERS[id];
+  const initialTier = tiers?.findIndex(t => t.modelId === activeModelId) ?? 1;
+  const [selectedTier, setSelectedTier] = useState(initialTier >= 0 ? initialTier : 1);
 
   // Ollama-specific state
   const [ollamaDetected, setOllamaDetected] = useState<boolean | null>(null);
@@ -178,7 +224,8 @@ export function ProviderCard({
       if (ok) {
         await storeSecret(envVar, apiKey.trim());
         setSuccess(true);
-        onValidated(id);
+        const tierModel = tiers?.[selectedTier]?.modelId;
+        onValidated(id, tierModel);
       } else {
         setError("Invalid key \u2014 please check and try again.");
       }
@@ -489,6 +536,37 @@ export function ProviderCard({
               <XCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               {error}
             </p>
+          )}
+
+          {/* Model tier picker — shown when connected and tiers available */}
+          {success && tiers && tiers.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-neutral-500">Choose model</p>
+              <div className="flex gap-1 w-full">
+                {tiers.map((tier, i) => (
+                  <button
+                    key={tier.modelId}
+                    type="button"
+                    onClick={() => { setSelectedTier(i); onModelSelected?.(id, tier.modelId); }}
+                    className={`
+                      flex-1 min-w-0 rounded-md border px-1 py-1.5 text-center transition-all
+                      ${selectedTier === i
+                        ? "border-primary-400 bg-primary-50 ring-1 ring-primary-100"
+                        : "border-neutral-200 bg-white hover:border-neutral-300"
+                      }
+                    `}
+                    aria-label={`Select ${TIER_LABELS[i]} tier: ${tier.label}`}
+                    aria-pressed={selectedTier === i}
+                  >
+                    <span className="text-sm" aria-hidden="true">{TIER_ICONS[i]}</span>
+                    <p className={`text-[10px] font-bold mt-0.5 truncate ${selectedTier === i ? "text-primary-700" : "text-neutral-700"}`}>
+                      {TIER_LABELS[i]}
+                    </p>
+                    <p className="text-[9px] text-neutral-400 truncate">{tier.label}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Action buttons — flex-wrap prevents overflow on narrow cards */}

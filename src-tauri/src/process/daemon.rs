@@ -310,23 +310,32 @@ async fn ensure_control_ui_auth() {
         Err(_) => return,
     };
 
-    // Check if controlUi.allowInsecureAuth is already set
-    let already_set = config
+    // Ensure controlUi has both flags for in-app chat
+    let cui = config
         .get("gateway")
-        .and_then(|g| g.get("controlUi"))
+        .and_then(|g| g.get("controlUi"));
+
+    let has_insecure = cui
         .and_then(|c| c.get("allowInsecureAuth"))
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    let has_origin_fallback = cui
+        .and_then(|c| c.get("dangerouslyAllowHostHeaderOriginFallback"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
-    if already_set {
+    if has_insecure && has_origin_fallback {
         return;
     }
 
-    // Add controlUi.allowInsecureAuth = true
+    // Set both flags needed for Tauri webview to connect via WebSocket
     if let Some(gw) = config.get_mut("gateway").and_then(|g| g.as_object_mut()) {
         gw.insert(
             "controlUi".to_string(),
-            serde_json::json!({ "allowInsecureAuth": true }),
+            serde_json::json!({
+                "allowInsecureAuth": true,
+                "dangerouslyAllowHostHeaderOriginFallback": true
+            }),
         );
     }
 

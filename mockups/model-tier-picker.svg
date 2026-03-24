@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="520" viewBox="0 0 680 520">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+      text { font-family: 'Inter', system-ui, sans-serif; }
+    </style>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-opacity="0.08"/>
+    </filter>
+    <filter id="shadow-sm" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="680" height="520" rx="16" fill="#fafafa"/>
+
+  <!-- Card -->
+  <rect x="24" y="20" width="632" height="480" rx="12" fill="white" stroke="#e5e5e5" filter="url(#shadow)"/>
+
+  <!-- Header: Provider name + Connected badge -->
+  <g transform="translate(48, 48)">
+    <!-- Icon circle -->
+    <rect width="40" height="40" rx="10" fill="#eff6ff"/>
+    <text x="20" y="26" text-anchor="middle" font-size="18" fill="#2563eb">⬡</text>
+
+    <!-- Provider name -->
+    <text x="52" y="18" font-size="16" font-weight="700" fill="#171717">Google Gemini</text>
+    <text x="52" y="35" font-size="12" fill="#737373">Free tier available</text>
+
+    <!-- Green checkmark -->
+    <circle cx="580" cy="8" r="12" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <path d="M574 8l4 4 8-8" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Divider -->
+  <line x1="48" y1="104" x2="632" y2="104" stroke="#e5e5e5"/>
+
+  <!-- Key stored securely -->
+  <g transform="translate(48, 120)">
+    <text x="0" y="14" font-size="12" font-weight="500" fill="#737373">API Key</text>
+    <rect x="0" y="24" width="584" height="36" rx="8" fill="#f0fdf4" stroke="#bbf7d0"/>
+    <circle cx="20" cy="42" r="8" fill="#dcfce7"/>
+    <path d="M16 42l3 3 6-6" stroke="#16a34a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <text x="34" y="47" font-size="13" font-weight="500" fill="#15803d">Key stored securely</text>
+  </g>
+
+  <!-- Choose model label -->
+  <text x="48" y="210" font-size="12" font-weight="600" fill="#525252">Choose model</text>
+
+  <!-- Three tier cards -->
+  <!-- Fast (unselected) -->
+  <g transform="translate(48, 222)">
+    <rect width="186" height="150" rx="10" fill="white" stroke="#e5e5e5" stroke-width="1.5"/>
+    <text x="93" y="32" text-anchor="middle" font-size="20">⚡</text>
+    <text x="93" y="54" text-anchor="middle" font-size="13" font-weight="700" fill="#404040">Fast</text>
+    <text x="93" y="72" text-anchor="middle" font-size="11" fill="#737373">Flash Lite</text>
+    <text x="93" y="96" text-anchor="middle" font-size="11" fill="#a3a3a3">Free tier</text>
+    <text x="93" y="116" text-anchor="middle" font-size="10" fill="#a3a3a3">Quick answers</text>
+  </g>
+
+  <!-- Smart (SELECTED - blue ring) -->
+  <g transform="translate(245, 222)">
+    <rect width="186" height="150" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+    <!-- Selection ring -->
+    <rect x="-3" y="-3" width="192" height="156" rx="13" fill="none" stroke="#bfdbfe" stroke-width="3"/>
+    <text x="93" y="32" text-anchor="middle" font-size="20">★</text>
+    <text x="93" y="54" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">Smart</text>
+    <text x="93" y="72" text-anchor="middle" font-size="11" fill="#3b82f6">Flash 2.5</text>
+    <text x="93" y="96" text-anchor="middle" font-size="11" fill="#2563eb">Free tier</text>
+    <text x="93" y="116" text-anchor="middle" font-size="10" fill="#3b82f6">Best balance</text>
+  </g>
+
+  <!-- Pro (unselected) -->
+  <g transform="translate(442, 222)">
+    <rect width="186" height="150" rx="10" fill="white" stroke="#e5e5e5" stroke-width="1.5"/>
+    <text x="93" y="32" text-anchor="middle" font-size="20">🧠</text>
+    <text x="93" y="54" text-anchor="middle" font-size="13" font-weight="700" fill="#404040">Pro</text>
+    <text x="93" y="72" text-anchor="middle" font-size="11" fill="#737373">Pro 2.5</text>
+    <text x="93" y="96" text-anchor="middle" font-size="11" fill="#a3a3a3">~$1.25/MTok</text>
+    <text x="93" y="116" text-anchor="middle" font-size="10" fill="#a3a3a3">Deep reasoning</text>
+  </g>
+
+  <!-- Action buttons row -->
+  <g transform="translate(48, 394)">
+    <!-- Get Key button -->
+    <rect width="120" height="36" rx="8" fill="white" stroke="#e5e5e5"/>
+    <text x="46" y="23" font-size="12" font-weight="500" fill="#404040">Get Key</text>
+    <text x="76" y="23" font-size="11" fill="#a3a3a3">↗</text>
+
+    <!-- Connected button -->
+    <rect x="132" y="0" width="160" height="36" rx="8" fill="#16a34a"/>
+    <circle cx="156" cy="18" r="7" fill="none" stroke="white" stroke-width="1.5"/>
+    <path d="M152 18l3 3 6-6" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <text x="172" y="23" font-size="12" font-weight="600" fill="white">Connected</text>
+  </g>
+
+  <!-- Primary Provider badge -->
+  <g transform="translate(48, 446)">
+    <rect width="584" height="36" rx="18" fill="#f0fdf4" stroke="#bbf7d0"/>
+    <circle cx="280" cy="18" r="7" fill="none" stroke="#16a34a" stroke-width="1.5"/>
+    <path d="M276 18l3 3 6-6" stroke="#16a34a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <text x="296" y="23" font-size="12" font-weight="600" fill="#15803d">Primary Provider</text>
+  </g>
+</svg>
