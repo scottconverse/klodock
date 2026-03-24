@@ -1,0 +1,231 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 1400" font-family="Inter, system-ui, -apple-system, sans-serif">
+  <defs>
+    <filter id="sh" x="-3%" y="-2%" width="106%" height="106%">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+    <linearGradient id="hg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f97316"/><stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="ng" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22c55e"/><stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+    <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#64748b"/><stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="540" height="1400" fill="#f8fafc"/>
+
+  <!-- Title -->
+  <rect width="540" height="48" fill="url(#hg)"/>
+  <text x="20" y="31" fill="white" font-size="16" font-weight="700">KloDock v1.3.0 — System Architecture</text>
+  <text x="520" y="31" fill="rgba(255,255,255,0.6)" font-size="9" text-anchor="end">Tauri v2 · React 19 · Rust</text>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- USER INTERFACE LAYER -->
+  <!-- ══════════════════════════════════ -->
+  <text x="20" y="75" fill="#475569" font-size="9" font-weight="600" letter-spacing="1.2">USER INTERFACE (React + TypeScript + Tailwind v4)</text>
+
+  <!-- Wizard -->
+  <rect x="20" y="88" width="245" height="130" rx="8" fill="white" stroke="#dbeafe" stroke-width="1" filter="url(#sh)"/>
+  <rect x="20" y="88" width="245" height="24" rx="8" fill="url(#bg)"/>
+  <rect x="20" y="104" width="245" height="8" fill="url(#bg)"/>
+  <text x="32" y="104" fill="white" font-size="10" font-weight="600">Setup Wizard (8 screens)</text>
+  <g font-size="8.5" fill="#334155">
+    <text x="32" y="128">Welcome → Dependencies → Install</text>
+    <text x="32" y="140">AI Provider → Personality → Channels</text>
+    <text x="32" y="152">Skills → Done (greeting bubble)</text>
+    <text x="32" y="168" fill="#64748b" font-style="italic">Auto-installs Node.js + OpenClaw</text>
+    <text x="32" y="180" fill="#64748b" font-style="italic">React Router · Lucide icons</text>
+    <text x="32" y="196" fill="#3b82f6" font-weight="600">First-run only</text>
+  </g>
+
+  <!-- Dashboard -->
+  <rect x="275" y="88" width="245" height="130" rx="8" fill="white" stroke="#dbeafe" stroke-width="1" filter="url(#sh)"/>
+  <rect x="275" y="88" width="245" height="24" rx="8" fill="url(#bg)"/>
+  <rect x="275" y="104" width="245" height="8" fill="url(#bg)"/>
+  <text x="287" y="104" fill="white" font-size="10" font-weight="600">Dashboard (7 pages)</text>
+  <g font-size="8" fill="#334155">
+    <text x="287" y="126">Overview</text><text x="345" y="126" fill="#64748b">health · activity · start/stop</text>
+    <text x="287" y="138">Chat</text><text x="345" y="138" fill="#64748b">inline agent chat via CLI</text>
+    <text x="287" y="150">Skills</text><text x="345" y="150" fill="#64748b">52 skills · safety badges</text>
+    <text x="287" y="162">Personality</text><text x="360" y="162" fill="#64748b">SOUL.md editor</text>
+    <text x="287" y="174">Channels</text><text x="345" y="174" fill="#64748b">Telegram · Discord · WebChat</text>
+    <text x="287" y="186">Settings</text><text x="345" y="186" fill="#64748b">6 providers · tier picker</text>
+    <text x="287" y="198">Updates</text><text x="345" y="198" fill="#64748b">auto-updater</text>
+  </g>
+
+  <!-- Shared Components -->
+  <rect x="20" y="226" width="500" height="55" rx="8" fill="white" stroke="#dbeafe" stroke-width="1" filter="url(#sh)"/>
+  <rect x="20" y="226" width="500" height="22" rx="8" fill="url(#bg)"/>
+  <rect x="20" y="240" width="500" height="8" fill="url(#bg)"/>
+  <text x="32" y="242" fill="white" font-size="10" font-weight="600">Shared Components</text>
+  <g font-size="8" fill="#334155">
+    <text x="32" y="264">ProviderCard</text><text x="100" y="264" fill="#64748b">key · tier · test</text>
+    <text x="180" y="264">Chat</text><text x="210" y="264" fill="#64748b">messages · input</text>
+    <text x="300" y="264">SafetyBadge</text><text x="365" y="264" fill="#64748b">Verified / Community</text>
+    <text x="32" y="276">StatusIndicator</text><text x="115" y="276" fill="#64748b">Running / Stopped</text>
+    <text x="210" y="276">Toast</text><text x="245" y="276" fill="#64748b">notifications</text>
+    <text x="330" y="276">KloDockLogo</text><text x="400" y="276" fill="#64748b">K monogram</text>
+  </g>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- IPC BRIDGE -->
+  <!-- ══════════════════════════════════ -->
+  <rect x="20" y="295" width="500" height="26" rx="6" fill="#fef3c7" stroke="#fbbf24" stroke-width="0.8"/>
+  <text x="270" y="312" fill="#92400e" font-size="9" font-weight="600" text-anchor="middle">▼ Tauri IPC — invoke() from React → Rust (type-safe, async) ▼</text>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- RUST BACKEND -->
+  <!-- ══════════════════════════════════ -->
+  <text x="20" y="348" fill="#475569" font-size="9" font-weight="600" letter-spacing="1.2">RUST BACKEND (Tauri v2)</text>
+
+  <!-- Row 1: installer + config -->
+  <rect x="20" y="360" width="245" height="120" rx="8" fill="white" stroke="#fed7aa" stroke-width="1" filter="url(#sh)"/>
+  <rect x="20" y="360" width="245" height="22" rx="8" fill="url(#rg)"/>
+  <rect x="20" y="374" width="245" height="8" fill="url(#rg)"/>
+  <text x="32" y="376" fill="white" font-size="10" font-weight="600">installer/</text>
+  <g font-size="8" fill="#334155">
+    <text x="32" y="396">node.rs</text><text x="100" y="396" fill="#64748b">download · SHA256 · extract</text>
+    <text x="32" y="408">openclaw.rs</text><text x="100" y="408" fill="#64748b">npm install · version check</text>
+    <text x="32" y="420">ollama.rs</text><text x="100" y="420" fill="#64748b">detect · download · pull model</text>
+    <text x="32" y="432">uninstall.rs</text><text x="100" y="432" fill="#64748b">resumable · step-by-step</text>
+    <text x="32" y="444">skills.rs</text><text x="100" y="444" fill="#64748b">bundled JSON fallback</text>
+  </g>
+
+  <rect x="275" y="360" width="245" height="120" rx="8" fill="white" stroke="#fed7aa" stroke-width="1" filter="url(#sh)"/>
+  <rect x="275" y="360" width="245" height="22" rx="8" fill="url(#rg)"/>
+  <rect x="275" y="374" width="245" height="8" fill="url(#rg)"/>
+  <text x="287" y="376" fill="white" font-size="10" font-weight="600">config/</text>
+  <g font-size="8" fill="#334155">
+    <text x="287" y="396">openclaw_json.rs</text><text x="385" y="396" fill="#64748b">read · write · merge</text>
+    <text x="287" y="408">soul.rs</text><text x="385" y="408" fill="#64748b">SOUL.md read/write</text>
+    <text x="287" y="420">env.rs</text><text x="385" y="420" fill="#64748b">.env materialize · scrub</text>
+    <text x="287" y="432">settings.rs</text><text x="385" y="432" fill="#64748b">keep_keys toggle</text>
+  </g>
+
+  <!-- Row 2: secrets + process -->
+  <rect x="20" y="490" width="245" height="120" rx="8" fill="white" stroke="#fed7aa" stroke-width="1" filter="url(#sh)"/>
+  <rect x="20" y="490" width="245" height="22" rx="8" fill="url(#rg)"/>
+  <rect x="20" y="504" width="245" height="8" fill="url(#rg)"/>
+  <text x="32" y="506" fill="white" font-size="10" font-weight="600">secrets/</text>
+  <g font-size="8" fill="#334155">
+    <text x="32" y="526">keychain.rs</text><text x="110" y="526" fill="#64748b">DPAPI encrypt/decrypt</text>
+    <text x="32" y="538">  store · retrieve · delete secrets</text>
+    <text x="32" y="550">  test_api_key (per provider)</text>
+    <text x="32" y="562">  test_channel_token (Telegram/Discord)</text>
+    <text x="32" y="574">  SHA-256 hashed filenames</text>
+  </g>
+
+  <rect x="275" y="490" width="245" height="120" rx="8" fill="white" stroke="#fed7aa" stroke-width="1" filter="url(#sh)"/>
+  <rect x="275" y="490" width="245" height="22" rx="8" fill="url(#rg)"/>
+  <rect x="275" y="504" width="245" height="8" fill="url(#rg)"/>
+  <text x="287" y="506" fill="white" font-size="10" font-weight="600">process/</text>
+  <g font-size="8" fill="#334155">
+    <text x="287" y="526">daemon.rs</text><text x="370" y="526" fill="#64748b">start · stop · restart</text>
+    <text x="287" y="538">health.rs</text><text x="370" y="538" fill="#64748b">HTTP ping · status events</text>
+    <text x="287" y="550">autostart/</text><text x="370" y="550" fill="#64748b">Win registry · macOS plist · Linux .desktop</text>
+    <text x="287" y="562">activity.rs</text><text x="370" y="562" fill="#64748b">event log with timestamps</text>
+  </g>
+
+  <!-- Row 3: chat + update + tray -->
+  <rect x="20" y="620" width="500" height="55" rx="8" fill="white" stroke="#fed7aa" stroke-width="1" filter="url(#sh)"/>
+  <rect x="20" y="620" width="500" height="22" rx="8" fill="url(#rg)"/>
+  <rect x="20" y="634" width="500" height="8" fill="url(#rg)"/>
+  <text x="32" y="636" fill="white" font-size="10" font-weight="600">chat/ · update/ · tray.rs</text>
+  <g font-size="8" fill="#334155">
+    <text x="32" y="656">proxy.rs</text><text x="90" y="656" fill="#64748b">CLI agent relay · .env materialize</text>
+    <text x="270" y="656">openclaw_update.rs</text><text x="380" y="656" fill="#64748b">backup · npm update</text>
+    <text x="32" y="668">tray.rs</text><text x="90" y="668" fill="#64748b">system tray icon · context menu (Show / Start / Quit)</text>
+  </g>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- CHAT FLOW -->
+  <!-- ══════════════════════════════════ -->
+  <rect x="20" y="690" width="500" height="48" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1"/>
+  <text x="32" y="708" fill="#1e40af" font-size="9" font-weight="700">CHAT DATA FLOW</text>
+  <text x="32" y="722" fill="#1e40af" font-size="8">User message → invoke("chat_send_message") → Rust materializes .env → spawns openclaw agent --message → AI responds</text>
+  <text x="32" y="733" fill="#3b82f6" font-size="7.5">No WebSocket · No gateway auth · No origin issues · Works offline with Ollama</text>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- EXTERNAL SERVICES -->
+  <!-- ══════════════════════════════════ -->
+  <text x="20" y="768" fill="#475569" font-size="9" font-weight="600" letter-spacing="1.2">EXTERNAL SERVICES &amp; STORAGE</text>
+
+  <!-- OpenClaw Runtime -->
+  <rect x="20" y="780" width="245" height="105" rx="8" fill="white" stroke="#bbf7d0" stroke-width="1" filter="url(#sh)"/>
+  <rect x="20" y="780" width="245" height="22" rx="8" fill="url(#ng)"/>
+  <rect x="20" y="794" width="245" height="8" fill="url(#ng)"/>
+  <text x="32" y="796" fill="white" font-size="10" font-weight="600">OpenClaw Runtime (Node.js)</text>
+  <g font-size="8" fill="#334155">
+    <text x="32" y="816">openclaw gateway</text><text x="140" y="816" fill="#64748b">port 18789 · WS + HTTP</text>
+    <text x="32" y="828">openclaw agent</text><text x="140" y="828" fill="#64748b">CLI chat · embedded mode</text>
+    <text x="32" y="840">openclaw skills</text><text x="140" y="840" fill="#64748b">52 bundled · ClawHub</text>
+    <text x="32" y="852">SOUL.md + workspace</text><text x="160" y="852" fill="#64748b">personality + files</text>
+  </g>
+
+  <!-- AI Providers -->
+  <rect x="275" y="780" width="245" height="105" rx="8" fill="white" stroke="#ddd6fe" stroke-width="1" filter="url(#sh)"/>
+  <rect x="275" y="780" width="245" height="22" rx="8" fill="url(#ag)"/>
+  <rect x="275" y="794" width="245" height="8" fill="url(#ag)"/>
+  <text x="287" y="796" fill="white" font-size="10" font-weight="600">AI Providers (6 supported)</text>
+  <g font-size="8" fill="#334155">
+    <text x="287" y="816" font-weight="600">Anthropic</text><text x="345" y="816" fill="#64748b">Haiku · Sonnet · Opus</text>
+    <text x="287" y="828" font-weight="600">OpenAI</text><text x="345" y="828" fill="#64748b">GPT-4o Mini · GPT-4o · o1</text>
+    <text x="287" y="840" font-weight="600">Gemini</text><text x="345" y="840" fill="#64748b">Flash · Pro</text>
+    <text x="287" y="852" font-weight="600">Groq</text><text x="345" y="852" fill="#64748b">Llama 3.3 · Mixtral</text>
+    <text x="287" y="864" font-weight="600">OpenRouter</text><text x="355" y="864" fill="#64748b">any model</text>
+    <text x="410" y="864" fill="#22c55e" font-weight="600">Ollama</text><text x="450" y="864" fill="#22c55e">FREE · local</text>
+    <text x="287" y="878" fill="#7c3aed" font-size="7.5" font-weight="600">Fast / Smart / Pro tier picker per provider</text>
+  </g>
+
+  <!-- Local Storage -->
+  <rect x="20" y="895" width="245" height="95" rx="8" fill="white" stroke="#cbd5e1" stroke-width="1" filter="url(#sh)"/>
+  <rect x="20" y="895" width="245" height="22" rx="8" fill="url(#sg)"/>
+  <rect x="20" y="909" width="245" height="8" fill="url(#sg)"/>
+  <text x="32" y="911" fill="white" font-size="10" font-weight="600">Local Storage</text>
+  <g font-size="8" fill="#334155">
+    <text x="32" y="932">~/.klodock/</text><text x="110" y="932" fill="#64748b">Node.js · encrypted secrets · state</text>
+    <text x="32" y="944">~/.openclaw/</text><text x="110" y="944" fill="#64748b">config · SOUL.md · .env (temp)</text>
+    <text x="32" y="956">OS Keychain</text><text x="110" y="956" fill="#64748b">DPAPI / Keychain / libsecret</text>
+    <text x="32" y="968">localStorage</text><text x="110" y="968" fill="#64748b">chat history · UI preferences</text>
+  </g>
+
+  <!-- Platform -->
+  <rect x="275" y="895" width="245" height="95" rx="8" fill="white" stroke="#cbd5e1" stroke-width="1" filter="url(#sh)"/>
+  <rect x="275" y="895" width="245" height="22" rx="8" fill="url(#sg)"/>
+  <rect x="275" y="909" width="245" height="8" fill="url(#sg)"/>
+  <text x="287" y="911" fill="white" font-size="10" font-weight="600">Platform Targets</text>
+  <g font-size="8" fill="#334155">
+    <text x="287" y="932">Windows</text><text x="350" y="932" fill="#64748b">.exe installer (NSIS, 5.1 MB)</text>
+    <text x="287" y="944">macOS</text><text x="350" y="944" fill="#64748b">.dmg (CI-built)</text>
+    <text x="287" y="956">Linux</text><text x="350" y="956" fill="#64748b">.AppImage · .deb (CI-built)</text>
+    <text x="287" y="968">System tray</text><text x="350" y="968" fill="#64748b">minimize · context menu</text>
+    <text x="287" y="980">Autostart</text><text x="350" y="980" fill="#64748b">registry / plist / .desktop</text>
+  </g>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- SECURITY -->
+  <!-- ══════════════════════════════════ -->
+  <rect x="20" y="1005" width="500" height="55" rx="6" fill="#fef2f2" stroke="#fecaca" stroke-width="0.8"/>
+  <text x="32" y="1023" fill="#991b1b" font-size="9" font-weight="700">SECURITY</text>
+  <text x="32" y="1036" fill="#7f1d1d" font-size="7.5">API keys encrypted at rest (DPAPI/Keychain) · .env scrubbed on daemon stop · SHA-256 verified Node.js download</text>
+  <text x="32" y="1048" fill="#7f1d1d" font-size="7.5">Pre-commit hook blocks API key leaks · No keys in git history · icacls permissions · Secrets never in process args</text>
+
+  <!-- ══════════════════════════════════ -->
+  <!-- TESTING -->
+  <!-- ══════════════════════════════════ -->
+  <rect x="20" y="1070" width="500" height="45" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="0.8"/>
+  <text x="32" y="1088" fill="#166534" font-size="9" font-weight="700">TESTING</text>
+  <text x="32" y="1100" fill="#15803d" font-size="7.5">26 Vitest unit · 27 Rust integration · 107 Puppeteer E2E · 51 QA shell checks · WCAG 2.1 AA · Cross-platform CI</text>
+</svg>

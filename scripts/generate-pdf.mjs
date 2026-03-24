@@ -141,10 +141,11 @@ para('KloDock is built on four layers: a React frontend rendered in a Tauri webv
 para('The chat interface uses a direct CLI approach: user messages are passed to the OpenClaw agent command as a child process, which calls the AI provider and returns the response. This eliminates the gateway authentication complexity entirely.');
 
 try {
-  const archPath = resolve(SCREENSHOTS, 'architecture.png');
-  doc.moveDown(0.5);
-  doc.image(archPath, 40, doc.y, { width: 500 });
-  doc.moveDown(1);
+  const archPath = resolve(SCREENSHOTS, 'architecture-portrait.png');
+  doc.moveDown(0.3);
+  doc.image(archPath, 20, doc.y, { width: 530 });
+  // The portrait diagram is tall — add a page break after
+  doc.addPage();
 } catch (e) {
   para('[Architecture diagram: see docs/architecture.svg]');
 }
