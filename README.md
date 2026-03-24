@@ -117,11 +117,17 @@ npx tauri dev
 ### Run tests
 
 ```bash
-# Frontend (20 tests)
+# Frontend unit tests (20 tests)
 npx vitest run
 
-# Rust (comprehensive test suite)
+# Rust integration tests
 cd src-tauri && cargo test
+
+# Puppeteer E2E tests (107 tests — every page, button, and edge case)
+npm run test:e2e
+
+# QA shell suite (47 checks — security, versions, docs, build artifacts)
+bash scripts/qa-test.sh
 ```
 
 ### Build
