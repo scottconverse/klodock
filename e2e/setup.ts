@@ -13,11 +13,14 @@ const TAURI_MOCK_SCRIPT = buildTauriMockScript();
 
 let viteProcess: ChildProcess | null = null;
 let browser: Browser | null = null;
+let viteRefCount = 0;
 
 /* ── Vite dev server ──────────────────────────────────── */
 
 export async function startVite(): Promise<void> {
-  // Check if Vite is already running on the port
+  viteRefCount++;
+
+  // Check if Vite is already running (from a previous suite or externally)
   const isRunning = await fetch(BASE_URL).then(() => true).catch(() => false);
   if (isRunning) {
     console.log(`[e2e] Vite already running on port ${VITE_PORT}`);
@@ -69,11 +72,22 @@ export async function startVite(): Promise<void> {
 }
 
 export function stopVite(): void {
+  viteRefCount--;
+  // Only kill Vite when the last suite finishes
+  if (viteRefCount <= 0 && viteProcess) {
+    viteProcess.kill("SIGTERM");
+    viteProcess = null;
+    viteRefCount = 0;
+  }
+}
+
+// Ensure cleanup on process exit
+process.on("exit", () => {
   if (viteProcess) {
     viteProcess.kill("SIGTERM");
     viteProcess = null;
   }
-}
+});
 
 /* ── Puppeteer browser ────────────────────────────────── */
 
