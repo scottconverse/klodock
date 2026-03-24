@@ -9,7 +9,7 @@
     "test": "vitest",
     "test:e2e:wdio": "wdio run ./wdio.conf.ts",
     "test:e2e:build": "tsc --project e2e/tsconfig.json",
-    "test:e2e": "tsc --project e2e/tsconfig.json && node --test e2e/dist/tests/*.test.js",
+    "test:e2e": "tsc --project e2e/tsconfig.json && node --test --test-concurrency=1 e2e/dist/tests/*.test.js",
     "tauri": "tauri"
   },
   "keywords": [

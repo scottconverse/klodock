@@ -8,6 +8,7 @@ export default mergeConfig(
       environment: "jsdom",
       setupFiles: ["./src/test-setup.ts", "./src/__tests__/setup.ts"],
       globals: true,
+      exclude: ["e2e/**", "node_modules/**"],
     },
   })
 );
