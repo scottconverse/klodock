@@ -27,14 +27,36 @@ const ALL_SCOPES = [
   "operator.pairing",
 ];
 
+const STORAGE_KEY = "klodock-chat-history";
+
+function loadChatHistory(): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return parsed.map((m: ChatMessage) => ({ ...m, timestamp: new Date(m.timestamp) }));
+  } catch { return []; }
+}
+
+function saveChatHistory(messages: ChatMessage[]) {
+  try {
+    // Keep last 100 messages
+    const trimmed = messages.slice(-100);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+  } catch { /* localStorage full or unavailable */ }
+}
+
 export function Chat({ fullPage = false, onClose }: ChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadChatHistory);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [startingAgent, setStartingAgent] = useState(false);
+  const [isOllamaProvider, setIsOllamaProvider] = useState(false);
+  const [streamingElapsed, setStreamingElapsed] = useState(0);
+  const [firstOllamaQuery, setFirstOllamaQuery] = useState(true);
 
   const wsRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -42,6 +64,29 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
   const sessionKeyRef = useRef(`klodock-${Date.now()}`);
   const streamBufferRef = useRef("");
   const streamMsgIdRef = useRef<string | null>(null);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) saveChatHistory(messages);
+  }, [messages]);
+
+  // Detect if using Ollama provider
+  useEffect(() => {
+    readConfig().then((cfg) => {
+      const model = (cfg as Record<string, unknown>)?.agents as Record<string, unknown>;
+      const primary = (model?.defaults as Record<string, unknown>)?.model as Record<string, string>;
+      if (primary?.primary?.startsWith("ollama/")) {
+        setIsOllamaProvider(true);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Elapsed timer while streaming (shows user it's not frozen)
+  useEffect(() => {
+    if (!streaming) { setStreamingElapsed(0); return; }
+    const interval = setInterval(() => setStreamingElapsed(s => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [streaming]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -115,7 +160,16 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
             setConnected(true);
             setConnecting(false);
           } else {
-            setError(msg.error?.message || "Connection failed");
+            const rawError = msg.error?.message || "Connection failed";
+            // Translate technical errors to user-friendly messages
+            const userError = rawError.includes("origin not allowed")
+              ? "Couldn't connect — try restarting your agent from the Overview page."
+              : rawError.includes("unauthorized") || rawError.includes("password")
+                ? "Connection denied — your agent may need to be restarted."
+                : rawError.includes("protocol mismatch")
+                  ? "Version mismatch — try updating KloDock."
+                  : rawError;
+            setError(userError);
             setConnecting(false);
           }
         }
@@ -123,7 +177,11 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
         // Handle chat.send response
         if (msg.type === "res" && msg.id?.startsWith("chat-")) {
           if (!msg.ok) {
-            setError(msg.error?.message || "Couldn't send message");
+            const rawError = msg.error?.message || "Couldn't send message";
+            const userError = rawError.includes("missing scope")
+              ? "Couldn't send — try restarting your agent from the Overview page."
+              : rawError;
+            setError(userError);
             setStreaming(false);
           }
         }
@@ -163,6 +221,7 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
           if (stream === "lifecycle" && data?.phase === "end") {
             if (streaming) {
               setStreaming(false);
+              setFirstOllamaQuery(false);
               streamMsgIdRef.current = null;
               streamBufferRef.current = "";
             }
@@ -362,6 +421,17 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
               <RefreshCw className="h-4 w-4" />
             </button>
           )}
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={() => { setMessages([]); localStorage.removeItem(STORAGE_KEY); }}
+              className="p-1.5 rounded-md hover:bg-neutral-100 text-neutral-400 text-xs"
+              aria-label="Clear chat history"
+              title="Clear chat"
+            >
+              Clear
+            </button>
+          )}
           {onClose && (
             <button
               type="button"
@@ -446,9 +516,22 @@ export function Chat({ fullPage = false, onClose }: ChatProps) {
               }`}
             >
               {msg.content || (
-                <span className="flex items-center gap-1.5 text-neutral-400">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Thinking...
+                <span className="flex flex-col gap-1 text-neutral-400">
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {isOllamaProvider && firstOllamaQuery && streamingElapsed < 5
+                      ? "Loading AI model..."
+                      : isOllamaProvider && firstOllamaQuery && streamingElapsed >= 5
+                        ? `Loading AI model (${streamingElapsed}s)...`
+                        : streamingElapsed >= 10
+                          ? `Thinking (${streamingElapsed}s)...`
+                          : "Thinking..."}
+                  </span>
+                  {isOllamaProvider && firstOllamaQuery && streamingElapsed >= 3 && (
+                    <span className="text-[10px] text-neutral-300">
+                      First response takes longer while the model loads into memory.
+                    </span>
+                  )}
                 </span>
               )}
             </div>
