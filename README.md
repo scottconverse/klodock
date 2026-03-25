@@ -4,6 +4,9 @@ Desktop GUI for [OpenClaw](https://github.com/openclaw/openclaw) — zero termin
 
 KloDock lets non-technical users install, configure, personalize, and manage an OpenClaw AI agent through a visual interface. No command line, no JSON files, no markdown editing. Download, run the wizard, talk to your agent.
 
+> **Windows:** SmartScreen may show "Windows protected your PC" — click **More info → Run anyway**. This is normal for unsigned open-source apps.
+> **macOS:** Right-click the app → **Open** on first launch (Gatekeeper warning for unsigned apps).
+
 ## Why KloDock?
 
 OpenClaw is powerful but hard to set up. It requires Node.js, terminal fluency, manual config files, and API key management. Hosted alternatives charge $10-40/month for what is free software — and hold your keys.
