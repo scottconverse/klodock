@@ -46,7 +46,7 @@ The application is built on Tauri v2, producing a 5.1 MB NSIS installer on Windo
 
   * Channel setup with API verification  Guided configuration flows for Telegram and Discord, with token entry, format validation, and live API verification (Telegram `getMe`, Discord `users/@me`) before saving. Shows bot name on successful connection.
 
-  * Skill browser with safety badges  Browse 52 skills across 8 categories (Communication, Productivity, Developer Tools, etc.) with search, filtering, and three-tier safety ratings: Verified (bundled/audited), Community (established), Unreviewed (new/unknown). Each skill shows what it needs to work — with download buttons and navigation links to close the gap. Bundled JSON fallback ensures the skill list loads even on first run when the live query is slow.
+  * Skill browser with safety badges  Browse 52 skills across 8 categories (Communication, Productivity, Developer Tools, etc.) with search, filtering, and three-tier safety ratings: Bundled (ships with OpenClaw), Published (listed on ClawHub), Unlisted (not in any registry). Each skill shows what it needs to work — with download buttons and navigation links to close the gap. Bundled JSON fallback ensures the skill list loads even on first run when the live query is slow.
 
   * Agent lifecycle management  The OpenClaw agent runs as a managed child process with automatic restart on crash, periodic health monitoring, and graceful shutdown.
 
@@ -146,7 +146,7 @@ KloDock uses Tauri v2 rather than Electron for three reasons:
 | `secrets/` | `keychain.rs` | OS credential store integration  DPAPI on Windows, keyring crate (Keychain/libsecret) on macOS/Linux |
 | `setup/` | `setup_state.rs` | Wizard state persistence, step completion tracking, crash-safe resume |
 | `process/` | `daemon.rs`, `health.rs`, `autostart/` | Child process lifecycle (start/stop/restart), periodic health checks, platform-specific login-item registration |
-| `clawhub/` | `registry.rs`, `safety.rs` | Skill registry client, search, recommendations, and safety rating lookup |
+| `clawhub/` | `registry.rs`, `safety.rs` | Skill registry client, search, recommendations, and status lookup |
 | `update/` | `openclaw_update.rs`, `skill_update.rs` | Version checking and update logic for OpenClaw and installed skills |
 
   Frontend Stack
@@ -200,21 +200,21 @@ KloDock ships with access to 52 skills from the OpenClaw skill registry. Skills 
 
 Skills are code that runs on your machine with your agent's permissions. When you enable a skill, you are allowing the agent to use that skill's capabilities. A skill that manages files can read and write files. A skill that sends messages can send messages on your behalf. Understand what a skill does before enabling it.
 
-Every skill in KloDock displays a safety badge:
+Every skill in KloDock displays a status badge. These badges indicate distribution status, not security audit results. KloDock does not independently audit, verify, or guarantee the safety of any skill.
 
-  * Verified  Bundled with OpenClaw and reviewed by the OpenClaw maintainers. These skills are part of the official distribution and have been audited for security and correctness. This is the highest trust level.
+  * Bundled (green)  Ships with the OpenClaw distribution. These skills are included in the official OpenClaw package. They have not been independently security-audited by KloDock. "Bundled" means the OpenClaw project chose to include them, not that they have been formally reviewed for vulnerabilities.
 
-  * Community  Created by community contributors and peer-reviewed. These skills have been examined by other developers but have not undergone the same level of scrutiny as Verified skills. Use with reasonable caution.
+  * Published (amber)  Listed on the ClawHub skill registry. These skills are publicly available and may have been created by any developer. They have not been audited for security by KloDock or by ClawHub. The ClawHub registry operates on a "no gatekeeping, just signal" policy  skills are moderated for outright abuse but are not vetted before listing.
 
-  * Unreviewed  New or unreviewed skills with no formal audit. These skills may work correctly, but they have not been independently verified. Enable these only if you understand what the skill does and trust its source.
+  * Unlisted (grey)  Not listed in any known registry. The origin and safety of these skills is unknown. Use only if you understand exactly what the skill does and trust its author.
 
-Our recommendation: Stick to Verified skills for anything involving sensitive data, financial accounts, or external communications. Review Community skills before enabling them. Approach Unreviewed skills the same way you would approach installing software from an unknown developer.
+Important: These badges are informational labels about where a skill comes from. They are not security certifications. No automated security scanning, code review, or community voting process is required for any badge level. You are responsible for evaluating whether a skill is safe to use in your environment.
 
   4.4 What KloDock Cannot Protect You From
 
   * Compromised AI providers. If your AI provider's service is breached or compromised, KloDock cannot prevent exposure of messages you sent to that provider.
 
-  * Malicious skills from third-party sources. While KloDock displays safety badges, these ratings are based on the OpenClaw registry's classification. KloDock does not independently audit every skill. A skill rated "Community" or "Unreviewed" could contain bugs or malicious code.
+  * Malicious skills. KloDock displays status badges (Bundled/Published/Unlisted) but these are distribution labels, not security certifications. KloDock does not independently audit any skill. Any skill  including Bundled skills  could contain bugs, vulnerabilities, or malicious code. You are trusting the individual skill author when you enable a skill.
 
   * Agent mistakes. AI agents can misinterpret instructions, hallucinate information, or take unintended actions. Always review agent output before acting on it, especially for important tasks.
 
@@ -271,7 +271,7 @@ klodock/
 │   ├── components/
 │   │   ├── ProgressBar.tsx         # Animated progress indicator
 │   │   ├── ProviderCard.tsx        # AI provider selection card
-│   │   ├── SafetyBadge.tsx         # Skill safety rating badge
+│   │   ├── SafetyBadge.tsx         # Skill skill status badge
 │   │   ├── StatusIndicator.tsx     # Agent status light
 │   │   ├── Toast.tsx               # Global toast notification component
 │   │   └── ToneSlider.tsx          # Personality tone range slider

@@ -4,14 +4,24 @@ use serde::{Deserialize, Serialize};
 // Types
 // ---------------------------------------------------------------------------
 
-/// How thoroughly a skill has been reviewed for safety.
+/// Distribution status of a skill. These are NOT security audits.
+/// KloDock does not independently audit any skill for security.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SafetyRating {
-    /// Reviewed and signed by the ClawHub team.
+    /// Ships with the OpenClaw distribution. Not independently audited.
+    Bundled,
+    /// Listed on the ClawHub registry. Not audited for security.
+    Published,
+    /// Not listed in any registry.
+    Unlisted,
+
+    // Legacy variants — kept for backward compatibility with existing data.
+    // The frontend maps these to the new names via SafetyBadge.tsx.
+    #[serde(alias = "Verified")]
     Verified,
-    /// Reviewed by the community but not officially audited.
+    #[serde(alias = "Community")]
     Community,
-    /// No review has been performed yet.
+    #[serde(alias = "Unreviewed")]
     Unreviewed,
 }
 

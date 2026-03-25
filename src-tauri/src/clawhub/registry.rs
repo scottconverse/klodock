@@ -241,9 +241,9 @@ fn map_skill_entry(entry: SkillEntry) -> (bool, SkillMetadata) {
         version: String::new(),
         install_count: 0,
         safety_rating: if entry.bundled {
-            SafetyRating::Verified
+            SafetyRating::Bundled
         } else {
-            SafetyRating::Community
+            SafetyRating::Published
         },
         required_permissions: Vec::new(),
         updated_at: String::new(),

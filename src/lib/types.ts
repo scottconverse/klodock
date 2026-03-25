@@ -50,7 +50,7 @@ export interface SkillMetadata {
   missing_requirements: string[];
 }
 
-export type SafetyRating = "Verified" | "Community" | "Unreviewed";
+export type SafetyRating = "Bundled" | "Published" | "Unlisted" | "Verified" | "Community" | "Unreviewed";
 
 export type DangerousPermission =
   | "ShellAccess"
