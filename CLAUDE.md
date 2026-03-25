@@ -7,6 +7,14 @@
 - **ALWAYS** use `.gitignore` to exclude any file that might contain secrets (`.env`, `secrets/`, `*.key`).
 - Before every commit, grep the staged changes for API key patterns (`AIza`, `sk-`, `gsk_`, `ghp_`, `xoxb-`). If found, **STOP and remove them**.
 
+## NEVER FABRICATE INFORMATION
+
+- **NEVER** invent email addresses, domain names, URLs, company names, or contact information. If you don't have the real value, **ASK THE USER**. Do not guess or make something up as a placeholder.
+- **NEVER** claim features, certifications, audits, or approvals exist when they don't. If a feature is a UI label without underlying verification (e.g., "Verified" badge with no actual audit process), say so honestly in the documentation.
+- **NEVER** fabricate test results, pass counts, or QA outcomes. If tests weren't run, say they weren't run.
+- **NEVER** create legal or liability-bearing content (Terms of Service, disclaimers, contact information, compliance claims) using fabricated data. Inaccurate legal documents can cause real financial and legal harm to the user.
+- When in doubt: **ASK, don't invent.**
+
 ## Release Rules
 
 - **ALWAYS** check ALL docs (README.md, README-full.md, README-full.txt), landing pages (docs/index.html, website/index.html), and PDF (KloDock-README.pdf) before ANY release. Every version reference, feature claim, and screenshot must match the actual code. No exceptions.
