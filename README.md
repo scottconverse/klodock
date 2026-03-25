@@ -7,6 +7,8 @@ KloDock lets non-technical users install, configure, personalize, and manage an 
 > **Windows:** SmartScreen may show "Windows protected your PC" — click **More info → Run anyway**. This is normal for unsigned open-source apps.
 > **macOS:** Right-click the app → **Open** on first launch (Gatekeeper warning for unsigned apps).
 
+> **Important:** AI agents can execute code, access files, and interact with external services. Read the [Security and Safety documentation](https://scottconverse.github.io/klodock/terms.html) and [Terms of Service](https://scottconverse.github.io/klodock/terms.html) before use.
+
 ## Why KloDock?
 
 OpenClaw is powerful but hard to set up. It requires Node.js, terminal fluency, manual config files, and API key management. Hosted alternatives charge $10-40/month for what is free software — and hold your keys.

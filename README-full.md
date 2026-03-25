@@ -160,63 +160,85 @@ KloDock uses Tauri v2 rather than Electron for three reasons:
 
 ---
 
-## 4. Security Model
+## 4. Security, Safety, and Trust
 
-KloDock treats API keys as the most sensitive data in the system. The security model is designed around the principle that keys should never exist in plaintext at rest.
+### 4.1 What KloDock Does to Protect You
 
-**Note:** Users who choose Ollama (local AI) skip the entire key management flow. No API key is stored, no `.env` is materialized, and no credentials exist anywhere. The agent talks directly to Ollama at `http://localhost:11434`.
+KloDock is designed with the principle that your data and credentials should never leave your machine unless you explicitly choose a cloud AI provider, and even then, only the minimum necessary data (your message to the AI) is transmitted.
 
-### Secret Materialization Flow (Cloud Providers)
+**Your API keys are encrypted at rest.** Keys are stored in your operating system's native credential store --- Windows DPAPI, macOS Keychain, or Linux libsecret. They are never saved as plain text files. When the agent needs a key, it is temporarily materialized in a protected file, used, and immediately scrubbed.
 
-```
-1. User enters API key in the wizard UI
-         |
-         v
-2. Frontend sends key to Rust backend via Tauri IPC
-         |
-         v
-3. Rust backend encrypts and stores in OS credential store
-   - Windows: DPAPI (ConvertTo-SecureString) -> ~/.klodock/secrets/
-   - macOS:   Keychain (via keyring crate)
-   - Linux:   Secret Service / libsecret (via keyring crate)
-         |
-         v
-4. Key stored at rest (encrypted by OS, never plaintext)
-         |
-   (when daemon starts)
-         |
-         v
-5. Rust backend retrieves key from credential store
-         |
-         v
-6. Writes ephemeral .env file to ~/.openclaw/.env
-   - File permissions set to 600 (owner read/write only)
-   - Windows: icacls restricts to current user
-         |
-         v
-7. OpenClaw agent process reads .env on startup
-         |
-   (when daemon stops)
-         |
-         v
-8. .env file is scrubbed (deleted) immediately
-```
+**Everything runs locally.** KloDock installs and runs entirely on your computer. There is no KloDock server, no account to create, no cloud service to trust. The KloDock application itself never transmits any data anywhere.
 
-### Additional Security Measures
+**No telemetry.** KloDock collects and transmits no usage data, analytics, crash reports, or diagnostic information. What you do with KloDock stays on your machine.
 
-- **Crash recovery scrub.** On every KloDock launch, the Rust backend checks for and removes any stale `.env` file left behind by a prior crash.
+**Downloads are verified.** The Node.js runtime is downloaded from the official nodejs.org distribution and verified against SHA-256 checksums before installation. This prevents tampered or corrupted downloads from being installed.
 
-- **SHA256 checksum verification.** The Node.js download is verified against the official `SHASUMS256.txt` from nodejs.org before extraction.
+**The application is sandboxed.** KloDock is built with Tauri, which enforces a capability-based permission model. The user interface can only call specific, pre-registered functions in the Rust backend. There is no shell access, no arbitrary file system access, and no unrestricted network access from the application window.
 
-- **Windows file permissions.** The `.env` file and secret storage directory are locked to the current user via `icacls` with inheritance removed.
+**Note:** Users who choose Ollama (local AI) skip the entire key management flow. No API key is stored, no `.env` is materialized, and no credentials exist anywhere. The agent talks directly to Ollama on your machine.
 
-- **Pre-commit hook.** A git pre-commit hook (`scripts/pre-commit`) scans staged changes for API key patterns (Google, Anthropic, OpenAI, Groq, GitHub, Slack) and blocks the commit if a potential key is detected. Install with `cp scripts/pre-commit .git/hooks/pre-commit`.
+### 4.2 Understanding the Risks of AI Agents
 
-- **Tauri capability restrictions.** The frontend can only invoke IPC commands that are explicitly registered in the `invoke_handler`. There is no shell access, no arbitrary filesystem access, and no network access from the webview context.
+KloDock makes it easy to run an AI agent on your computer. It is important to understand what this means and what risks are involved.
 
-- **Ollama zero-key path.** When the user selects Ollama as their provider, no API key is stored, no `.env` file is created, and no credentials leave the machine. The agent communicates directly with Ollama's local HTTP API. KloDock auto-detects Ollama, lists available models, and guards against the case where Ollama is running but has no models pulled. Note: the selected Ollama model must support **tool calling** (function calling). Models that lack tool support will produce a `"does not support tools"` error at runtime. Recommended models: `qwen2.5:7b`, `llama3.1:8b`, or `mistral:7b`.
+**An AI agent can take actions on your behalf.** Unlike a simple chatbot that only responds to questions, an AI agent powered by OpenClaw can read and write files in its workspace, execute code, browse the web, and interact with external services through skills. This is what makes it powerful, but it also means the agent can make mistakes, misunderstand instructions, or take actions you did not intend.
 
-- **No telemetry.** KloDock collects and transmits no usage data by default.
+**AI models can produce incorrect, misleading, or harmful output.** All AI language models --- whether from Anthropic, OpenAI, Google, or running locally via Ollama --- can generate responses that sound confident but are factually wrong, biased, or inappropriate. Never rely on an AI agent for medical, legal, financial, or safety-critical decisions without independent verification.
+
+**Your AI provider receives your messages.** When you use a cloud AI provider (Anthropic, OpenAI, Google Gemini, Groq, or OpenRouter), your messages are sent to that provider's servers for processing. Each provider has its own privacy policy, data retention practices, and terms of service. KloDock does not control what these providers do with your data. Review your provider's privacy policy before sharing sensitive information.
+
+**API usage costs money.** Cloud AI providers charge per token (roughly per word) for both input and output. A long conversation or complex agent task can consume significant tokens. KloDock does not track or limit your spending. Monitor your usage on your provider's dashboard and set spending limits there.
+
+### 4.3 Skill Safety and the Trust Model
+
+KloDock ships with access to 52 skills from the OpenClaw skill registry. Skills extend what your agent can do --- from sending messages on Telegram to managing GitHub issues to controlling smart home devices.
+
+**Skills are code that runs on your machine with your agent's permissions.** When you enable a skill, you are allowing the agent to use that skill's capabilities. A skill that manages files can read and write files. A skill that sends messages can send messages on your behalf. Understand what a skill does before enabling it.
+
+Every skill in KloDock displays a safety badge:
+
+- **Verified** --- Bundled with OpenClaw and reviewed by the OpenClaw maintainers. These skills are part of the official distribution and have been audited for security and correctness. This is the highest trust level.
+
+- **Community** --- Created by community contributors and peer-reviewed. These skills have been examined by other developers but have not undergone the same level of scrutiny as Verified skills. Use with reasonable caution.
+
+- **Unreviewed** --- New or unreviewed skills with no formal audit. These skills may work correctly, but they have not been independently verified. Enable these only if you understand what the skill does and trust its source.
+
+**Our recommendation:** Stick to Verified skills for anything involving sensitive data, financial accounts, or external communications. Review Community skills before enabling them. Approach Unreviewed skills the same way you would approach installing software from an unknown developer.
+
+### 4.4 What KloDock Cannot Protect You From
+
+- **Compromised AI providers.** If your AI provider's service is breached or compromised, KloDock cannot prevent exposure of messages you sent to that provider.
+
+- **Malicious skills from third-party sources.** While KloDock displays safety badges, these ratings are based on the OpenClaw registry's classification. KloDock does not independently audit every skill. A skill rated "Community" or "Unreviewed" could contain bugs or malicious code.
+
+- **Agent mistakes.** AI agents can misinterpret instructions, hallucinate information, or take unintended actions. Always review agent output before acting on it, especially for important tasks.
+
+- **Local machine compromise.** If your computer is already compromised by malware, KloDock's security measures (encrypted key storage, file permissions) may be bypassed by the malware. KloDock is not a security tool and does not protect against pre-existing threats on your system.
+
+- **API key theft via physical access.** If someone has physical access to your unlocked computer, they can potentially extract your API keys from the OS credential store. Lock your computer when you step away.
+
+### 4.5 Technical Security Measures (Developer Reference)
+
+**Secret Materialization Flow (Cloud Providers):**
+
+1. User enters API key in the wizard or Settings page
+2. Key is sent to the Rust backend via Tauri IPC (type-safe, no HTTP)
+3. Rust backend encrypts and stores in the OS credential store (DPAPI / Keychain / libsecret)
+4. Key exists at rest only in encrypted form
+5. When the agent needs the key, Rust retrieves it from the credential store
+6. An ephemeral `.env` file is written with restricted permissions (600 / icacls owner-only)
+7. The agent process reads the `.env` on startup
+8. The `.env` is scrubbed (deleted) immediately after use
+
+**Additional measures:**
+- Crash recovery scrub removes any stale `.env` on every KloDock launch
+- SHA-256 checksum verification on Node.js downloads
+- Windows file permissions via `icacls` with inheritance removed
+- Git pre-commit hook blocks commits containing API key patterns
+- Tauri capability restrictions limit IPC to registered commands only
+- Secret filenames are SHA-256 hashed (file names do not reveal key names)
+- Config backup before every OpenClaw update (automatic copy of openclaw.json and SOUL.md)
 
 ---
 
