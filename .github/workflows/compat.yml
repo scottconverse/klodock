@@ -1,9 +1,18 @@
 name: OpenClaw Compatibility
 
+# Detects breakage from upstream openclaw releases against our integration.
+# Weekly cadence (Mondays 06:00 UTC) is enough — openclaw doesn't ship
+# multiple times a day. Daily was burning ~150-250 Linux-equiv min/month
+# against scottconverse's 2,000-min free tier. Use `workflow_dispatch` for
+# on-demand checks when investigating a specific upstream change.
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 6 * * 1'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
   compat:
