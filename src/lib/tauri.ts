@@ -202,6 +202,10 @@ export async function verifyAllSteps(): Promise<SetupState> {
   return invoke<SetupState>("verify_all_steps");
 }
 
+export async function verifyStep(step: SetupStep): Promise<SetupState> {
+  return invoke<SetupState>("verify_step", { step });
+}
+
 /* ── Daemon ──────────────────────────────────────────── */
 
 export async function startDaemon(): Promise<DaemonStatus> {
