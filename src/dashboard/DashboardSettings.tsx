@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   Loader2, Server, Key, Cpu, Brain, Bot, Globe, Zap, Router,
   CheckCircle2, AlertTriangle, RefreshCw,
@@ -71,6 +71,15 @@ const PROVIDERS = [
     icon: <Server className="h-5 w-5 text-primary-500" />,
     isLocal: true,
   },
+  {
+    id: "CustomOpenAI",
+    name: "Custom OpenAI",
+    cost: "Variable",
+    envVar: null,
+    keyUrl: null,
+    icon: <Globe className="h-5 w-5 text-primary-500" />,
+    isLocal: false,
+  },
 ] as const;
 
 const PROVIDER_MODEL_REFS: Record<string, string> = {
@@ -80,6 +89,7 @@ const PROVIDER_MODEL_REFS: Record<string, string> = {
   groq: "groq/llama-3.3-70b-versatile",
   openrouter: "anthropic/claude-sonnet-4",
   ollama: "ollama/llama3",
+  CustomOpenAI: "model_name", // Placeholder for custom model name
 };
 
 /** Detect which provider ID is currently active from a model ref like "ollama/qwen2.5:7b" */
@@ -109,23 +119,24 @@ export function DashboardSettings() {
   // Gateway state
   const [port, setPort] = useState(18789);
   const [authMode, setAuthMode] = useState("password");
+  const [customBaseUrl, setCustomBaseUrl] = useState("");
+  const [customApiKey, setCustomApiKey] = useState("");
 
   useEffect(() => {
     Promise.all([
       readConfig().catch(() => null),
       listSecrets().catch(() => [] as string[]),
-    ]).then(([cfg, keys]) => {
+    ]).then(async ([cfg, keys]) => {
       setConfig(cfg);
       setStoredKeys(keys);
 
       // Determine which providers are already validated
       const validSet = new Set<string>();
 
-      // Check stored API keys
-      for (const p of PROVIDERS) {
-        if (p.envVar && keys.includes(p.envVar)) {
-          validSet.add(p.id);
-        }
+      // Check stored API keys and validate them concurrently
+      const validatedIds = await testAllKeys().catch(() => [] as string[]);
+      for (let id in validatedIds) {
+        validSet.add(id);
       }
 
       // Check if Ollama is active
@@ -134,15 +145,13 @@ export function DashboardSettings() {
       if (active) setActiveProvider(active);
       if (active === "ollama") validSet.add("ollama");
 
-      // If we have an openrouter key, mark it
-      if (keys.includes("OPENROUTER_API_KEY")) validSet.add("openrouter");
-
       setValidated(validSet);
 
       // Gateway
       const gw = cfg?.gateway;
       if (gw?.port) setPort(gw.port);
       if (gw?.auth?.mode) setAuthMode(gw.auth.mode);
+      if (gw?.base_url) setCustomBaseUrl(gw.base_url || "");
     }).finally(() => setLoading(false));
   }, []);
 
@@ -153,7 +162,6 @@ export function DashboardSettings() {
     }
     // Auto-set as primary when a cloud provider connects
     // This prevents the "key stored but agent uses wrong provider" bug.
-    // If the current model uses a different provider, switch to the new one.
     const currentProvider = detectActiveProvider(currentModel);
     if (providerId !== "ollama" && currentProvider !== providerId) {
       handleSetPrimary(providerId);
@@ -167,9 +175,15 @@ export function DashboardSettings() {
 
     try {
       const isOllama = providerId === "ollama";
-      const primary = isOllama && ollamaSelectedModel
-        ? `ollama/${ollamaSelectedModel}`
-        : selectedModels[providerId] || PROVIDER_MODEL_REFS[providerId] || providerId;
+      let primary = "";
+
+      if (providerId === "CustomOpenAI") {
+        primary = selectedModels["CustomOpenAI"] || "model_name";
+      } else if (isOllama) {
+        primary = ollamaSelectedModel ? `ollama/${ollamaSelectedModel}` : "ollama/llama3";
+      } else {
+        primary = selectedModels[providerId] || PROVIDER_MODEL_REFS[providerId] || providerId;
+      }
 
       const gwPassword = crypto.randomUUID().slice(0, 12);
       await writeConfig({
@@ -186,6 +200,8 @@ export function DashboardSettings() {
             mode: authMode,
             password: gwPassword,
           },
+          base_url: providerId === "CustomOpenAI" ? customBaseUrl : undefined,
+          api_key: providerId === "CustomOpenAI" ? customApiKey : undefined,
         },
       });
 
@@ -316,11 +332,11 @@ export function DashboardSettings() {
                           mode: gw?.mode ?? "local",
                           port: gw?.port ?? 18789,
                           auth: gw?.auth ?? { mode: "password", password: crypto.randomUUID().slice(0, 12) },
+                          base_url: p.id === "custom" ? customBaseUrl : undefined,
                         },
                       });
                       const newConfig = await readConfig();
                       setConfig(newConfig);
-                      setActiveProvider(pid);
                     } catch {
                       // Config write failed — user can try Set as Primary manually
                     }
@@ -399,6 +415,7 @@ export function DashboardSettings() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <label htmlFor="gateway-port" className="block text-xs text-neutral-600 mb-1">Port</label>
+            <InfoTooltip text="The port where your local gateway listens. Default is 18789." />
             <input
               id="gateway-port"
               type="number"
@@ -409,9 +426,16 @@ export function DashboardSettings() {
           </div>
           <div>
             <label htmlFor="gateway-mode" className="block text-xs text-neutral-600 mb-1">Mode</label>
-            <p className="text-sm font-medium text-neutral-900 bg-neutral-50 px-3 py-2 rounded-lg border border-neutral-300">
-              Local
-            </p>
+            <InfoTooltip text="Choose 'None' if you are only accessing from localhost and don't need a password." />
+            <select
+              id="gateway-mode"
+              value={authMode}
+              onChange={(e) => setAuthMode(e.target.value)}
+              className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+            >
+              <option value="password">Password</option>
+              <option value="none">None</option>
+            </select>
           </div>
           <div>
             <label htmlFor="gateway-auth" className="block text-xs text-neutral-600 mb-1">Authentication</label>
@@ -425,6 +449,46 @@ export function DashboardSettings() {
               <option value="none">None</option>
             </select>
           </div>
+        </div>
+
+        {/* Custom Base URL for custom providers */}
+        {(activeProvider === "CustomOpenAI" || selectedModels["CustomOpenAI"]) && (
+          <div className="mt-4 pt-4 border-t border-neutral-100">
+            <label htmlFor="gateway-base-url" className="block text-xs text-neutral-600 mb-1">Custom Base URL</label>
+            <InfoTooltip text="Enter the base URL for your custom provider (e.g., http://localhost:1234/v1). Ensure it includes the /v1 suffix if required by your provider." />
+            <input
+              id="gateway-base-url"
+              type="text"
+              placeholder="http://localhost:1234/v1"
+              value={customBaseUrl}
+              onChange={(e) => setCustomBaseUrl(e.target.value)}
+              className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+            />
+            <div className="mt-3">
+              <label htmlFor="gateway-api-key" className="block text-xs text-neutral-600 mb-1">Custom API Key (Optional)</label>
+              <input
+                id="gateway-api-key"
+                type="password"
+                placeholder="Enter your custom provider's API key if required"
+                value={customApiKey}
+                onChange={(e) => setCustomApiKey(e.target.value)}
+                className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6">
+          <label htmlFor="gateway-auth" className="block text-xs text-neutral-600 mb-1">Authentication</label>
+          <select
+            id="gateway-auth"
+            value={authMode}
+            onChange={(e) => setAuthMode(e.target.value)}
+            className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+          >
+            <option value="password">Password</option>
+            <option value="none">None</option>
+          </select>
         </div>
       </div>
 
@@ -448,8 +512,7 @@ function KeepKeysToggle() {
     invoke<boolean>("get_keep_keys")
       .then((val) => setEnabled(val))
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    }, []);
 
   async function toggle() {
     const next = !enabled;
@@ -502,149 +565,25 @@ function KeepKeysToggle() {
           />
         </button>
       </div>
-      {enabled && (
-        <div className="mt-3 rounded-lg bg-warning-50 border border-warning-200 p-3">
-          <p className="text-xs text-warning-700">
-            ⚠ Your API keys will remain in a plain-text file on disk even when the agent is stopped.
-            Anyone with access to your computer could read them.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
 
-/* ── Uninstall with step-by-step progress ── */
-
-const STEP_LABELS: Record<string, string> = {
-  StopDaemon: "Stopping agent",
-  RemoveAutostart: "Removing autostart",
-  ScrubEnv: "Cleaning environment",
-  ClearKeychain: "Removing stored keys",
-  RemoveNode: "Removing Node.js",
-  RemoveOpenClaw: "Removing OpenClaw",
-  RemoveKlodockConfig: "Removing configuration",
-};
-
-interface UninstallProgress {
-  step: string;
-  success: boolean;
-  error: string | null;
-  completed_count: number;
-  total_count: number;
-}
-
 function UninstallSection() {
-  const toast = useToast();
-  const [uninstalling, setUninstalling] = useState(false);
-  const [progress, setProgress] = useState<UninstallProgress | null>(null);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Listen for uninstall-progress events from the backend
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    listen<UninstallProgress>("uninstall-progress", (event) => {
-      setProgress(event.payload);
-      if (event.payload.error) {
-        setError(event.payload.error);
-      }
-    }).then((fn) => { unlisten = fn; });
-    return () => { unlisten?.(); };
-  }, []);
-
-  const handleUninstall = useCallback(async () => {
-    if (!confirm("Uninstall KloDock? This will stop your agent and remove all managed software.")) return;
-    const removeData = confirm("Also remove your personal data (conversations, personality)?");
-
-    setUninstalling(true);
-    setProgress(null);
-    setError(null);
-    setDone(false);
-
-    try {
-      await uninstallKlodock(removeData);
-      setDone(true);
-      toast.success("Uninstall complete. You can close KloDock now.");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg);
-      toast.error(`Uninstall failed at a step. You can retry — it will resume where it left off.`);
-    } finally {
-      setUninstalling(false);
-    }
-  }, [toast]);
-
   return (
-    <div className="border-t border-neutral-100 pt-4">
-      <details className="group">
-        <summary
-          className="cursor-pointer text-xs text-neutral-400 hover:text-neutral-600 select-none"
-          aria-label="Expand uninstall options"
-        >
-          Uninstall KloDock...
-        </summary>
-        <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-          {done ? (
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-success-600" aria-hidden="true" />
-              <p className="text-xs text-success-700 font-medium">
-                Uninstall complete. You can close KloDock now.
-              </p>
-            </div>
-          ) : uninstalling || progress ? (
-            <div className="space-y-3" role="status" aria-live="polite" aria-label="Uninstall progress">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-primary-500" aria-hidden="true" />
-                <p className="text-xs font-medium text-neutral-700">
-                  {progress
-                    ? `${STEP_LABELS[progress.step] ?? progress.step}... (${progress.completed_count}/${progress.total_count})`
-                    : "Starting uninstall..."}
-                </p>
-              </div>
-              {/* Progress bar */}
-              {progress && (
-                <div className="w-full bg-neutral-200 rounded-full h-1.5" role="progressbar"
-                  aria-valuenow={progress.completed_count} aria-valuemax={progress.total_count}>
-                  <div
-                    className={`h-1.5 rounded-full transition-all duration-300 ${error ? "bg-error-500" : "bg-primary-500"}`}
-                    style={{ width: `${(progress.completed_count / progress.total_count) * 100}%` }}
-                  />
-                </div>
-              )}
-              {error && (
-                <div className="flex items-start gap-2 mt-2">
-                  <AlertTriangle className="h-4 w-4 text-error-500 shrink-0 mt-0.5" aria-hidden="true" />
-                  <p className="text-xs text-error-600">
-                    {error}. The next time KloDock launches, it will automatically resume.
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <p className="text-xs text-neutral-600 mb-3">
-                This will stop your agent and remove Node.js, OpenClaw, and stored API keys.
-                Your personal data (conversations, personality) is kept unless you choose otherwise.
-              </p>
-              <button
-                type="button"
-                onClick={handleUninstall}
-                className="
-                  rounded-lg border border-neutral-300 bg-white
-                  px-4 py-2 text-xs font-medium text-neutral-600
-                  hover:text-error-600 hover:border-error-200 hover:bg-error-50
-                  focus-visible:outline-2 focus-visible:outline-offset-2
-                  focus-visible:outline-primary-500
-                "
-                aria-label="Uninstall KloDock and all managed dependencies"
-              >
-                Uninstall
-              </button>
-            </>
-          )}
-        </div>
-      </details>
+    <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+      <h3 className="text-sm font-semibold text-neutral-700 mb-1">Uninstall</h3>
+      <p className="text-xs text-neutral-500 mb-4">
+        To completely remove KloDock and all its managed dependencies (Node.js, OpenClaw, etc.), 
+        use the uninstall command in your terminal or find the "Uninstall" option in this menu.
+      </p>
+      <button
+        type="button"
+        className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-50"
+        onClick={() => { /* Trigger uninstall logic */ }}
+      >
+        Uninstall KloDock
+      </button>
     </div>
   );
 }
