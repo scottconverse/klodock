@@ -442,7 +442,7 @@ pub async fn test_all_keys() -> Result<Vec<String>, String> {
             let key_clone = key.clone();
             futures.push(async move {
                 let client = reqwest::Client::new();
-                let url = match id.as_str() {
+                let url = match id {
                     "openai" => "https://api.openai.com/v1/models",
                     "anthropic" => "https://api.anthropic.com/v1/models",
                     "gemini" | "google" => "https://generativelanguage.googleapis.com/v1beta/models",
@@ -451,7 +451,7 @@ pub async fn test_all_keys() -> Result<Vec<String>, String> {
                     _ => return Err(format!("Unsupported provider: {}", id)),
                 };
 
-                let auth_header = match id.as_str() {
+                let auth_header = match id {
                     "openai" | "groq" | "openrouter" => ("Bearer ", &key_clone),
                     "anthropic" => ("x-api-key", &key_clone),
                     "gemini" => ("x-goog-api-key", &key_clone),
@@ -539,8 +539,7 @@ pub async fn test_channel_token(channel: String, token: String) -> Result<String
                         log::error!("Telegram response parse error: {}", e);
                         "Couldn't read Telegram's response. Try again.".to_string()
                     })?;
-                let bot_name = body["result"]["first_name"]
-                    .as_str()
+                let bot_name = body["result"]["first_name"].as_str()
                     .unwrap_or("Your bot");
                 Ok(format!("Connected! Bot name: {}", bot_name))
             } else if resp.status().as_u16() == 401 {
@@ -564,8 +563,7 @@ pub async fn test_channel_token(channel: String, token: String) -> Result<String
                         log::error!("Discord response parse error: {}", e);
                         "Couldn't read Discord's response. Try again.".to_string()
                     })?;
-                let bot_name = body["username"]
-                    .as_str()
+                let bot_name = body["username"].as_str()
                     .unwrap_or("Your bot");
                 Ok(format!("Connected! Bot name: {}", bot_name))
             } else if resp.status().as_u16() == 401 {
