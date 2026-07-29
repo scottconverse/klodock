@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import {
-  Loader2, Server, Key, Cpu, Brain, Bot, Globe, Zap, Router,
-  CheckCircle2, AlertTriangle, RefreshCw,
+  Loader2, Server, Cpu, Brain, Bot, Globe, Zap, Router,
+  CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { ProviderCard } from "@/components/ProviderCard";
 import { useToast } from "@/components/Toast";
+import { InfoTooltip } from "@/components/InfoTooltip";
 import {
   readConfig, writeConfig, listSecrets, deleteSecret,
   checkOllama, listOllamaModels, runHealthCheck,
   restartDaemon, startDaemon, uninstallKlodock,
+  testAllKeys,
 } from "@/lib/tauri";
 import type { OpenClawConfig } from "@/lib/types";
 
@@ -490,6 +492,7 @@ export function DashboardSettings() {
             <option value="none">None</option>
           </select>
         </div>
+
       </div>
 
       {/* Keep API Keys toggle */}
