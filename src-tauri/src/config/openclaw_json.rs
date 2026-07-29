@@ -222,5 +222,5 @@ pub async fn write_config(config: OpenClawConfig) -> Result<(), String> {
         .map_err(|e| {
             log::error!("Config write failed at {}: {}", path.display(), e);
             "Couldn't save your settings. Check disk space or permissions.".to_string()
-        })?;
+        })
 }
