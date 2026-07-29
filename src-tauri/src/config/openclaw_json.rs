@@ -33,6 +33,12 @@ pub struct GatewayConfig {
     pub port: Option<u16>,
     #[serde(default, rename = "controlUi", skip_serializing_if = "Option::is_none")]
     pub control_ui: Option<ControlUiConfig>,
+    /// Base URL for custom OpenAI-compatible endpoints (e.g., LM Studio).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base_url: Option<String>,
+    /// API key for custom OpenAI-compatible endpoints (optional).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -115,6 +121,7 @@ pub fn model_ref(provider: &str, model: &str) -> String {
         "groq" => format!("groq/{}", model),
         "openrouter" => model.to_string(), // OpenRouter models already have provider prefix
         "ollama" => format!("ollama/{}", model),
+        "CustomOpenAI" => model.to_string(), // Custom providers use the raw model name
         _ => format!("{}/{}", provider, model),
     }
 }
@@ -182,9 +189,9 @@ pub async fn write_config(config: OpenClawConfig) -> Result<(), String> {
             .await
             .map_err(|e| {
                 log::error!("Existing config read failed: {}", e);
-                "Couldn't read existing settings. Try restarting KloDock.".to_string()
+"Couldn't read existing settings. Try restarting KloDock.".to_string()
             })?;
-        serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Object(serde_json::Map::new()))
+        serde_json::from_slice(&bytes).unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()))
     } else {
         serde_json::Value::Object(serde_json::Map::new())
     };
@@ -215,5 +222,5 @@ pub async fn write_config(config: OpenClawConfig) -> Result<(), String> {
         .map_err(|e| {
             log::error!("Config write failed at {}: {}", path.display(), e);
             "Couldn't save your settings. Check disk space or permissions.".to_string()
-        })
+        })?;
 }
