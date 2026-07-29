@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import { ProgressBar } from "@/components/ProgressBar";
 import { useWizardState, type WizardStep } from "@/lib/wizard-state";
 import {
