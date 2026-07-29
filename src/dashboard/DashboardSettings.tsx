@@ -3,15 +3,14 @@ import {
   Loader2, Server, Cpu, Brain, Bot, Globe, Zap, Router,
   CheckCircle2, AlertTriangle,
 } from "lucide-react";
-import { listen } from "@tauri-apps/api/event";
+
 import { invoke } from "@tauri-apps/api/core";
 import { ProviderCard } from "@/components/ProviderCard";
 import { useToast } from "@/components/Toast";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import {
   readConfig, writeConfig, listSecrets, deleteSecret,
-  checkOllama, listOllamaModels, runHealthCheck,
-  restartDaemon, startDaemon, uninstallKlodock,
+  restartDaemon, startDaemon,
   testAllKeys,
 } from "@/lib/tauri";
 import type { OpenClawConfig } from "@/lib/types";
@@ -109,7 +108,7 @@ export function DashboardSettings() {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState<OpenClawConfig | null>(null);
-  const [storedKeys, setStoredKeys] = useState<string[]>([]);
+  const [, setStoredKeys] = useState<string[]>([]);
   const [validated, setValidated] = useState<Set<string>>(new Set());
   const [ollamaSelectedModel, setOllamaSelectedModel] = useState("");
   const [selectedModels, setSelectedModels] = useState<Record<string, string>>({});
@@ -327,14 +326,14 @@ export function DashboardSettings() {
                   // provider, they want to use it. Write to config immediately.
                   if (validated.has(pid) && modelId !== currentModel) {
                     try {
-                      const gw = config?.gateway as Record<string, unknown> | undefined;
+                      const gw = config?.gateway;
                       await writeConfig({
                         agents: { defaults: { workspace: "~/.openclaw/workspace", model: { primary: modelId } } },
                         gateway: {
                           mode: gw?.mode ?? "local",
                           port: gw?.port ?? 18789,
                           auth: gw?.auth ?? { mode: "password", password: crypto.randomUUID().slice(0, 12) },
-                          base_url: p.id === "custom" ? customBaseUrl : undefined,
+                          base_url: p.id === "CustomOpenAI" ? customBaseUrl : undefined,
                         },
                       });
                       const newConfig = await readConfig();
@@ -515,7 +514,8 @@ function KeepKeysToggle() {
     invoke<boolean>("get_keep_keys")
       .then((val) => setEnabled(val))
       .catch(() => {})
-    }, []);
+      .finally(() => setLoading(false));
+  }, []);
 
   async function toggle() {
     const next = !enabled;

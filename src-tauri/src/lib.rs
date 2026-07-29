@@ -96,6 +96,7 @@ pub fn run() {
             secrets::keychain::test_channel_token,
             secrets::keychain::check_ollama,
             secrets::keychain::list_ollama_models,
+            secrets::keychain::test_all_keys,
             // Settings commands
             config::settings::get_keep_keys,
             config::settings::set_keep_keys,

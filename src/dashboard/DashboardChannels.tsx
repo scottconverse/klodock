@@ -361,10 +361,6 @@ export function DashboardChannels() {
     }
   }
 
-  async function openLink(url: string) {
-    try { await open(url); } catch { window.open(url, "_blank"); }
-  }
-
   if (loading) {
     return (
       <div className="flex justify-center py-20">

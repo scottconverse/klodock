@@ -10,7 +10,6 @@
  */
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import React from "react";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import type { SafetyRating } from "@/lib/types";
 

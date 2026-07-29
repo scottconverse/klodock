@@ -7,6 +7,7 @@ use tauri::Emitter;
 use crate::config::env;
 use crate::installer::openclaw;
 use crate::secrets::keychain;
+use crate::process::logger; // Added logger module
 
 /// Maximum number of automatic restart attempts before giving up.
 pub const MAX_RESTART_ATTEMPTS: u32 = 3;

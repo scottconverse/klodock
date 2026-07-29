@@ -74,7 +74,7 @@ export interface ProviderCardProps {
   name: string;
   cost: string;
   envVar: string | null;
-  keyUrl: string;
+  keyUrl: string | null;
   icon: ReactNode;
   isLocal?: boolean;
   validated?: boolean;
@@ -213,6 +213,7 @@ export function ProviderCard({
   }
 
   async function handleOpenUrl() {
+    if (!keyUrl) return;
     try {
       await open(keyUrl);
     } catch {

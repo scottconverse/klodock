@@ -220,6 +220,14 @@ export async function restartDaemon(): Promise<DaemonStatus> {
   return invoke<DaemonStatus>("restart_daemon");
 }
 
+export async function getDaemonStatus(): Promise<DaemonStatus> {
+  return invoke<DaemonStatus>("get_daemon_status");
+}
+
+export async function runHealthCheck(): Promise<HealthStatus> {
+  return invoke<HealthStatus>("run_health_check");
+}
+
 /* ── Autostart ──────────────────────────────────────── */
 
 export async function enableAutostart(): Promise<void> {

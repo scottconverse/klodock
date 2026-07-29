@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { KloDockLogo } from "@/components/KloDockLogo";
 import { StatusIndicator } from "@/components/StatusIndicator";
-import { getDaemonStatus, onDaemonStatus, runHealthCheck } from "@/lib/tauri";
+import { onDaemonStatus, runHealthCheck } from "@/lib/tauri";
 import type { DaemonStatus } from "@/lib/types";
 
 const NAV_ITEMS = [

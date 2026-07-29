@@ -11,6 +11,7 @@ import {
   checkOpenClaw,
   installOpenClaw,
 } from "@/lib/tauri";
+import type { SetupState, SetupStep, StepStatus } from "@/lib/types";
 import { useState, useEffect } from "react";
 
 const PATH_TO_STEP: Record<string, WizardStep> = {
@@ -41,7 +42,7 @@ export function WizardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { stepOrder, completedSteps } = useWizardState();
-  const [setupState, setSetupState] = useState<any>(null);
+  const [setupState, setSetupState] = useState<SetupState | null>(null);
 
   useEffect(() => {
     getSetupState().then(setSetupState).catch(console.error);
@@ -57,10 +58,15 @@ export function WizardLayout() {
     }
   }
 
-  const [retryingStep, setRetryingStep] = useState<string | null>(null);
-  const failedSteps = setupState?.steps ? Object.entries(setupState.steps).filter(([_, status]) => status.status === "Failed") : [];
+  const [retryingStep, setRetryingStep] = useState<SetupStep | null>(null);
+  const failedSteps = setupState?.steps
+    ? (Object.entries(setupState.steps) as [SetupStep, StepStatus][]).filter(
+        (entry): entry is [SetupStep, Extract<StepStatus, { status: "failed" }>] =>
+          entry[1].status === "failed"
+      )
+    : [];
 
-  async function handleRetry(step: string) {
+  async function handleRetry(step: SetupStep) {
     setRetryingStep(step);
     try {
       if (step === "node_install") {

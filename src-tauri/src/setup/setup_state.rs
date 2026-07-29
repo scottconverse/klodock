@@ -51,6 +51,16 @@ impl SetupState {
             SetupStep::SkillInstall,
         ]
     }
+
+    /// Marks a single step as `Completed` and persists to disk.
+    pub fn complete_step(&mut self, step: SetupStep) {
+        self.steps.insert(step, StepStatus::Completed);
+    }
+
+    /// Sets a step to Failed status.
+    pub fn fail_step(&mut self, step: SetupStep, message: String) {
+        self.steps.insert(step, StepStatus::Failed(message));
+    }
 }
 
 /// Path to `~/.klodock/setup-state.json`.
@@ -73,8 +83,6 @@ pub async fn get_setup_state() -> Result<SetupState, String> {
             "Couldn't load setup progress. Try restarting KloDock.".to_string()
         })?;
     // If the file is corrupt, empty, or wrong schema, return fresh state
-    // instead of crashing. The user shouldn't lose progress because of a
-    // malformed JSON file — they just restart the wizard.
     match serde_json::from_str::<SetupState>(&contents) {
         Ok(state) => Ok(state),
         Err(e) => {
@@ -88,8 +96,17 @@ pub async fn get_setup_state() -> Result<SetupState, String> {
 #[tauri::command]
 pub async fn complete_step(step: SetupStep) -> Result<SetupState, String> {
     let mut state = get_setup_state().await?;
-    state.steps.insert(step, StepStatus::Completed);
-    persist_state(&state).await?;
+    state.complete_step(step);
+    persist_state(&mut state).await?;
+    Ok(state)
+}
+
+/// Sets a step to Failed status and persists to disk.
+#[tauri::command]
+pub async fn fail_step(step: SetupStep, message: String) -> Result<SetupState, String> {
+    let mut state = get_setup_state().await?;
+    state.fail_step(step, message);
+    persist_state(&mut state).await?;
     Ok(state)
 }
 
@@ -101,19 +118,29 @@ pub async fn verify_all_steps() -> Result<SetupState, String> {
     let mut state = SetupState::new_all_not_started();
 
     for &step in SetupState::all_steps() {
-        let status = verify_step(step).await;
+        let status = perform_verification(step).await;
         state.steps.insert(step, status);
     }
 
-    persist_state(&state).await?;
+    persist_state(&mut state).await?;
+    Ok(state)
+}
+
+/// Verifies a single step and persists the result.
+#[tauri::command]
+pub async fn verify_step(step: SetupStep) -> Result<SetupState, String> {
+    let mut state = get_setup_state().await?;
+    let status = perform_verification(step).await;
+    state.steps.insert(step, status);
+    persist_state(&mut state).await?;
     Ok(state)
 }
 
 // ---------------------------------------------------------------------------
-// Internal helpers
+// Helpers
 // ---------------------------------------------------------------------------
 
-async fn persist_state(state: &SetupState) -> Result<(), String> {
+async fn persist_state(state: &mut SetupState) -> Result<(), String> {
     let path = state_file_path()?;
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
@@ -123,8 +150,8 @@ async fn persist_state(state: &SetupState) -> Result<(), String> {
                 "Couldn't create settings folder. Check disk space or permissions.".to_string()
             })?;
     }
-    let json =
-        serde_json::to_string_pretty(state).map_err(|e| {
+    let json = serde_json::to_string_pretty(state)
+        .map_err(|e| {
             log::error!("Setup state serialize failed: {}", e);
             "Couldn't save setup progress.".to_string()
         })?;
@@ -138,7 +165,7 @@ async fn persist_state(state: &SetupState) -> Result<(), String> {
 }
 
 /// Run a real verification for a single step.
-async fn verify_step(step: SetupStep) -> StepStatus {
+async fn perform_verification(step: SetupStep) -> StepStatus {
     match step {
         SetupStep::NodeInstall => verify_node_install().await,
         SetupStep::OpenClawInstall => verify_openclaw_install().await,

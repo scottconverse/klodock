@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use std::os::windows::process::CommandExt;
 use tauri::Emitter;
 
 // ---------------------------------------------------------------------------
@@ -81,6 +82,8 @@ pub async fn uninstall_klodock(
     app: tauri::AppHandle,
     remove_user_data: bool,
 ) -> Result<(), String> {
+    preflight_check().await?;
+
     let state = UninstallState {
         completed: Vec::new(),
         remaining: ALL_STEPS.to_vec(),
@@ -103,6 +106,8 @@ pub async fn resume_uninstall(app: tauri::AppHandle) -> Result<bool, String> {
     if !state_path.exists() {
         return Ok(false);
     }
+
+    preflight_check().await?;
 
     let contents = tokio::fs::read_to_string(&state_path)
         .await
@@ -261,6 +266,30 @@ async fn execute_step(step: UninstallStep, remove_user_data: bool) -> Result<(),
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+async fn preflight_check() -> Result<(), String> {
+    if let Ok(_) = tokio::net::TcpStream::connect("127.0.0.1:18789").await {
+        log::warn!("Port 18789 is currently in use by another process.");
+        #[cfg(windows)]
+        {
+            // On Windows, we attempt to kill the process on port 18789 using netstat/taskkill.
+            let _ = tokio::process::Command::new("cmd")
+                .args(["/C", "for /f \"tokens=5\" %a in ('netstat -ano | findstr :18789 ^| findstr LISTENING') do taskkill /F /PID %a"])
+                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                .output()
+                .await;
+        }
+        #[cfg(not(windows))]
+        {
+            // On Unix, we attempt to kill the process on port 18789 using lsof/kill.
+            let _ = std::process::Command::new("fuser")
+                .args(["-k", "18789"])
+                .output()
+                .await;
+        }
+    }
+    Ok(())
+}
 
 fn uninstall_state_path() -> Result<PathBuf, String> {
     Ok(crate::paths::klodock_base_dir()?.join("uninstall-state.json"))

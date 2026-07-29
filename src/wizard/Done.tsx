@@ -8,9 +8,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   RefreshCw,
-  LayoutDashboard,
   Globe,
-  ExternalLink,
 } from "lucide-react";
 import { startDaemon, onDaemonStatus, retrieveSecret, readSoul } from "@/lib/tauri";
 import type { DaemonStatus } from "@/lib/types";

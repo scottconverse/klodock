@@ -1,0 +1,23 @@
+#!/bin/sh
+# Blocks any commit that doesn't actually compile. Tracked in the repo
+# (not .git/hooks, which never leaves this machine) -- wired in automatically
+# by `npm install` via package.json's "prepare" script, so it travels with
+# a fresh clone rather than being a local-only safeguard.
+
+set -e
+
+echo "[pre-commit] cargo check (src-tauri)..."
+( cd src-tauri && cargo check --message-format short )
+if [ $? -ne 0 ]; then
+    echo "[pre-commit] BLOCKED: Rust code does not compile. Fix the errors above before committing."
+    exit 1
+fi
+
+echo "[pre-commit] tsc --noEmit (frontend)..."
+npx tsc -p tsconfig.json
+if [ $? -ne 0 ]; then
+    echo "[pre-commit] BLOCKED: TypeScript does not type-check. Fix the errors above before committing."
+    exit 1
+fi
+
+echo "[pre-commit] Both checks passed."

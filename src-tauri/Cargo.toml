@@ -38,6 +38,7 @@ dirs = "6"
 which = "7"
 tauri-plugin-single-instance = "2"
 semver = "1"
+futures = "0.3"
 tokio-tungstenite = { version = "0.26", features = ["connect", "native-tls"] }
 
 [target.'cfg(unix)'.dependencies]

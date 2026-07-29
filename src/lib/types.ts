@@ -104,6 +104,8 @@ export interface OpenClawConfig {
   gateway?: {
     mode?: string;
     port?: number;
+    base_url?: string;
+    api_key?: string;
     auth?: {
       mode: string;
       password?: string;

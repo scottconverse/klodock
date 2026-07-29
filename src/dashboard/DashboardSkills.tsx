@@ -10,7 +10,6 @@ import { listAllSkills, checkOpenclawUpdate } from "@/lib/tauri";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { open } from "@tauri-apps/plugin-shell";
 import type { SkillMetadata } from "@/lib/types";
-import type { UpdateInfo } from "@/lib/types";
 
 /* ── Categories ─────────────────────────────────────────── */
 

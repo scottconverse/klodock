@@ -10,3 +10,4 @@ target/
 *.AppImage
 *.deb
 src-tauri/keys/klodock.key
+.aider*

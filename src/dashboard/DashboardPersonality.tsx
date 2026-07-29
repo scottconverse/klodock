@@ -39,7 +39,7 @@ export function DashboardPersonality() {
   // Editor state
   const [name, setName] = useState("");
   const [roleType, setRoleType] = useState<RoleType>("GeneralAssistant");
-  const [customRoleText, setCustomRoleText] = useState("");
+  const [customRoleText] = useState("");
   const [tone, setTone] = useState(0.5);
   const [instructions, setInstructions] = useState("");
   const [preview, setPreview] = useState("");
