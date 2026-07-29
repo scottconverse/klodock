@@ -373,7 +373,8 @@ pub fn list_secrets() -> Result<Vec<String>, String> {
 pub async fn test_api_key(provider: String, key: String) -> Result<bool, String> {
     let client = reqwest::Client::new();
 
-    let response = match provider.to_lowercase().as_str() {
+    let provider_lower = provider.to_lowercase();
+    let response = match provider_lower.as_str() {
         "openai" => {
             client.get("https://api.openai.com/v1/models")
                 .bearer_auth(&key).send().await
@@ -417,6 +418,78 @@ pub async fn test_api_key(provider: String, key: String) -> Result<bool, String>
             Err("Couldn't connect to verify your key. Check your internet.".to_string())
         }
     }
+}
+
+/// Test all stored keys in the keychain concurrently and return a list of validated provider IDs.
+#[tauri::command]
+pub async fn test_all_keys() -> Result<Vec<String>, String> {
+    let keys = read_index()?;
+    let mut futures = Vec::new();
+
+    for key in keys {
+        // Map the secret name to a provider ID. 
+        // This is based on the envVar names used by KloDock.
+        let provider_id = match key {
+            ref k if k.contains("OPENAI") => Some("openai"),
+            ref k if k.contains("ANTHROPIC") => Some("anthropic"),
+            ref k if k.contains("GOOGLE") || k.contains("GEMINI") => Some("gemini"),
+            ref k if k.contains("GROQ") => Some("groq"),
+            ref k if k.contains("OPENROUTER") => Some("openrouter"),
+            _ => None,
+        };
+
+        if let Some(id) = provider_id {
+            let key_clone = key.clone();
+            futures.push(async move {
+                let client = reqwest::Client::new();
+                let url = match id.as_str() {
+                    "openai" => "https://api.openai.com/v1/models",
+                    "anthropic" => "https://api.anthropic.com/v1/models",
+                    "gemini" | "google" => "https://generativelanguage.googleapis.com/v1beta/models",
+                    "groq" => "https://api.groq.com/openai/v1/models",
+                    "openrouter" => "https://openrouter.ai/api/v1/models",
+                    _ => return Err(format!("Unsupported provider: {}", id)),
+                };
+
+                let auth_header = match id.as_str() {
+                    "openai" | "groq" | "openrouter" => ("Bearer ", &key_clone),
+                    "anthropic" => ("x-api-key", &key_clone),
+                    "gemini" => ("x-goog-api-key", &key_clone),
+                    _ => ("Unknown", &key_clone),
+                };
+
+                let mut req = client.get(url);
+                if !auth_header.0.is_empty() {
+                    req = req.header(auth_header.0, auth_header.1);
+                } else if id == "openai" || id == "groq" || id == "openrouter" {
+                    req = req.bearer_auth(&key_clone);
+                }
+
+                let resp = req.send().await.map_err(|e| {
+                    log::error!("Network error testing {} key: {}", id, e);
+                    "Couldn't connect to verify your key. Check your internet.".to_string()
+                })?;
+                if resp.status().is_success() {
+                    Ok(id)
+                } else {
+                    log::warn!("{} failed with status {}", id, resp.status());
+                    Err(format!("{} failed with status {}. Try again later.", id, resp.status()))
+                }
+            });
+        }
+    }
+
+    let results = futures::future::join_all(futures).await;
+    let mut validated = Vec::new();
+    for res in results {
+        if let Ok(id) = res {
+            validated.push(id.to_string());
+        } else {
+            log::warn!("Key validation failed: {:?}", res);
+        }
+    }
+
+    Ok(validated)
 }
 
 /// Check if Ollama is running locally by probing its API endpoint.
