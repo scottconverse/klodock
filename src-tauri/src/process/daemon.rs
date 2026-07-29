@@ -12,6 +12,11 @@ use crate::process::logger; // Added logger module
 /// Maximum number of automatic restart attempts before giving up.
 pub const MAX_RESTART_ATTEMPTS: u32 = 3;
 
+/// Path to the agent PID file.
+fn agent_pid_file_path() -> Result<PathBuf, String> {
+    Ok(crate::paths::klodock_base_dir()?.join("daemon.agent.pid"))
+}
+
 /// Event name for daemon status changes.
 const STATUS_EVENT: &str = "daemon-status";
 
@@ -213,6 +218,221 @@ pub async fn start_daemon(app: AppHandle) -> Result<DaemonStatus, String> {
 
     Ok(DaemonStatus::Running)
 }
+
+/// Start the agent daemon as a managed child process.
+///
+/// This starts the `openclaw agent` command and keeps it running.
+/// It uses the same `.env` file as the gateway daemon.
+#[tauri::command]
+pub async fn start_agent(app: AppHandle) -> Result<DaemonStatus, String> {
+    let _ = app.emit(STATUS_EVENT, &DaemonStatus::Starting);
+
+    // Scrub any stale .env from a prior crash
+    scrub_stale_env().await?;
+
+    // Read all secrets from keychain
+    let key_names = keychain::list_secrets()?;
+    let mut secrets = HashMap::new();
+    for key_name in &key_names {
+        match keychain::retrieve_secret(key_name.clone()) {
+            Ok(value) => {
+                secrets.insert(key_name.clone(), value);
+            }
+            Err(e) => {
+                log::warn!("Failed to retrieve secret '{}': {}", key_name, e);
+            }
+        }
+    }
+
+    if !secrets.is_empty() {
+        env::write_env(secrets)
+            .await
+            .map_err(|e| {
+                log::error!("Env write for agent start failed: {}", e);
+                "Couldn't prepare API keys for your agent. Try restarting KloDock.".to_string()
+            })?;
+        log::info!("Materialized {} secrets to .env", key_names.len());
+    }
+
+    // Spawn the openclaw agent
+    let openclaw_path = openclaw::openclaw_bin_path()?;
+    if !openclaw_path.exists() {
+        let _ = env::delete_env().await;
+        return Err(
+            "OpenClaw is not installed. Please go back to the Install step.".into(),
+        );
+    }
+
+    // Set up environment for the daemon
+    let node_dir = crate::paths::klodock_base_dir()?.join("node");
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let path_sep = if cfg!(windows) { ";" } else { ":" };
+    let new_path = format!("{}{}{}", node_dir.display(), path_sep, current_path);
+
+    // The openclaw config directory
+    let openclaw_dir = crate::paths::openclaw_base_dir()?;
+
+    // Enable Vulkan GPU acceleration for Ollama. Ollama's own runtime
+    // safely ignores this if no Vulkan-capable GPU is present.
+    //
+    // On Windows, spawn node.exe directly instead of the .cmd wrapper.
+    // The .cmd file uses cmd.exe which opens a console window even with
+    // CREATE_NO_WINDOW set on the child process.
+    let (spawn_exe, spawn_args): (std::path::PathBuf, Vec<String>) = if cfg!(windows) {
+        let node_exe = node_dir.join("node.exe");
+        let openclaw_js = node_dir
+            .join("node_modules")
+            .join("openclaw")
+            .join("openclaw.mjs");
+        if node_exe.exists() && openclaw_js.exists() {
+            (
+                node_exe,
+                vec![
+                    openclaw_js.to_string_lossy().into_owned(),
+                    "agent".into(),
+                    "--agent".into(),
+                    "main".into(),
+                ],
+            )
+        } else {
+            (openclaw_path.clone(), vec!["agent".into(), "--agent".into(), "main".into()])
+        }
+    } else {
+        (openclaw_path.clone(), vec!["agent".into(), "--agent".into(), "main".into()])
+    };
+
+    let mut cmd = tokio::process::Command::new(&spawn_exe);
+    cmd.args(&spawn_args)
+        .env("PATH", &new_path)
+        .env("OLLAMA_VULKAN", "1")
+        .current_dir(&openclaw_dir)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let child = cmd.spawn().map_err(|e| {
+        log::error!("Agent daemon spawn failed: {}", e);
+        "Couldn't start your agent. Try reinstalling OpenClaw.".to_string()
+    })?;
+
+    let pid = child.id().unwrap_or(0);
+
+    // Write PID file
+    let pid_path = agent_pid_file_path()?;
+    if let Some(parent) = pid_path.parent() {
+        tokio::fs::create_dir_all(parent)
+            .await
+            .map_err(|e| {
+                log::error!("PID dir creation failed: {}", e);
+                "Couldn't save agent process info. Check disk space.".to_string()
+            })?;
+    }
+    tokio::fs::write(&pid_path, pid.to_string())
+        .await
+        .map_err(|e| {
+            log::error!("PID file write failed: {}", e);
+            "Couldn't save agent process info. Check disk space.".to_string()
+        })?;
+
+    // Read active model for activity log
+    let model_name = crate::config::openclaw_json::read_config().await
+        .ok()
+        .and_then(|c| c.agents)
+        .and_then(|a| a.defaults)
+        .and_then(|d| d.model)
+        .map(|m| m.primary)
+        .unwrap_or_else(|| "unknown model".into());
+    log::info!("OpenClaw agent daemon started with PID {pid}, model: {model_name}");
+    crate::process::activity::record("success", &format!("Agent started · {model_name}"));
+    let _ = app.emit(STATUS_EVENT, &DaemonStatus::Running);
+
+    // Spawn a background task to monitor the child process
+    let app_monitor = app.clone();
+    tokio::spawn(async move {
+        monitor_daemon(child, app_monitor).await;
+    });
+
+    Ok(DaemonStatus::Running)
+}
+
+/// Stop the agent daemon process, scrub .env (unless "keep keys" is on), remove PID file.
+#[tauri::command]
+pub async fn stop_agent() -> Result<DaemonStatus, String> {
+    let pid_path = agent_pid_file_path()?;
+
+    if pid_path.exists() {
+        let pid_str = tokio::fs::read_to_string(&pid_path)
+            .await
+            .map_err(|e| {
+                log::error!("PID file read failed for status check: {}", e);
+                "Couldn't check agent status. Try restarting KloDock.".to_string()
+            })?;
+
+        if let Ok(pid) = pid_str.trim().parse::<u32>() {
+            kill_process(pid).await;
+        }
+
+        let _ = tokio::fs::remove_file(&pid_path).await;
+    }
+
+    // Scrub .env — ALWAYS, unless keep_keys is enabled
+    if !keep_keys_setting() {
+        let _ = env::delete_env().await;
+        log::info!("Scrubbed .env on agent stop");
+    } else {
+        log::info!("Preserved .env on stop (keep_api_keys_on_disk = true)");
+    }
+
+    crate::process::activity::record("info", "Agent stopped");
+    Ok(DaemonStatus::Stopped)
+}
+
+/// Start then stop the agent daemon.
+#[tauri::command]
+pub async fn restart_agent(app: AppHandle) -> Result<DaemonStatus, String> {
+    let _ = stop_agent().await;
+    start_agent(app).await
+}
+
+/// Check whether the agent daemon is currently alive by reading the PID file
+/// and verifying the process exists.
+#[tauri::command]
+pub async fn get_agent_status() -> Result<DaemonStatus, String> {
+    let pid_path = agent_pid_file_path()?;
+    if !pid_path.exists() {
+        return Ok(DaemonStatus::Stopped);
+    }
+
+    let pid_str = tokio::fs::read_to_string(&pid_path)
+        .await
+        .map_err(|e| {
+            log::error!("PID file read failed for status check: {}", e);
+            "Couldn't check agent status. Try restarting KloDock.".to_string()
+        })?;
+
+    let pid: u32 = match pid_str.trim().parse() {
+        Ok(p) => p,
+        Err(_) => {
+            log::warn!("Corrupt PID file (non-numeric content), removing");
+            let _ = tokio::fs::remove_file(&pid_path).await;
+            return Ok(DaemonStatus::Stopped);
+        }
+    };
+
+    if is_process_alive(pid) {
+        Ok(DaemonStatus::Running)
+    } else {
+        let _ = tokio::fs::remove_file(&pid_path).await;
+        Ok(DaemonStatus::Stopped)
+    }
+}
+
 
 /// Internal version for non-Tauri callers (e.g., tray quit handler).
 pub async fn stop_daemon_internal() -> Result<DaemonStatus, String> {

@@ -41,7 +41,22 @@ pub async fn chat_send_message(
     let openclaw_dir = crate::paths::openclaw_base_dir()
         .map_err(|_| "Couldn't find OpenClaw configuration")?;
 
-    // Materialize API keys from keychain to .env so openclaw agent can read them
+    // Check if agent daemon is running
+    let agent_status = crate::process::daemon::get_agent_status().await
+        .unwrap_or(crate::process::daemon::DaemonStatus::Stopped);
+
+    if let crate::process::daemon::DaemonStatus::Running = agent_status {
+        // Agent is already running, we should send the message to it.
+        // For now, since we haven't implemented a persistent stdin/stdout
+        // mechanism for the agent daemon, we will still call the CLI command.
+        // This is a placeholder until the persistent communication layer is ready.
+        log::info!("Agent daemon is running, but using CLI command as fallback.");
+    } else {
+        // Agent is not running, materialize .env and start it (or just run one-shot)
+        // For now, we'll stick to the one-shot for compatibility while we build the daemon.
+        log::info!("Agent daemon is not running. Proceeding with one-shot CLI call.");
+    }
+
     {
         use crate::secrets::keychain;
         use crate::config::env;
