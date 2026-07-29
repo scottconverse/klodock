@@ -220,14 +220,6 @@ export async function restartDaemon(): Promise<DaemonStatus> {
   return invoke<DaemonStatus>("restart_daemon");
 }
 
-export async function getDaemonStatus(): Promise<DaemonStatus> {
-  return invoke<DaemonStatus>("get_daemon_status");
-}
-
-export async function runHealthCheck(): Promise<HealthStatus> {
-  return invoke<HealthStatus>("run_health_check");
-}
-
 /* ── Autostart ──────────────────────────────────────── */
 
 export async function enableAutostart(): Promise<void> {
@@ -310,4 +302,10 @@ export function onDaemonStatus(
   return listen<DaemonStatus>("daemon-status", (event) => {
     callback(event.payload);
   });
+}
+
+/* ── Helpers ─────────────────────────────────────────── */
+
+export async function testAllKeys(): Promise<Record<string, boolean>> {
+  return invoke("test_all_keys");
 }
