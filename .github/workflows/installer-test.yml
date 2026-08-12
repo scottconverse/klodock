@@ -1,0 +1,16 @@
+# Calls the central reusable installer-test workflow.
+# Managed by scottconverse/installer-ci; edit there, not here.
+name: installer-test
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  installer-test:
+    uses: scottconverse/installer-ci/.github/workflows/installer-test.yml@main
+    permissions:
+      contents: read
+      packages: read
+    secrets: inherit
